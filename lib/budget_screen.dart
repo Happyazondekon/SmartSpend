@@ -1,11 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart';import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'transaction.dart';
 import 'theme.dart';
-import 'utils.dart';
+
 
 class BudgetScreen extends StatefulWidget {
   @override
@@ -20,6 +24,10 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
   List<String> currencies = ['XOF', 'USD', 'EUR', 'GBP', 'CAD'];
   bool isDarkMode = false;
   List<Transaction> transactions = [];
+
+  // Filtre par mois
+  DateTime selectedMonth = DateTime.now();
+  List<Transaction> filteredTransactions = [];
 
   Map<String, Map<String, dynamic>> budget = {
     'Loyer': {'percent': 0.30, 'amount': 0.0, 'icon': Icons.home, 'color': Colors.blue, 'spent': 0.0},
@@ -56,7 +64,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
             'amount': value['amount'],
             'icon': IconData(value['icon'], fontFamily: 'MaterialIcons'),
             'color': Color(value['color']),
-            'spent': value['spent'],
+            'spent': value['spent'] ?? 0.0,
           };
         });
       }
@@ -67,17 +75,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
         List<dynamic> decodedTransactions = jsonDecode(savedTransactions);
         transactions = decodedTransactions.map((item) => Transaction.fromJson(item)).toList();
 
-        // Recalculer les dépenses par catégorie
-        budget.forEach((key, value) {
-          budget[key]!['spent'] = 0.0;
-        });
-
-        for (var transaction in transactions) {
-          if (budget.containsKey(transaction.category)) {
-            budget[transaction.category]!['spent'] =
-                (budget[transaction.category]!['spent'] as double) + transaction.amount;
-          }
-        }
+        _updateFilteredTransactions();
       }
 
       if (salary > 0) {
@@ -85,6 +83,26 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
         calculateBudget();
       }
     });
+  }
+
+  void _updateFilteredTransactions() {
+    // Filtrer les transactions du mois sélectionné
+    filteredTransactions = transactions.where((t) =>
+    t.date.year == selectedMonth.year &&
+        t.date.month == selectedMonth.month
+    ).toList();
+
+    // Recalculer les dépenses par catégorie pour le mois sélectionné
+    budget.forEach((key, value) {
+      budget[key]!['spent'] = 0.0;
+    });
+
+    for (var transaction in filteredTransactions) {
+      if (budget.containsKey(transaction.category)) {
+        budget[transaction.category]!['spent'] =
+            (budget[transaction.category]!['spent'] as double) + transaction.amount;
+      }
+    }
   }
 
   Future<void> _saveData() async {
@@ -133,6 +151,31 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     });
   }
 
+  // Fonction pour vérifier si le total des pourcentages dépasse 100%
+  double _getTotalBudgetPercentage() {
+    double total = 0.0;
+    budget.forEach((key, value) {
+      total += value['percent'] as double;
+    });
+    return total;
+  }
+
+  // Nouvelle fonction pour obtenir des recommandations de dépenses
+  String _getSpendingRecommendation(String category) {
+    double spent = budget[category]!['spent'] as double;
+    double allocated = budget[category]!['amount'] as double;
+    double percentage = allocated > 0 ? (spent / allocated) * 100 : 0;
+
+    if (percentage > 100) {
+      return "Vous avez dépassé votre budget pour cette catégorie. Essayez de réduire vos dépenses.";
+    } else if (percentage >= 95) {
+      return "Vous approchez de la limite de votre budget. Soyez prudent avec vos prochaines dépenses.";
+    } else if (percentage < 30 && percentage > 0) {
+      return "Vous utilisez peu de votre budget alloué. C'est une bonne occasion d'épargner.";
+    }
+    return "";
+  }
+
   void _addTransaction(String category, double amount, String description) {
     final transaction = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -144,17 +187,13 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
 
     setState(() {
       transactions.add(transaction);
-      budget[category]!['spent'] = (budget[category]!['spent'] as double) + amount;
+      _updateFilteredTransactions();
       _saveData();
     });
   }
 
   void _editTransaction(Transaction transaction, double newAmount, String newDescription) {
     setState(() {
-      // Soustraire l'ancien montant des dépenses de catégorie
-      budget[transaction.category]!['spent'] =
-          (budget[transaction.category]!['spent'] as double) - transaction.amount;
-
       // Mettre à jour la transaction
       int index = transactions.indexWhere((t) => t.id == transaction.id);
       if (index != -1) {
@@ -165,12 +204,9 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
           description: newDescription,
           date: transaction.date,
         );
-
-        // Ajouter le nouveau montant aux dépenses de catégorie
-        budget[transaction.category]!['spent'] =
-            (budget[transaction.category]!['spent'] as double) + newAmount;
       }
 
+      _updateFilteredTransactions();
       _saveData();
     });
   }
@@ -178,8 +214,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
   void _deleteTransaction(Transaction transaction) {
     setState(() {
       transactions.removeWhere((t) => t.id == transaction.id);
-      budget[transaction.category]!['spent'] =
-          (budget[transaction.category]!['spent'] as double) - transaction.amount;
+      _updateFilteredTransactions();
       _saveData();
     });
   }
@@ -200,6 +235,18 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Cette catégorie existe déjà'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Vérifier si le total des pourcentages dépasse 100%
+    double currentTotal = _getTotalBudgetPercentage();
+    if (currentTotal + percent/100 > 1.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Le total des pourcentages ne peut pas dépasser 100%. Actuellement: ${(currentTotal * 100).toStringAsFixed(0)}%'),
           backgroundColor: Colors.red,
         ),
       );
@@ -240,6 +287,18 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
       return;
     }
 
+    // Vérifier si le total des pourcentages dépasse 100%
+    double currentTotal = _getTotalBudgetPercentage() - (budget[oldName]!['percent'] as double);
+    if (currentTotal + percent/100 > 1.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Le total des pourcentages ne peut pas dépasser 100%. Après modification: ${((currentTotal + percent/100) * 100).toStringAsFixed(0)}%'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       // Créer la nouvelle catégorie avec les valeurs modifiées
       Map<String, dynamic> updatedCategory = {
@@ -272,6 +331,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
         budget[oldName] = updatedCategory;
       }
 
+      _updateFilteredTransactions();
       _saveData();
     });
   }
@@ -296,6 +356,40 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     });
   }
 
+  // Fonction pour exporter les transactions du mois sélectionné
+  Future<void> _exportTransactions() async {
+    final monthTransactions = transactions.where((t) =>
+    t.date.month == selectedMonth.month &&
+        t.date.year == selectedMonth.year
+    ).toList();
+
+    if (monthTransactions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucune transaction à exporter'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final csvData = StringBuffer()
+      ..writeln('Date,Catégorie,Description,Montant ($currency)');
+
+    for (final t in monthTransactions) {
+      csvData.writeln(
+          '${t.date.day}/${t.date.month}/${t.date.year},'
+              '${t.category},'
+              '${t.description.replaceAll(',', ';')},'
+              '${t.amount.toStringAsFixed(2)}'
+      );
+    }
+
+    await Share.share(
+      csvData.toString(),
+      subject: 'Transactions_${DateFormat('yyyy-MM').format(selectedMonth)}.csv',
+    );
+  }
   @override
   Widget build(BuildContext context) {
     ThemeData theme = getAppTheme(isDarkMode);
@@ -339,12 +433,23 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
           onPressed: () {
             if (_tabController.index == 0) {
               _showAddCategoryDialog();
-            } else {
+            } else if (_tabController.index == 2) {
               _showAddTransactionDialog();
+            } else {
+              // Pour l'onglet statistiques
+              _showMonthPicker();
             }
           },
-          child: Icon(_tabController.index == 0 ? Icons.add_chart : Icons.add),
-          tooltip: _tabController.index == 0 ? 'Ajouter une catégorie' : 'Ajouter une transaction',
+          child: Icon(_tabController.index == 0
+              ? Icons.add_chart
+              : _tabController.index == 2
+              ? Icons.add
+              : Icons.calendar_month),
+          tooltip: _tabController.index == 0
+              ? 'Ajouter une catégorie'
+              : _tabController.index == 2
+              ? 'Ajouter une transaction'
+              : 'Changer de mois',
         ),
       ),
     );
@@ -393,29 +498,52 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
         ),
       ),
       padding: EdgeInsets.all(16),
-      child: budget.isEmpty ?
-      Center(child: Text('Aucune catégorie de budget définie')) :
-      Column(
+      child: Column(
         children: [
+          // Sélecteur de mois
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Mois: ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.file_download),
+                onPressed: filteredTransactions.isEmpty ? null : _exportTransactions,
+                tooltip: 'Exporter les transactions',
+                color: isDarkMode ? Colors.white : Colors.blue[800],
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+
+          // Graphique des dépenses réelles
+          budget.isEmpty || filteredTransactions.isEmpty ?
+          Center(child: Text('Aucune dépense pour ce mois')) :
           Container(
             height: 300,
             child: PieChart(
               PieChartData(
-                sections: budget.entries.map((entry) {
+                sections: budget.entries
+                    .where((entry) => entry.value['spent'] > 0) // Ne montrer que les catégories avec des dépenses
+                    .map((entry) {
                   return PieChartSectionData(
                     color: entry.value['color'],
-                    value: entry.value['amount'],
-                    title: entry.key,
+                    value: entry.value['spent'], // Utiliser les dépenses réelles
+                    title: '${(entry.value['spent'] as double).toStringAsFixed(0)}',
                     titleStyle: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : Colors.black,
+                      color: Colors.white,
                     ),
                     radius: 100,
                     showTitle: true,
-                    borderSide: BorderSide(
-                      width: 0,
-                    ),
+                    borderSide: BorderSide(width: 0),
                   );
                 }).toList(),
                 sectionsSpace: 2,
@@ -425,11 +553,18 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
             ),
           ),
           SizedBox(height: 20),
+
           // Légende
           Expanded(
             child: SingleChildScrollView(
               child: Column(
-                children: budget.entries.map((entry) {
+                children: budget.entries
+                    .where((entry) => entry.value['spent'] > 0) // Ne montrer que les catégories avec des dépenses
+                    .map((entry) {
+                  double spentPercent = salary > 0
+                      ? ((entry.value['spent'] as double) / salary) * 100
+                      : 0;
+
                   return Padding(
                     padding: EdgeInsets.symmetric(vertical: 4),
                     child: Row(
@@ -451,7 +586,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                         ),
                         Spacer(),
                         Text(
-                          '${entry.value['amount'].toStringAsFixed(0)} $currency',
+                          '${(entry.value['spent'] as double).toStringAsFixed(0)} $currency (${spentPercent.toStringAsFixed(1)}%)',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: isDarkMode ? Colors.white70 : Colors.grey[800],
@@ -480,45 +615,92 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
               : [Colors.blue[50]!, Colors.blue[100]!],
         ),
       ),
-      child: transactions.isEmpty ?
-      Center(child: Text('Aucune transaction enregistrée')) :
-      ListView.builder(
-        itemCount: transactions.length,
-        itemBuilder: (context, index) {
-          final transaction = transactions[index];
-          return Card(
-            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: isDarkMode ? Colors.grey[800] : Colors.white,
-            child: ListTile(
-              leading: Icon(
-                budget[transaction.category]?['icon'] ?? Icons.error,
-                color: budget[transaction.category]?['color'] ?? Colors.grey,
-              ),
-              title: Text(
-                transaction.description,
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.black87,
+      child: Column(
+        children: [
+          // Sélecteur de mois
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Mois: ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
                 ),
-              ),
-              subtitle: Text(
-                '${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white70 : Colors.grey[700],
+                IconButton(
+                  icon: Icon(Icons.calendar_month),
+                  onPressed: () => _showMonthPicker(),
+                  color: isDarkMode ? Colors.white : Colors.blue[800],
                 ),
-              ),
-              trailing: Text(
-                '${transaction.amount.toStringAsFixed(0)} $currency',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: budget[transaction.category]?['color'] ?? Colors.grey,
-                ),
-              ),
-              onTap: () => _showTransactionOptionsDialog(transaction),
+              ],
             ),
-          );
-        },
+          ),
+
+          // Liste des transactions
+          Expanded(
+            child: filteredTransactions.isEmpty ?
+            Center(child: Text('Aucune transaction pour ce mois')) :
+            ListView.builder(
+              itemCount: filteredTransactions.length,
+              itemBuilder: (context, index) {
+                final transaction = filteredTransactions[index];
+                return Card(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: isDarkMode ? Colors.grey[800] : Colors.white,
+                  child: ListTile(
+                    leading: Icon(
+                      budget[transaction.category]?['icon'] ?? Icons.error,
+                      color: budget[transaction.category]?['color'] ?? Colors.grey,
+                    ),
+                    title: Text(
+                      transaction.description,
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.white70 : Colors.grey[700],
+                      ),
+                    ),
+                    trailing: Text(
+                      '${transaction.amount.toStringAsFixed(0)} $currency',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: budget[transaction.category]?['color'] ?? Colors.grey,
+                      ),
+                    ),
+                    onTap: () => _showTransactionOptionsDialog(transaction),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _showMonthPicker() {
+    showDatePicker(
+      context: context,
+      initialDate: selectedMonth,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      initialDatePickerMode: DatePickerMode.year,
+    ).then((date) {
+      if (date != null) {
+        setState(() {
+          selectedMonth = DateTime(date.year, date.month);
+          _updateFilteredTransactions();
+        });
+      }
+    });
   }
 
   Widget _buildHeader() {
@@ -640,6 +822,8 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     );
   }
 
+  // Complétion de la fonction _buildBudgetList() et le reste du code
+
   Widget _buildBudgetList() {
     return Column(
       children: budget.entries.map((entry) {
@@ -647,608 +831,868 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
         progressValue = progressValue.clamp(0.0, 1.0);
 
         double spentPercentage = entry.value['amount'] > 0
-            ? (entry.value['spent'] / entry.value['amount']).clamp(0.0, 1.0)
+            ? (entry.value['spent'] / entry.value['amount']).clamp(0.0, 2.0) // Limite à 200% pour l'affichage
             : 0.0;
 
-        return GestureDetector(
-          onLongPress: () => _showCategoryOptionsDialog(entry.key),
-          child: Container(
-            margin: EdgeInsets.only(bottom: 16),
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDarkMode ? Colors.grey[800] : Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: isDarkMode ? Colors.black26 : Colors.blue.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+        // Calcul du montant restant
+        double remaining = (entry.value['amount'] as double) - (entry.value['spent'] as double);
+        String recommendation = _getSpendingRecommendation(entry.key);
+
+        return Container(
+          margin: EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDarkMode ? Colors.grey[800] : Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: isDarkMode ? Colors.black26 : Colors.blue.withOpacity(0.1),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    entry.value['icon'],
+                    color: entry.value['color'],
+                    size: 28,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          entry.value['icon'],
-                          color: entry.value['color'],
-                          size: 24,
-                        ),
-                        SizedBox(width: 12),
                         Text(
                           entry.key,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: isDarkMode ? Colors.white : Colors.black87,
                           ),
                         ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
                         Text(
-                          '${entry.value['amount'].toStringAsFixed(0)} $currency',
+                          '${(entry.value['percent'] * 100).toStringAsFixed(0)}% - ${entry.value['amount'].toStringAsFixed(0)} $currency',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: entry.value['color'],
-                          ),
-                        ),
-                        Text(
-                          'Dépensé: ${entry.value['spent'].toStringAsFixed(0)} $currency',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDarkMode ? Colors.white70 : Colors.grey[600],
+                            fontSize: 14,
+                            color: isDarkMode ? Colors.white70 : Colors.grey[700],
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.edit, color: isDarkMode ? Colors.white70 : Colors.blue),
+                    onPressed: () => _showEditCategoryDialog(entry.key),
+                    tooltip: 'Modifier',
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: isDarkMode ? Colors.white70 : Colors.red),
+                    onPressed: () => _deleteCategory(entry.key),
+                    tooltip: 'Supprimer',
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              // Affichage détaillé des dépenses et du montant restant
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Dépensé: ${entry.value['spent'].toStringAsFixed(0)} $currency',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white70 : Colors.grey[700],
+                    ),
+                  ),
+                  Text(
+                    'Restant: ${remaining.toStringAsFixed(0)} $currency',
+                    style: TextStyle(
+                      color: remaining < 0
+                          ? Colors.red
+                          : (isDarkMode ? Colors.white70 : Colors.green[700]),
+                      fontWeight: remaining < 0 ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              // Barre de progression
+              Stack(
+                children: [
+                  // Fond de la barre
+                  Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.grey[700] : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  // Progression des dépenses
+                  Container(
+                    height: 8,
+                    width: MediaQuery.of(context).size.width * 0.7 * spentPercentage,
+                    decoration: BoxDecoration(
+                      color: spentPercentage > 1
+                          ? Colors.red
+                          : (spentPercentage > 0.95 ? Colors.orange : entry.value['color']),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+              // Afficher la recommandation si elle existe
+              if (recommendation.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    recommendation,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: spentPercentage > 1
+                          ? Colors.red
+                          : (spentPercentage > 0.95 ? Colors.orange : isDarkMode ? Colors.white60 : Colors.grey[600]),
+                    ),
+                  ),
                 ),
-                SizedBox(height: 8),
-                Stack(
-                  children: [
-                    LinearProgressIndicator(
-                      value: progressValue,
-                      backgroundColor: entry.value['color'].withOpacity(0.2),
-                      valueColor: AlwaysStoppedAnimation<Color>(entry.value['color']),
-                      minHeight: 8,
-                    ),
-                    LinearProgressIndicator(
-                      value: spentPercentage * progressValue,
-                      backgroundColor: Colors.transparent,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        entry.value['color'].withOpacity(0.5),
-                      ),
-                      minHeight: 8,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${(entry.value['percent'] * 100).toStringAsFixed(0)}% du budget',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkMode ? Colors.white70 : Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      '${(spentPercentage * 100).toStringAsFixed(0)}% utilisé',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkMode ? Colors.white70 : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            ],
           ),
         );
       }).toList(),
     );
   }
 
-  void _showAddTransactionDialog() {
-    if (budget.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Veuillez d\'abord créer au moins une catégorie de budget'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+  // Au lieu d'utiliser des objets Color directement, utilisons un index ou une Map
+// pour stocker les couleurs dans les fonctions de dialogue
 
-    String selectedCategory = budget.keys.first;
-    final amountController = TextEditingController();
-    final descriptionController = TextEditingController();
+  // Mise à jour de la fonction _showAddCategoryDialog()
+  void _showAddCategoryDialog() {
+    String name = '';
+    double percent = 0;
+    double amount = 0;
+    bool isUsingPercent = true; // Mode de saisie par défaut
+    int selectedIconIndex = 0;
+    int selectedColorIndex = 0;
+
+    // Définir la liste des couleurs disponibles
+    List<Color> availableColors = [
+      Colors.blue,
+      Colors.green,
+      Colors.red,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.amber,
+      Colors.indigo,
+      Colors.brown,
+    ];
+
+    // Calculer le pourcentage total déjà utilisé
+    double totalUsedPercent = 0;
+    budget.forEach((category, data) {
+      totalUsedPercent += (data['percent'] as double) * 100;
+    });
+    double remainingPercent = 100 - totalUsedPercent;
+    double remainingAmount = salary * (remainingPercent / 100);
+
+    // Définir une liste d'icônes disponibles
+    List<IconData> availableIcons = [
+      Icons.home,
+      Icons.directions_car,
+      Icons.bolt,
+      Icons.wifi,
+      Icons.restaurant,
+      Icons.sports_esports,
+      Icons.savings,
+      Icons.shopping_cart,
+      Icons.medical_services,
+      Icons.school,
+    ];
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white,
-        title: Text(
-          'Ajouter une dépense',
-          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButton<String>(
-              value: selectedCategory,
-              dropdownColor: isDarkMode ? Colors.grey[700] : Colors.white,
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-              items: budget.keys.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Row(
-                    children: [
-                      Icon(budget[category]!['icon'], color: budget[category]!['color'], size: 20),
-                      SizedBox(width: 8),
-                      Text(category),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedCategory = value!;
-                });
-              },
-            ),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Montant',
-                labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
-                ),
-              ),
-            ),
-            TextField(
-              controller: descriptionController,
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Description',
-                labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              'Annuler',
-              style: TextStyle(color: Colors.grey),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text(
-              'Ajouter',
-              style: TextStyle(color: Colors.blue),
-            ),
-            onPressed: () {
-              double amount = double.tryParse(amountController.text) ?? 0;
-              if (amount <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Veuillez entrer un montant valide'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Fonctions de conversion entre pourcentage et montant
+            void updateAmountFromPercent() {
+              if (salary > 0) {
+                amount = (percent * salary) / 100;
               }
+            }
 
-              _addTransaction(
-                selectedCategory,
-                amount,
-                descriptionController.text.isNotEmpty ? descriptionController.text : 'Sans description',
-              );
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+            void updatePercentFromAmount() {
+              if (salary > 0) {
+                percent = (amount / salary) * 100;
+              }
+            }
+
+            return AlertDialog(
+              title: Text('Ajouter une catégorie'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Affichage du pourcentage et montant restants
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Restant:'),
+                              Text(
+                                '${remainingPercent.toStringAsFixed(1)}% (${remainingAmount.toStringAsFixed(0)} $currency)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: remainingPercent < 0 ? Colors.red : Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Nom',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        name = value;
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    // Switch pour choisir entre pourcentage et montant
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Montant'),
+                        Switch(
+                          value: isUsingPercent,
+                          onChanged: (value) {
+                            setState(() {
+                              isUsingPercent = value;
+                              if (isUsingPercent) {
+                                updatePercentFromAmount();
+                              } else {
+                                updateAmountFromPercent();
+                              }
+                            });
+                          },
+                        ),
+                        Text('Pourcentage'),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    isUsingPercent
+                        ? TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Pourcentage (%)',
+                        border: OutlineInputBorder(),
+                        helperText: 'Restant: ${remainingPercent.toStringAsFixed(1)}%',
+                        suffixText: 'Montant: ${(percent * salary / 100).toStringAsFixed(0)} $currency',
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          percent = double.tryParse(value) ?? 0;
+                          updateAmountFromPercent();
+                        });
+                      },
+                    )
+                        : TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Montant ($currency)',
+                        border: OutlineInputBorder(),
+                        helperText: 'Restant: ${remainingAmount.toStringAsFixed(0)} $currency',
+                        suffixText: 'Pourcentage: ${(amount / salary * 100).toStringAsFixed(1)}%',
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          amount = double.tryParse(value) ?? 0;
+                          updatePercentFromAmount();
+                        });
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Icône:'),
+                        DropdownButton<int>(
+                          value: selectedIconIndex,
+                          items: List.generate(availableIcons.length, (index) {
+                            return DropdownMenuItem(
+                              value: index,
+                              child: Icon(availableIcons[index]),
+                            );
+                          }),
+                          onChanged: (int? value) {
+                            setState(() {
+                              selectedIconIndex = value ?? 0;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Couleur:'),
+                        DropdownButton<int>(
+                          value: selectedColorIndex,
+                          items: List.generate(availableColors.length, (index) {
+                            return DropdownMenuItem(
+                              value: index,
+                              child: Container(width: 24, height: 24, color: availableColors[index]),
+                            );
+                          }),
+                          onChanged: (int? value) {
+                            setState(() {
+                              selectedColorIndex = value ?? 0;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Annuler'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ElevatedButton(
+                  child: Text('Ajouter'),
+                  onPressed: () {
+                    // Vérifier si les valeurs sont valides
+                    double calculatedPercent = isUsingPercent ? percent : (amount / salary * 100);
+
+                    if (calculatedPercent > remainingPercent) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Le montant dépasse la valeur restante disponible!'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(context).pop();
+                    _addCategory(
+                        name,
+                        calculatedPercent,
+                        availableIcons[selectedIconIndex],
+                        availableColors[selectedColorIndex]
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+// Mise à jour de la fonction _showEditCategoryDialog()
+  void _showEditCategoryDialog(String categoryName) {
+    String name = categoryName;
+    double percent = (budget[categoryName]!['percent'] as double) * 100;
+    double originalPercent = percent; // Sauvegarder le pourcentage original
+    double amount = budget[categoryName]!['amount'] as double;
+    double originalAmount = amount; // Sauvegarder le montant original
+    bool isUsingPercent = true; // Mode de saisie par défaut
+    IconData currentIcon = budget[categoryName]!['icon'] as IconData;
+    Color currentColor = budget[categoryName]!['color'] as Color;
+
+    // Définir la liste des couleurs disponibles
+    List<Color> availableColors = [
+      Colors.blue,
+      Colors.green,
+      Colors.red,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.amber,
+      Colors.indigo,
+      Colors.brown,
+    ];
+
+    // Trouver l'index de la couleur actuelle ou utiliser 0
+    int selectedColorIndex = 0;
+    for (int i = 0; i < availableColors.length; i++) {
+      if (availableColors[i].value == currentColor.value) {
+        selectedColorIndex = i;
+        break;
+      }
+    }
+
+    // Calculer le pourcentage total déjà utilisé (sans compter la catégorie actuelle)
+    double totalUsedPercent = 0;
+    budget.forEach((category, data) {
+      if (category != categoryName) {
+        totalUsedPercent += (data['percent'] as double) * 100;
+      }
+    });
+    double remainingPercent = 100 - totalUsedPercent;
+    double remainingAmount = salary * (remainingPercent / 100);
+
+    // Définir une liste d'icônes disponibles
+    List<IconData> availableIcons = [
+      Icons.home,
+      Icons.directions_car,
+      Icons.bolt,
+      Icons.wifi,
+      Icons.restaurant,
+      Icons.sports_esports,
+      Icons.savings,
+      Icons.shopping_cart,
+      Icons.medical_services,
+      Icons.school,
+    ];
+
+    // Trouver l'index de l'icône actuelle ou utiliser 0
+    int selectedIconIndex = 0;
+    for (int i = 0; i < availableIcons.length; i++) {
+      if (availableIcons[i].codePoint == currentIcon.codePoint) {
+        selectedIconIndex = i;
+        break;
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            // Fonctions de conversion entre pourcentage et montant
+            void updateAmountFromPercent() {
+              if (salary > 0) {
+                amount = (percent * salary) / 100;
+              }
+            }
+
+            void updatePercentFromAmount() {
+              if (salary > 0) {
+                percent = (amount / salary) * 100;
+              }
+            }
+
+            return AlertDialog(
+              title: Text('Modifier la catégorie'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Affichage du pourcentage restant + pourcentage actuel
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Actuel:'),
+                              Text(
+                                '${originalPercent.toStringAsFixed(1)}% (${originalAmount.toStringAsFixed(0)} $currency)',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Restant:'),
+                              Text(
+                                '${remainingPercent.toStringAsFixed(1)}% (${remainingAmount.toStringAsFixed(0)} $currency)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: remainingPercent < 0 ? Colors.red : Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Total disponible:'),
+                              Text(
+                                '${(remainingPercent + originalPercent).toStringAsFixed(1)}% (${(remainingAmount + originalAmount).toStringAsFixed(0)} $currency)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Nom',
+                        border: OutlineInputBorder(),
+                      ),
+                      controller: TextEditingController(text: name),
+                      onChanged: (value) {
+                        name = value;
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    // Switch pour choisir entre pourcentage et montant
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Montant'),
+                        Switch(
+                          value: isUsingPercent,
+                          onChanged: (value) {
+                            setState(() {
+                              isUsingPercent = value;
+                              if (isUsingPercent) {
+                                updatePercentFromAmount();
+                              } else {
+                                updateAmountFromPercent();
+                              }
+                            });
+                          },
+                        ),
+                        Text('Pourcentage'),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    isUsingPercent
+                        ? TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Pourcentage (%)',
+                        border: OutlineInputBorder(),
+                        helperText: 'Maximum: ${(remainingPercent + originalPercent).toStringAsFixed(1)}%',
+                        suffixText: 'Montant: ${(percent * salary / 100).toStringAsFixed(0)} $currency',
+                      ),
+                      controller: TextEditingController(text: percent.toString()),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          percent = double.tryParse(value) ?? 0;
+                          updateAmountFromPercent();
+                        });
+                      },
+                    )
+                        : TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Montant ($currency)',
+                        border: OutlineInputBorder(),
+                        helperText: 'Maximum: ${(remainingAmount + originalAmount).toStringAsFixed(0)} $currency',
+                        suffixText: 'Pourcentage: ${(amount / salary * 100).toStringAsFixed(1)}%',
+                      ),
+                      controller: TextEditingController(text: amount.toString()),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          amount = double.tryParse(value) ?? 0;
+                          updatePercentFromAmount();
+                        });
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Icône:'),
+                        DropdownButton<int>(
+                          value: selectedIconIndex,
+                          items: List.generate(availableIcons.length, (index) {
+                            return DropdownMenuItem(
+                              value: index,
+                              child: Icon(availableIcons[index]),
+                            );
+                          }),
+                          onChanged: (int? value) {
+                            setState(() {
+                              selectedIconIndex = value ?? 0;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Couleur:'),
+                        DropdownButton<int>(
+                          value: selectedColorIndex,
+                          items: List.generate(availableColors.length, (index) {
+                            return DropdownMenuItem(
+                              value: index,
+                              child: Container(width: 24, height: 24, color: availableColors[index]),
+                            );
+                          }),
+                          onChanged: (int? value) {
+                            setState(() {
+                              selectedColorIndex = value ?? 0;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Annuler'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ElevatedButton(
+                  child: Text('Modifier'),
+                  onPressed: () {
+                    // Vérifier si les valeurs sont valides
+                    double calculatedPercent = isUsingPercent ? percent : (amount / salary * 100);
+
+                    if (calculatedPercent > remainingPercent + originalPercent) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Le montant dépasse la valeur restante disponible!'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(context).pop();
+                    _editCategory(
+                        categoryName,
+                        name,
+                        calculatedPercent,
+                        availableIcons[selectedIconIndex],
+                        availableColors[selectedColorIndex]
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddTransactionDialog() {
+    String selectedCategory = budget.keys.first;
+    double amount = 0;
+    String description = '';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Ajouter une transaction'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButton<String>(
+                      isExpanded: true,
+                      value: selectedCategory,
+                      items: budget.keys.map((String category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Row(
+                            children: [
+                              Icon(budget[category]!['icon'], color: budget[category]!['color']),
+                              SizedBox(width: 8),
+                              Text(category),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        setState(() {
+                          selectedCategory = value!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Montant ($currency)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        amount = double.tryParse(value) ?? 0;
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        description = value;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Annuler'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ElevatedButton(
+                  child: Text('Ajouter'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _addTransaction(selectedCategory, amount, description);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
   void _showTransactionOptionsDialog(Transaction transaction) {
-    final amountController = TextEditingController(text: transaction.amount.toString());
-    final descriptionController = TextEditingController(text: transaction.description);
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white,
-        title: Text(
-          'Options',
-          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Transaction du ${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
-              style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Montant',
-                labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
-                ),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Options'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.edit),
+                title: Text('Modifier'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showEditTransactionDialog(transaction);
+                },
               ),
-            ),
-            TextField(
-              controller: descriptionController,
-              style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Description',
-                labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
-                ),
+              ListTile(
+                leading: Icon(Icons.delete, color: Colors.red),
+                title: Text('Supprimer'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _deleteTransaction(transaction);
+                },
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('Annuler'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              'Supprimer',
-              style: TextStyle(color: Colors.red),
-            ),
-            onPressed: () {
-              _deleteTransaction(transaction);
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: Text(
-              'Annuler',
-              style: TextStyle(color: Colors.grey),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text(
-              'Enregistrer',
-              style: TextStyle(color: Colors.blue),
-            ),
-            onPressed: () {
-              double amount = double.tryParse(amountController.text) ?? 0;
-              if (amount <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Veuillez entrer un montant valide'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              _editTransaction(
-                transaction,
-                amount,
-                descriptionController.text.isNotEmpty ? descriptionController.text : 'Sans description',
-              );
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  void _showAddCategoryDialog() {
-    final nameController = TextEditingController();
-    final percentController = TextEditingController();
-    IconData selectedIcon = availableIcons.first;
-    Color selectedColor = availableColors.first;
+  void _showEditTransactionDialog(Transaction transaction) {
+    double amount = transaction.amount;
+    String description = transaction.description;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white,
-        title: Text(
-          'Ajouter une catégorie',
-          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-                decoration: InputDecoration(
-                  labelText: 'Nom de la catégorie',
-                  labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Modifier la transaction'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Catégorie: ${transaction.category}'),
+                SizedBox(height: 16),
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Montant ($currency)',
+                    border: OutlineInputBorder(),
                   ),
+                  controller: TextEditingController(text: amount.toString()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    amount = double.tryParse(value) ?? 0;
+                  },
                 ),
-              ),
-              TextField(
-                controller: percentController,
-                keyboardType: TextInputType.number,
-                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-                decoration: InputDecoration(
-                  labelText: 'Pourcentage du budget (%)',
-                  labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
+                SizedBox(height: 16),
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
                   ),
+                  controller: TextEditingController(text: description),
+                  onChanged: (value) {
+                    description = value;
+                  },
                 ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Choisir une icône',
-                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-              ),
-              SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
-                children: availableIcons.map((icon) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIcon = icon;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: selectedIcon == icon
-                            ? (isDarkMode ? Colors.blue[700] : Colors.blue[100])
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: isDarkMode ? Colors.white : Colors.blue[800],
-                        size: 24,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Choisir une couleur',
-                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-              ),
-              SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
-                children: availableColors.map((color) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedColor = color;
-                      });
-                    },
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      margin: EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: selectedColor == color
-                              ? (isDarkMode ? Colors.white : Colors.black)
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              'Annuler',
-              style: TextStyle(color: Colors.grey),
+              ],
             ),
-            onPressed: () => Navigator.pop(context),
           ),
-          TextButton(
-            child: Text(
-              'Ajouter',
-              style: TextStyle(color: Colors.blue),
+          actions: [
+            TextButton(
+              child: Text('Annuler'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
-            onPressed: () {
-              double percent = double.tryParse(percentController.text) ?? 0;
-              _addCategory(
-                nameController.text,
-                percent,
-                selectedIcon,
-                selectedColor,
-              );
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
+            ElevatedButton(
+              child: Text('Modifier'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _editTransaction(transaction, amount, description);
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
-  void _showCategoryOptionsDialog(String categoryName) {
-    final nameController = TextEditingController(text: categoryName);
-    final percentController = TextEditingController(
-        text: (budget[categoryName]!['percent'] * 100).toStringAsFixed(0));
-    IconData selectedIcon = budget[categoryName]!['icon'];
-    Color selectedColor = budget[categoryName]!['color'];
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDarkMode ? Colors.grey[800] : Colors.white,
-        title: Text(
-          'Modifier la catégorie',
-          style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-                decoration: InputDecoration(
-                  labelText: 'Nom de la catégorie',
-                  labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
-                  ),
-                ),
-              ),
-              TextField(
-                controller: percentController,
-                keyboardType: TextInputType.number,
-                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-                decoration: InputDecoration(
-                  labelText: 'Pourcentage du budget (%)',
-                  labelStyle: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: isDarkMode ? Colors.white54 : Colors.grey),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Choisir une icône',
-                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-              ),
-              SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
-                children: availableIcons.map((icon) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIcon = icon;
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: selectedIcon == icon
-                            ? (isDarkMode ? Colors.blue[700] : Colors.blue[100])
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: isDarkMode ? Colors.white : Colors.blue[800],
-                        size: 24,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Choisir une couleur',
-                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.grey[700]),
-              ),
-              SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
-                children: availableColors.map((color) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedColor = color;
-                      });
-                    },
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      margin: EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: selectedColor == color
-                              ? (isDarkMode ? Colors.white : Colors.black)
-                              : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            child: Text(
-              'Supprimer',
-              style: TextStyle(color: Colors.red),
-            ),
-            onPressed: () {
-              _deleteCategory(categoryName);
-              Navigator.pop(context);
-            },
-          ),
-          TextButton(
-            child: Text(
-              'Annuler',
-              style: TextStyle(color: Colors.grey),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: Text(
-              'Enregistrer',
-              style: TextStyle(color: Colors.blue),
-            ),
-            onPressed: () {
-              double percent = double.tryParse(percentController.text) ?? 0;
-              _editCategory(
-                categoryName,
-                nameController.text,
-                percent,
-                selectedIcon,
-                selectedColor,
-              );
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _salaryController.dispose();
+    super.dispose();
   }
 }

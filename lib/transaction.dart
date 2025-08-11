@@ -13,7 +13,6 @@ class Transaction {
     required this.date,
   });
 
-  // Conversion en JSON pour sauvegarde
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -24,7 +23,6 @@ class Transaction {
     };
   }
 
-  // Création depuis JSON
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
       id: json['id'],

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-const List<IconData> availableIcons = [
-  Icons.home, Icons.directions_car, Icons.bolt, Icons.wifi, Icons.restaurant,
-  Icons.sports_esports, Icons.savings, Icons.shopping_cart, Icons.medical_services,
-  Icons.school, Icons.fitness_center, Icons.pets, Icons.airplanemode_active,
-  Icons.auto_stories, Icons.camera_alt, Icons.coffee, Icons.child_care
-];
+Future<void> initializeLocale() async {
+  await initializeDateFormatting('fr_FR', null);
+}
 
-const List<Color> availableColors = [
-  Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.red,
-  Colors.pink, Colors.teal, Colors.amber, Colors.cyan, Colors.indigo,
-  Colors.lime, Colors.brown, Colors.deepOrange, Colors.deepPurple
-];
+String formatCurrency(double amount, String currency) {
+  NumberFormat formatter = NumberFormat.currency(
+    locale: 'fr_FR',
+    symbol: currency,
+    decimalDigits: 0,
+  );
+  return formatter.format(amount);
+}
