@@ -68,81 +68,124 @@ class AppTheme {
 
   static ThemeData getTheme(bool isDarkMode) {
     final colorScheme = isDarkMode ? _darkColorScheme : _lightColorScheme;
-    final textTheme = GoogleFonts.poppinsTextTheme(
-      isDarkMode ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
-    ).copyWith(
-      headlineSmall: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-      titleLarge: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-      titleMedium: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-      bodyLarge: GoogleFonts.poppins(),
-      bodyMedium: GoogleFonts.poppins(),
+
+    // CORRECTION: Définir explicitement les couleurs de base pour le textTheme
+    final baseTextTheme = isDarkMode ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+
+    final textTheme = GoogleFonts.poppinsTextTheme(baseTextTheme).copyWith(
+      // Définir explicitement les couleurs pour chaque style de texte
+      headlineSmall: GoogleFonts.poppins(
+        fontWeight: FontWeight.bold,
+        color: colorScheme.onBackground, // AJOUT: couleur explicite
+      ),
+      titleLarge: GoogleFonts.poppins(
+        fontWeight: FontWeight.bold,
+        color: colorScheme.onSurface, // AJOUT: couleur explicite
+      ),
+      titleMedium: GoogleFonts.poppins(
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface, // AJOUT: couleur explicite
+      ),
+      bodyLarge: GoogleFonts.poppins(
+        color: colorScheme.onBackground, // AJOUT: couleur explicite
+      ),
+      bodyMedium: GoogleFonts.poppins(
+        color: colorScheme.onSurface, // AJOUT: couleur explicite
+      ),
+      bodySmall: GoogleFonts.poppins(
+        color: colorScheme.onSurfaceVariant, // AJOUT: couleur explicite
+      ),
+      // AJOUT: Autres styles de texte
+      displayLarge: GoogleFonts.poppins(color: colorScheme.onBackground),
+      displayMedium: GoogleFonts.poppins(color: colorScheme.onBackground),
+      displaySmall: GoogleFonts.poppins(color: colorScheme.onBackground),
+      headlineLarge: GoogleFonts.poppins(color: colorScheme.onBackground),
+      headlineMedium: GoogleFonts.poppins(color: colorScheme.onBackground),
+      labelLarge: GoogleFonts.poppins(color: colorScheme.onSurface),
+      labelMedium: GoogleFonts.poppins(color: colorScheme.onSurface),
+      labelSmall: GoogleFonts.poppins(color: colorScheme.onSurfaceVariant),
     );
 
     return ThemeData(
-        useMaterial3: true,
-        colorScheme: colorScheme,
-        textTheme: textTheme,
-        appBarTheme: AppBarTheme(
-          backgroundColor: colorScheme.surface,
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: textTheme.titleLarge?.copyWith(color:Colors.blue[700],),
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: isDarkMode ? colorScheme.primary : Colors.blue[700], // CORRECTION: adaptation mode sombre
         ),
-        tabBarTheme: TabBarTheme(
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          indicator: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: colorScheme.primary, width: 3),
-            ),
+        iconTheme: IconThemeData(color: colorScheme.onSurface), // AJOUT: couleur des icônes
+      ),
+      tabBarTheme: TabBarTheme(
+        labelColor: colorScheme.primary,
+        unselectedLabelColor: colorScheme.onSurfaceVariant,
+        indicator: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: colorScheme.primary, width: 3),
           ),
         ),
-        cardTheme: CardTheme(
-          elevation: 0,
-          color: colorScheme.surfaceVariant.withOpacity(0.3),
+      ),
+      cardTheme: CardTheme(
+        elevation: 0,
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          side: BorderSide(color: colorScheme.outline.withOpacity(0.2), width: 1),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12.0),
+          borderSide: BorderSide.none,
+        ),
+        labelStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        hintStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-            side: BorderSide(color: colorScheme.outline.withOpacity(0.2), width: 1),
-          ),
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-          border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12.0),
-            borderSide: BorderSide.none,
           ),
-          labelStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-          hintStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          textStyle: textTheme.titleMedium?.copyWith(color: colorScheme.onPrimary),
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: colorScheme.primary,
-            foregroundColor: colorScheme.onPrimary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            textStyle: textTheme.titleMedium,
-          ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: colorScheme.tertiary,
+        foregroundColor: colorScheme.onTertiary,
+      ),
+      dialogTheme: DialogTheme(
+        backgroundColor: colorScheme.background,
+        titleTextStyle: textTheme.titleLarge?.copyWith(color: colorScheme.onBackground), // AJOUT
+        contentTextStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface), // AJOUT
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.0),
         ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: colorScheme.tertiary,
-          foregroundColor: colorScheme.onTertiary,
-        ),
-        dialogTheme: DialogTheme(
-          backgroundColor: colorScheme.background,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-        ),
-        snackBarTheme: SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          backgroundColor: colorScheme.inverseSurface,
-          contentTextStyle: TextStyle(color: colorScheme.onInverseSurface),
-        )
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: colorScheme.inverseSurface,
+        contentTextStyle: TextStyle(color: colorScheme.onInverseSurface),
+      ),
+      // AJOUT: Autres thèmes pour assurer la cohérence
+      listTileTheme: ListTileThemeData(
+        titleTextStyle: textTheme.titleMedium,
+        subtitleTextStyle: textTheme.bodyMedium,
+        leadingAndTrailingTextStyle: textTheme.bodyMedium,
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: colorScheme.surface,
+        textStyle: textTheme.bodyMedium,
+      ),
     );
   }
 }

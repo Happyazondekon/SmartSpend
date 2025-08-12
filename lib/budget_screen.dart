@@ -17,6 +17,14 @@ import 'theme.dart';
 
 
 class BudgetScreen extends StatefulWidget {
+  final bool isDarkMode;
+  final Function(bool) onToggleDarkMode;
+
+  const BudgetScreen({
+    super.key,
+    required this.isDarkMode,
+    required this.onToggleDarkMode,
+  });
   @override
   _BudgetScreenState createState() => _BudgetScreenState();
 }
@@ -27,7 +35,6 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
   double salary = 0;
   String currency = 'XOF';
   List<String> currencies = ['XOF', 'USD', 'EUR', 'GBP', 'CAD'];
-  bool isDarkMode = false;
   List<Transaction> transactions = [];
 
   // Filtre par mois
@@ -82,7 +89,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     setState(() {
       salary = prefs.getDouble('salary') ?? 0;
       currency = prefs.getString('currency') ?? 'XOF';
-      isDarkMode = prefs.getBool('isDarkMode') ?? false;
+
 
       String? savedBudget = prefs.getString('budget');
       if (savedBudget != null) {
@@ -135,7 +142,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('salary', salary);
     await prefs.setString('currency', currency);
-    await prefs.setBool('isDarkMode', isDarkMode);
+
 
     Map<String, dynamic> encodableBudget = {};
     budget.forEach((key, value) {
@@ -736,63 +743,43 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'SmartSpend',
-      theme: AppTheme.getTheme(false),
-      darkTheme: AppTheme.getTheme(true),
-      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      localizationsDelegates: [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: [
-        const Locale('fr', 'FR'),
-        const Locale('en', 'US'),
-      ],
-      locale: Locale('fr', 'FR'),
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('SmartSpend'),
-          actions: [
-            IconButton(
-              icon: Icon(isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-              onPressed: () => setState(() { isDarkMode = !isDarkMode; _saveData(); }),
-            ),
-          ],
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(child: Text('Budget')),
-              Tab(child: Text('Statistiques')),
-              Tab(child: Text('Transactions')),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('SmartSpend'),
+        actions: [
+          IconButton(
+            icon: Icon(widget.isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+            onPressed: () => widget.onToggleDarkMode(!widget.isDarkMode),
           ),
-        ),
-        body: TabBarView(
+        ],
+        bottom: TabBar(
           controller: _tabController,
-          children: [
-            _buildBudgetTab(),
-            _buildStatsTab(),
-            _buildTransactionsTab(),
+          tabs: [
+            Tab(child: Text('Budget')),
+            Tab(child: Text('Statistiques')),
+            Tab(child: Text('Transactions')),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            if (_tabController.index == 0) _showAddCategoryDialog();
-            else if (_tabController.index == 2) _showAddTransactionDialog();
-            else _showMonthPicker();
-          },
-          child: Icon(_tabController.index == 0
-              ? Icons.add_chart
-              : _tabController.index == 2
-              ? Icons.add
-              : Icons.calendar_today_outlined),
-          tooltip: _tabController.index == 0 ? 'Ajouter une catégorie'
-              : _tabController.index == 2 ? 'Ajouter une transaction'
-              : 'Changer de mois',
-        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildBudgetTab(),
+          _buildStatsTab(),
+          _buildTransactionsTab(),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_tabController.index == 0) _showAddCategoryDialog();
+          else if (_tabController.index == 2) _showAddTransactionDialog();
+          else _showMonthPicker();
+        },
+        child: Icon(_tabController.index == 0
+            ? Icons.add_chart
+            : _tabController.index == 2
+            ? Icons.add
+            : Icons.calendar_today_outlined),
       ),
     );
   }
@@ -832,7 +819,10 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
           ),
           Text(
             'Gérez vos finances',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 28),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontSize: 28,
+              color: Theme.of(context).colorScheme.onBackground, // AJOUT: couleur explicite
+            ),
           ),
         ],
       ),
@@ -976,7 +966,14 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
             _buildMonthSelectorHeader(),
             SizedBox(height: 24),
             filteredTransactions.isEmpty
-                ? Expanded(child: Center(child: Text("Aucune dépense pour ce mois.")))
+                ? Expanded(child: Center(
+                child: Text(
+                  "Aucune dépense pour ce mois.",
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                )
+            ),)
                 : Expanded(
                 child: SingleChildScrollView(
                   child: Column(
