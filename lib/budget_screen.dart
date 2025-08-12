@@ -1047,7 +1047,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                   // Fermer le drawer
                   Navigator.pop(context);
                   // Afficher le chatbot
-                  showFAQChatBot(context);
+                  showElegantFAQChatBot(context);
                 },
               ),
 
