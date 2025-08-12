@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'budget_screen.dart';
+import 'notification_service.dart';
 import 'theme.dart';
 import 'utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeLocale();
+
+  // Initialisation des notifications
+  try {
+    await NotificationService().initialize();
+    print('Service de notifications initialisé avec succès');
+  } catch (e) {
+    print('Erreur lors de l\'initialisation des notifications: $e');
+  }
   runApp(const MyApp());
 }
 

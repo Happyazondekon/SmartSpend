@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -13,12 +14,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'models/transaction.dart';
+import 'notification_service.dart';
 import 'theme.dart';
-
+import 'faq_chatbot.dart';
 
 class BudgetScreen extends StatefulWidget {
   final bool isDarkMode;
   final Function(bool) onToggleDarkMode;
+
 
   const BudgetScreen({
     super.key,
@@ -36,6 +39,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
   String currency = 'XOF';
   List<String> currencies = ['XOF', 'USD', 'EUR', 'GBP', 'CAD'];
   List<Transaction> transactions = [];
+  bool _notificationsEnabled = false;
 
   // Filtre par mois
   DateTime selectedMonth = DateTime.now();
@@ -71,6 +75,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadSavedData();
+    _loadNotificationStatus();
   }
 
   @override
@@ -83,6 +88,251 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
   // ===================================================================
   // ===================== LOGIQUE MÉTIER (INCHANGÉE) ==================
   // ===================================================================
+
+  // Ajoutez cette méthode à votre _BudgetScreenState
+  Future<void> _toggleDailyReminders(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (enabled) {
+      // Vérifications des permissions étendues
+      var scheduleStatus = await Permission.scheduleExactAlarm.status;
+      var notificationStatus = await Permission.notification.status;
+      var batteryStatus = await Permission.ignoreBatteryOptimizations.status;
+
+      print('Statut permissions:');
+      print('- Alarme exacte: $scheduleStatus');
+      print('- Notifications: $notificationStatus');
+      print('- Optimisation batterie: $batteryStatus');
+
+      // Vérifier notification système d'abord
+      if (notificationStatus.isDenied) {
+        notificationStatus = await Permission.notification.request();
+        if (notificationStatus.isDenied || notificationStatus.isPermanentlyDenied) {
+          setState(() => _notificationsEnabled = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Permission de notification refusée. Activez-la dans les paramètres Android.'),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'Paramètres',
+                onPressed: () => openAppSettings(),
+              ),
+            ),
+          );
+          return;
+        }
+      }
+
+      // Vérifier si les notifications sont réellement activées au niveau système
+      bool systemEnabled = await NotificationService().areNotificationsEnabled();
+      if (!systemEnabled) {
+        setState(() => _notificationsEnabled = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Les notifications sont désactivées dans les paramètres Android pour cette app'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Paramètres',
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Vérifier permission alarme exacte
+      if (scheduleStatus.isDenied) {
+        scheduleStatus = await Permission.scheduleExactAlarm.request();
+        if (scheduleStatus.isDenied || scheduleStatus.isPermanentlyDenied) {
+          setState(() => _notificationsEnabled = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Permission d\'alarme exacte refusée. Activez "Applications autorisées" dans les paramètres système.'),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'Paramètres',
+                onPressed: () => openAppSettings(),
+              ),
+            ),
+          );
+          return;
+        }
+      }
+
+      // Suggérer de désactiver l'optimisation de batterie
+      if (batteryStatus.isDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pour des rappels fiables, désactivez l\'optimisation de batterie pour SmartSpend'),
+            backgroundColor: Colors.orange,
+            action: SnackBarAction(
+              label: 'Paramètres',
+              onPressed: () async {
+                await Permission.ignoreBatteryOptimizations.request();
+              },
+            ),
+          ),
+        );
+      }
+
+      // Si toutes les permissions sont OK, programmer la notification
+      try {
+        await NotificationService().scheduleDailyReminder();
+        await prefs.setBool('daily_reminders', true);
+        setState(() => _notificationsEnabled = true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Rappels quotidiens activés!\nVous recevrez un rappel à 21h chaque jour.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } catch (e) {
+        setState(() => _notificationsEnabled = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de l\'activation des rappels: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      // Désactiver les rappels
+      try {
+        await NotificationService().cancelAllNotifications();
+        await prefs.setBool('daily_reminders', false);
+        setState(() => _notificationsEnabled = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rappels quotidiens désactivés'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la désactivation: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+// Méthode améliorée de chargement du statut
+  Future<void> _loadNotificationStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedSetting = prefs.getBool('daily_reminders') ?? false;
+
+    if (savedSetting) {
+      // Vérifications plus poussées
+      var scheduleStatus = await Permission.scheduleExactAlarm.status;
+      var notificationStatus = await Permission.notification.status;
+      bool systemEnabled = await NotificationService().areNotificationsEnabled();
+
+      if (scheduleStatus.isGranted && notificationStatus.isGranted && systemEnabled) {
+        // Vérifier que la notification est bien programmée
+        final pending = await FlutterLocalNotificationsPlugin().pendingNotificationRequests();
+        bool hasScheduledReminder = pending.any((n) => n.id == 0);
+
+        if (!hasScheduledReminder) {
+          // Reprogrammer si elle n'existe plus
+          try {
+            await NotificationService().scheduleDailyReminder();
+            print('Rappel quotidien reprogrammé');
+          } catch (e) {
+            print('Erreur reprogrammation: $e');
+            await prefs.setBool('daily_reminders', false);
+            setState(() => _notificationsEnabled = false);
+            return;
+          }
+        }
+
+        setState(() => _notificationsEnabled = true);
+        print('Rappels quotidiens chargés et actifs');
+      } else {
+        // Les permissions ont été révoquées
+        print('Permissions révoquées: alarme=$scheduleStatus, notif=$notificationStatus, système=$systemEnabled');
+        await prefs.setBool('daily_reminders', false);
+        setState(() => _notificationsEnabled = false);
+      }
+    } else {
+      setState(() => _notificationsEnabled = false);
+    }
+  }
+  Future<void> _testNotification() async {
+    try {
+      // Vérifier d'abord si les notifications sont vraiment activées
+      bool enabled = await NotificationService().areNotificationsEnabled();
+      if (!enabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Les notifications ne sont pas activées au niveau système'),
+            backgroundColor: Colors.orange,
+            action: SnackBarAction(
+              label: 'Paramètres',
+              onPressed: () => openAppSettings(),
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Debug complet
+      await NotificationService().debugNotifications();
+
+      // Test avec notification immédiate ET programmée
+      await NotificationService().showImmediateNotification();
+      await NotificationService().scheduleInstantReminder();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tests de notification lancés:\n• Immédiate\n• Dans 3 secondes\nVérifiez la barre de notification!'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur test notification: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+// Méthode _loadNotificationStatus corrigée
+
+// Ajoutez cette méthode
+  void _showSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Paramètres'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SwitchListTile(
+              title: Text('Rappels quotidiens'),
+              subtitle: Text('Recevoir un rappel pour enregistrer vos transactions'),
+              value: _notificationsEnabled,
+              onChanged: _toggleDailyReminders,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: Text('Fermer'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Future<void> _loadSavedData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -747,6 +997,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
       appBar: AppBar(
         title: Text('SmartSpend'),
         actions: [
+          // Le bouton pour le mode sombre reste ici, le drawer peut avoir d'autres actions.
           IconButton(
             icon: Icon(widget.isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
             onPressed: () => widget.onToggleDarkMode(!widget.isDarkMode),
@@ -761,6 +1012,49 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
           ],
         ),
       ),
+      // Ajout du Drawer
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                child: Text(
+                  'Paramètres',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+
+              SwitchListTile(
+                title: Text('Rappels quotidiens'),
+                subtitle: Text('Recevoir un rappel à 21h pour enregistrer vos transactions'),
+                value: _notificationsEnabled,
+                onChanged: (bool value) {
+                  Navigator.of(context).pop();
+                  _toggleDailyReminders(value);
+                },
+              ),
+              // --- NOUVELLE OPTION POUR LE CHATBOT ---
+              ListTile(
+                leading: Icon(Icons.chat_bubble_outline),
+                title: Text('Parlez à votre financier'),
+                onTap: () {
+                  // Fermer le drawer
+                  Navigator.pop(context);
+                  // Afficher le chatbot
+                  showFAQChatBot(context);
+                },
+              ),
+
+
+            ],
+          ),
+        ),
       body: TabBarView(
         controller: _tabController,
         children: [
