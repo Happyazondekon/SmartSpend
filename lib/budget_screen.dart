@@ -183,7 +183,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Rappels quotidiens activés!\nVous recevrez un rappel à 21h chaque jour.'),
+            content: Text('✅ Rappels quotidiens activés!\nVous recevrez un rappel  soir.'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 3),
           ),
@@ -1013,48 +1013,130 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
         ),
       ),
       // Ajout du Drawer
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            // En-tête du tiroir repensé
+            // On utilise un DrawerHeader pour une mise en page standard de Material Design
+            // Il s'ajuste mieux que le Container et gère les paddings par défaut
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              // Le padding est géré par le DrawerHeader, on peut donc retirer l'espaceur
+              child: Align(
+                alignment: Alignment.centerLeft,
                 child: Text(
                   'Paramètres',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 28, // Augmentation de la taille pour un impact plus moderne
+                    fontWeight: FontWeight.bold, // Utilisation d'un fontWeight plus fort pour l'emphase
                   ),
                 ),
               ),
+            ),
 
-              SwitchListTile(
-                title: Text('Rappels quotidiens'),
-                subtitle: Text('Recevoir un rappel à 21h pour enregistrer vos transactions'),
-                value: _notificationsEnabled,
-                onChanged: (bool value) {
-                  Navigator.of(context).pop();
-                  _toggleDailyReminders(value);
-                },
+            // Options du menu avec des sections plus claires et des widgets modernes
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  // Section Notifications
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: Text(
+                      'NOTIFICATIONS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7), // Une couleur un peu plus subtile
+                        letterSpacing: 1.5, // Augmentation du letter-spacing pour un look plus pro
+                      ),
+                    ),
+                  ),
+                  // On utilise un ListTile simple pour un look plus intégré au tiroir
+                  SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                    secondary: const Icon(Icons.notifications_active_outlined),
+                    title: Text(
+                      'Rappels quotidiens',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Rappel du soir pour vos transactions',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    value: _notificationsEnabled,
+                    onChanged: (bool value) {
+                      Navigator.of(context).pop();
+                      _toggleDailyReminders(value);
+                    },
+                  ),
+
+                  // Section Assistance
+                  const Divider(height: 1, thickness: 1), // Ajout d'un Divider pour séparer les sections
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: Text(
+                      'ASSISTANCE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                    leading: const Icon(Icons.chat_bubble_outline),
+                    title: Text(
+                      'Assistant financier',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Obtenez des conseils personnalisés',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showElegantFAQChatBot(context);
+                    },
+                  ),
+
+                  // D'autres options peuvent être ajoutées ici
+
+
+                ],
               ),
-              // --- NOUVELLE OPTION POUR LE CHATBOT ---
-              ListTile(
-                leading: Icon(Icons.chat_bubble_outline),
-                title: Text('Parlez à votre financier'),
-                onTap: () {
-                  // Fermer le drawer
-                  Navigator.pop(context);
-                  // Afficher le chatbot
-                  showElegantFAQChatBot(context);
-                },
+            ),
+
+            // Pied de page plus subtil et mieux aligné
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16), // Ajout d'un padding au bas
+              child: Text(
+                'SmartSpend v1.0.0',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.primary, // Une couleur moins forte
+                  letterSpacing: 0.8,
+                ),
               ),
-
-
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
       body: TabBarView(
         controller: _tabController,
         children: [

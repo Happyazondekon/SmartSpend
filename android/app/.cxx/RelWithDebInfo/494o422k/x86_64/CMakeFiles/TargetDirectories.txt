@@ -1,0 +1,2 @@
+C:/Users/ELITEBOOK/StudioProjects/smartspend/android/app/.cxx/RelWithDebInfo/494o422k/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/ELITEBOOK/StudioProjects/smartspend/android/app/.cxx/RelWithDebInfo/494o422k/x86_64/CMakeFiles/rebuild_cache.dir

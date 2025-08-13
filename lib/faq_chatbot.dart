@@ -86,7 +86,6 @@ class _ScaleOnTapState extends State<_ScaleOnTap> with SingleTickerProviderState
 
 class AIService {
 
-
   static Future<String> getGroqResponse(String prompt) async {
     try {
       final response = await http.post(
@@ -189,13 +188,13 @@ Réponse professionnelle et bienveillante en français:""",
 
 class FAQChatBot {
   static final Map<String, String> enhancedFAQ = {
-    "Comment ajouter une transaction?": "📝 **Ajouter une transaction:**\n\n1. Ouvrez l'onglet 'Transactions'\n2. Appuyez sur le bouton '+' \n3. Saisissez le montant, choisissez la catégorie et ajoutez une description\n4. Validez pour enregistrer\n\n💡 **Astuce:** Ajoutez vos transactions immédiatement pour un suivi précis!",
-    "Comment créer un budget?": "🎯 **Créer un budget efficace:**\n\n1. Accédez à l'onglet 'Budget'\n2. Cliquez sur '+' pour ajouter un nouveau budget\n3. Définissez le montant maximal par catégorie\n4. Activez les alertes pour rester dans les limites\n\n💰 **Conseil:** Suivez la règle 50/30/20 (besoins/envies/épargne)",
-    "Comment consulter mes statistiques?": "📊 **Analyser vos finances:**\n\nL'onglet 'Statistiques' vous offre:\n• Graphiques de dépenses par catégorie\n• Évolution mensuelle de vos finances\n• Comparaisons périodiques\n• Tendances de consommation\n\n🔍 **Utilisez ces données** pour identifier vos habitudes et optimiser votre budget!",
-    "Comment économiser efficacement?": "💰 **Stratégies d'épargne éprouvées:**\n\n🎯 **Méthode des 52 semaines:** Épargnez 1€ la 1ère semaine, 2€ la 2ème...\n🏦 **Épargne automatique:** 10-20% de chaque revenu\n📱 **Utilisez SmartSpend** pour tracker vos progrès\n⚡ **Réduisez les abonnements** non-essentiels\n\n**Objectif:** Constituez d'abord un fonds d'urgence (3-6 mois de charges)!",
-    "Comment réduire mes dépenses?": "✂️ **Optimisation des dépenses:**\n\n🔍 **Analysez vos statistiques SmartSpend:**\n• Identifiez les catégories les plus coûteuses\n• Repérez les dépenses récurrentes\n• Trouvez les 'fuites' budgétaires\n\n💡 **Actions concrètes:**\n• Comparez les prix avant d'acheter\n• Cuisinez plus à la maison\n• Renégociez vos contrats (assurance, téléphone)\n• Privilégiez l'occasion quand possible",
+    "📱 Comment ajouter une transaction?": "📝 **Ajouter une transaction:**\n\n1. Ouvrez l'onglet 'Transactions'\n2. Appuyez sur le bouton '+' \n3. Saisissez le montant, choisissez la catégorie et ajoutez une description\n4. Validez pour enregistrer\n\n💡 **Astuce:** Ajoutez vos transactions immédiatement pour un suivi précis!",
+    "🎯 Comment créer un budget?": "🎯 **Créer un budget efficace:**\n\n1. Accédez à l'onglet 'Budget'\n2. Cliquez sur '+' pour ajouter un nouveau budget\n3. Définissez le montant maximal par catégorie\n4. Activez les alertes pour rester dans les limites\n\n💰 **Conseil:** Suivez la règle 50/30/20 (besoins/envies/épargne)",
+    "📊 Comment consulter mes statistiques?": "📊 **Analyser vos finances:**\n\nL'onglet 'Statistiques' vous offre:\n• Graphiques de dépenses par catégorie\n• Évolution mensuelle de vos finances\n• Comparaisons périodiques\n• Tendances de consommation\n\n🔍 **Utilisez ces données** pour identifier vos habitudes et optimiser votre budget!",
+    "💰 Comment économiser efficacement?": "💰 **Stratégies d'épargne éprouvées:**\n\n🎯 **Méthode des 52 semaines:** Épargnez 1€ la 1ère semaine, 2€ la 2ème...\n🏦 **Épargne automatique:** 10-20% de chaque revenu\n📱 **Utilisez SmartSpend** pour tracker vos progrès\n⚡ **Réduisez les abonnements** non-essentiels\n\n**Objectif:** Constituez d'abord un fonds d'urgence (3-6 mois de charges)!",
+    "✂️ Comment réduire mes dépenses?": "✂️ **Optimisation des dépenses:**\n\n🔍 **Analysez vos statistiques SmartSpend:**\n• Identifiez les catégories les plus coûteuses\n• Repérez les dépenses récurrentes\n• Trouvez les 'fuites' budgétaires\n\n💡 **Actions concrètes:**\n• Comparez les prix avant d'acheter\n• Cuisinez plus à la maison\n• Renégociez vos contrats (assurance, téléphone)\n• Privilégiez l'occasion quand possible",
     "Conseils investissement débutant?": "🚀 **Débuter en investissement:**\n\n⚠️ **Prérequis essentiels:**\n✓ Fonds d'urgence constitué (3-6 mois)\n✓ Dettes remboursées (sauf prêt immobilier)\n✓ Budget maîtrisé avec SmartSpend\n\n📈 **Premiers pas:**\n• Commencez petit (50-100€/mois)\n• Diversifiez vos placements\n• Privilégiez le long terme\n• Formez-vous avant d'investir\n\n🏦 **Options:** Livret A, PEL, assurance-vie, PEA",
-    "Comment gérer mes dettes?": "💳 **Stratégie de remboursement:**\n\n🎯 **Méthode 'Boule de neige':**\n1. Listez toutes vos dettes\n2. Payez les minimums partout\n3. Attaquez la plus petite dette en premier\n4. Une fois remboursée, passez à la suivante\n\n📊 **Utilisez SmartSpend** pour tracker vos remboursements et célébrer vos progrès!\n\n⚡ **Négociez** avec vos créanciers si nécessaire.",
+    "💳Comment gérer mes dettes?": "💳 **Stratégie de remboursement:**\n\n🎯 **Méthode 'Boule de neige':**\n1. Listez toutes vos dettes\n2. Payez les minimums partout\n3. Attaquez la plus petite dette en premier\n4. Une fois remboursée, passez à la suivante\n\n📊 **Utilisez SmartSpend** pour tracker vos remboursements et célébrer vos progrès!\n\n⚡ **Négociez** avec vos créanciers si nécessaire.",
   };
 
   static final List<String> financialTopics = [
@@ -595,7 +594,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
                         style: textTheme.labelSmall?.copyWith(
                           color: colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
-                          fontSize: 10,
+                          fontSize: 07,
                         ),
                       ),
                     ),
