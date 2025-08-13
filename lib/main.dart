@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
-import 'budget_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_wrapper.dart';
 import 'notification_service.dart';
 import 'theme.dart';
 import 'utils.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialiser Firebase
+  await Firebase.initializeApp();
+
+  // Initialiser la locale
   await initializeLocale();
 
   // Initialisation des notifications
@@ -16,6 +22,7 @@ void main() async {
   } catch (e) {
     print('Erreur lors de l\'initialisation des notifications: $e');
   }
+
   runApp(const MyApp());
 }
 
@@ -58,7 +65,7 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.getTheme(false),
       darkTheme: AppTheme.getTheme(true),
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: BudgetScreen(
+      home: AuthWrapper(
         isDarkMode: _isDarkMode,
         onToggleDarkMode: _toggleDarkMode,
       ),

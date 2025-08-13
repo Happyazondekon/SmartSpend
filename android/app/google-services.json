@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "875595293840",
+    "project_id": "smartspend-70d05",
+    "storage_bucket": "smartspend-70d05.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:875595293840:android:8b46605cd780115cbe6415",
+        "android_client_info": {
+          "package_name": "com.heyhappy.smartspend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "875595293840-8h6ll7fvn8a7in0skl6ptruhuo5mknqo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.heyhappy.smartspend",
+            "certificate_hash": "6345a3087dcfe455751f607afa03f8fb5adb1777"
+          }
+        },
+        {
+          "client_id": "875595293840-40kcjnvv286m7h8rsd49ss4bm0gfslmk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFXf7aXKrUuHcY_6TdDTlKYnBvvWHLtHY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "875595293840-40kcjnvv286m7h8rsd49ss4bm0gfslmk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

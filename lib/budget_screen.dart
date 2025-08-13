@@ -13,10 +13,13 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smartspend/screens/profile_screen.dart';
 import 'models/transaction.dart';
 import 'notification_service.dart';
 import 'theme.dart';
 import 'faq_chatbot.dart';
+import '../services/auth_service.dart';
+
 
 class BudgetScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -997,6 +1000,32 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
       appBar: AppBar(
         title: Text('SmartSpend'),
         actions: [
+          IconButton(
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundImage: AuthService().currentUser?.photoURL != null
+                  ? NetworkImage(AuthService().currentUser!.photoURL!)
+                  : null,
+              child: AuthService().currentUser?.photoURL == null
+                  ? Icon(
+                Icons.person,
+                size: 20,
+                color: Theme.of(context).colorScheme.onPrimary,
+              )
+                  : null,
+            ),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(
+                    isDarkMode: widget.isDarkMode,
+                    onToggleDarkMode: widget.onToggleDarkMode,
+                  ),
+                ),
+              );
+            },
+          ),
           // Le bouton pour le mode sombre reste ici, le drawer peut avoir d'autres actions.
           IconButton(
             icon: Icon(widget.isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
