@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "875595293840-0ing6b8kigm38b663kf541llbhudq178.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.heyhappy.smartspend",
+            "certificate_hash": "d11f4fc2aa1fc511286712180b2c6deb0e4913f3"
+          }
+        },
+        {
           "client_id": "875595293840-8h6ll7fvn8a7in0skl6ptruhuo5mknqo.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
