@@ -1043,127 +1043,168 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
       ),
       // Ajout du Drawer
       drawer: Drawer(
-        child: Column(
-          children: [
-            // En-tête du tiroir repensé
-            // On utilise un DrawerHeader pour une mise en page standard de Material Design
-            // Il s'ajuste mieux que le Container et gère les paddings par défaut
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(24),
+            bottomRight: Radius.circular(24),
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(24),
+              bottomRight: Radius.circular(24),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).shadowColor.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              // Le padding est géré par le DrawerHeader, on peut donc retirer l'espaceur
-              child: Align(
-                alignment: Alignment.centerLeft,
+            ],
+          ),
+          child: Column(
+            children: [
+              // En-tête du tiroir avec un fond dégradé et des coins arrondis
+              DrawerHeader(
+                margin: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'SmartSpend',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Votre assistant financier personnel',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Options du menu
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
+                    // Section Notifications
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Text(
+                        'NOTIFICATIONS',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    _buildListTile(
+                      title: 'Rappels quotidiens',
+                      subtitle: 'Rappel du soir pour vos transactions',
+                      icon: Icons.notifications_active_outlined,
+                      isSwitch: true,
+                      switchValue: _notificationsEnabled,
+                      onSwitchChanged: (bool value) {
+                        _toggleDailyReminders(value);
+                      },
+                    ),
+
+                    // Section Assistance
+                    const Divider(indent: 24, endIndent: 24, height: 1, thickness: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Text(
+                        'ASSISTANCE',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    _buildListTile(
+                      title: 'Assistant financier',
+                      subtitle: 'Obtenez des conseils personnalisés',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      onTap: () {
+                        Navigator.pop(context);
+                        showElegantFAQChatBot(context);
+                      },
+                    ),
+
+                    // Section Compte
+                    const Divider(indent: 24, endIndent: 24, height: 1, thickness: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Text(
+                        'COMPTE',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                    _buildListTile(
+                      title: 'Mon Profil',
+                      subtitle: 'Gérez vos informations de compte',
+                      icon: Icons.person_outline_rounded,
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ProfileScreen(
+                              isDarkMode: widget.isDarkMode,
+                              onToggleDarkMode: widget.onToggleDarkMode,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                  ],
+                ),
+              ),
+
+              // Pied de page
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24, top: 16),
                 child: Text(
-                  'Paramètres',
+                  'SmartSpend v1.0.0',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28, // Augmentation de la taille pour un impact plus moderne
-                    fontWeight: FontWeight.bold, // Utilisation d'un fontWeight plus fort pour l'emphase
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onBackground.withOpacity(0.5),
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-            ),
-
-            // Options du menu avec des sections plus claires et des widgets modernes
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  // Section Notifications
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: Text(
-                      'NOTIFICATIONS',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7), // Une couleur un peu plus subtile
-                        letterSpacing: 1.5, // Augmentation du letter-spacing pour un look plus pro
-                      ),
-                    ),
-                  ),
-                  // On utilise un ListTile simple pour un look plus intégré au tiroir
-                  SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                    secondary: const Icon(Icons.notifications_active_outlined),
-                    title: Text(
-                      'Rappels quotidiens',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Rappel du soir pour vos transactions',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    value: _notificationsEnabled,
-                    onChanged: (bool value) {
-                      Navigator.of(context).pop();
-                      _toggleDailyReminders(value);
-                    },
-                  ),
-
-                  // Section Assistance
-                  const Divider(height: 1, thickness: 1), // Ajout d'un Divider pour séparer les sections
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: Text(
-                      'ASSISTANCE',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                    leading: const Icon(Icons.chat_bubble_outline),
-                    title: Text(
-                      'Assistant financier',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Obtenez des conseils personnalisés',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      showElegantFAQChatBot(context);
-                    },
-                  ),
-
-                  // D'autres options peuvent être ajoutées ici
-
-
-                ],
-              ),
-            ),
-
-            // Pied de page plus subtil et mieux aligné
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16), // Ajout d'un padding au bas
-              child: Text(
-                'SmartSpend v1.0.0',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.primary, // Une couleur moins forte
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       body: TabBarView(
@@ -1359,6 +1400,77 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildListTile({
+    required String title,
+    String? subtitle,
+    required IconData icon,
+    Color? iconColor,
+    bool isSwitch = false,
+    bool? switchValue,
+    Function(bool)? onSwitchChanged,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: isSwitch
+          ? SwitchListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        secondary: Icon(
+          icon,
+          color: iconColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.7),
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: subtitle != null
+            ? Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+        )
+            : null,
+        value: switchValue ?? false,
+        onChanged: onSwitchChanged,
+        activeColor: Theme.of(context).colorScheme.primary,
+        activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+      )
+          : ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        leading: Icon(
+          icon,
+          color: iconColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.7),
+        ),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: subtitle != null
+            ? Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          ),
+        )
+            : null,
+        trailing: const Icon(Icons.chevron_right_rounded),
+        onTap: onTap,
+      ),
     );
   }
 
