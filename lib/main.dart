@@ -5,6 +5,7 @@ import 'auth_wrapper.dart';
 import 'notification_service.dart';
 import 'theme.dart';
 import 'utils.dart';
+import 'theme_provider.dart'; // Nouveau import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,9 @@ void main() async {
 
   // Initialiser la locale
   await initializeLocale();
+
+  // Initialiser le ThemeProvider
+  await ThemeProvider().initialize();
 
   // Initialisation des notifications
   try {
@@ -34,27 +38,23 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _isDarkMode = false;
+  final ThemeProvider _themeProvider = ThemeProvider();
 
   @override
   void initState() {
     super.initState();
-    _loadThemePreference();
+    // Écouter les changements de thème
+    _themeProvider.addListener(_onThemeChanged);
   }
 
-  Future<void> _loadThemePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    });
+  @override
+  void dispose() {
+    _themeProvider.removeListener(_onThemeChanged);
+    super.dispose();
   }
 
-  void _toggleDarkMode(bool newValue) async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isDarkMode = newValue;
-    });
-    await prefs.setBool('isDarkMode', newValue);
+  void _onThemeChanged() {
+    setState(() {});
   }
 
   @override
@@ -64,11 +64,8 @@ class _MyAppState extends State<MyApp> {
       title: 'SmartSpend',
       theme: AppTheme.getTheme(false),
       darkTheme: AppTheme.getTheme(true),
-      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: AuthWrapper(
-        isDarkMode: _isDarkMode,
-        onToggleDarkMode: _toggleDarkMode,
-      ),
+      themeMode: _themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: AuthWrapper(),
     );
   }
 }

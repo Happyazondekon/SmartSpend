@@ -19,17 +19,16 @@ import 'notification_service.dart';
 import 'theme.dart';
 import 'faq_chatbot.dart';
 import '../services/auth_service.dart';
+import 'theme_provider.dart'; // NOUVEAU: Importation du ThemeProvider
 
 
 class BudgetScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final Function(bool) onToggleDarkMode;
+
 
 
   const BudgetScreen({
     super.key,
-    required this.isDarkMode,
-    required this.onToggleDarkMode,
+
   });
   @override
   _BudgetScreenState createState() => _BudgetScreenState();
@@ -43,6 +42,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
   List<String> currencies = ['XOF', 'USD', 'EUR', 'GBP', 'CAD'];
   List<Transaction> transactions = [];
   bool _notificationsEnabled = false;
+  final ThemeProvider _themeProvider = ThemeProvider(); // NOUVEAU: Instance unique
 
   // Filtre par mois
   DateTime selectedMonth = DateTime.now();
@@ -79,19 +79,24 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     _tabController = TabController(length: 3, vsync: this);
     _loadSavedData();
     _loadNotificationStatus();
+    _themeProvider.addListener(_onThemeChanged);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _salaryController.dispose();
+    _themeProvider.removeListener(_onThemeChanged);
     super.dispose();
   }
 
   // ===================================================================
   // ===================== LOGIQUE MÉTIER (INCHANGÉE) ==================
   // ===================================================================
-
+// NOUVEAU: Callback pour les changements de thème
+  void _onThemeChanged() {
+    setState(() {});
+  }
   // Ajoutez cette méthode à votre _BudgetScreenState
   Future<void> _toggleDailyReminders(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
@@ -1019,18 +1024,19 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   maintainState: true,
-                  builder: (context) => ProfileScreen(
-                    isDarkMode: widget.isDarkMode,
-                    onToggleDarkMode: widget.onToggleDarkMode,
-                  ),
+                  builder: (context) => const ProfileScreen(), // MODIFIÉ: Suppression des paramètres
                 ),
               );
             },
           ),
-          // Le bouton pour le mode sombre reste ici, le drawer peut avoir d'autres actions.
+          // Le bouton pour le mode sombre est mis à jour ici
           IconButton(
-            icon: Icon(widget.isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
-            onPressed: () => widget.onToggleDarkMode(!widget.isDarkMode),
+            // MODIFIÉ: Utilisation de _themeProvider.isDarkMode
+            icon: Icon(
+              ThemeProvider().isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            ),
+            // MODIFIÉ: Utilisation de la méthode toggleTheme du ThemeProvider
+            onPressed: () => ThemeProvider().toggleTheme(!ThemeProvider().isDarkMode),
           ),
         ],
         bottom: TabBar(
@@ -1179,10 +1185,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             maintainState: true,
-                            builder: (context) => ProfileScreen(
-                              isDarkMode: widget.isDarkMode,
-                              onToggleDarkMode: widget.onToggleDarkMode,
-                            ),
+                            builder: (context) => const ProfileScreen(), // MODIFIÉ: Suppression des paramètres
                           ),
                         );
                       },

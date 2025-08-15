@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import 'login_screen.dart'; // Assurez-vous que l'importation de LoginScreen est correcte
+import '../../theme_provider.dart'; // NOUVEAU: Importation du ThemeProvider
 
 class ForgotPasswordScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final Function(bool) onToggleDarkMode;
+  // SUPPRIMÉ: final bool isDarkMode;
+  // SUPPRIMÉ: final Function(bool) onToggleDarkMode;
 
   const ForgotPasswordScreen({
     super.key,
-    required this.isDarkMode,
-    required this.onToggleDarkMode,
+    // SUPPRIMÉ: required this.isDarkMode,
+    // SUPPRIMÉ: required this.onToggleDarkMode,
   });
 
   @override
@@ -20,6 +21,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final AuthService _authService = AuthService();
+  final ThemeProvider _themeProvider = ThemeProvider(); // NOUVEAU: Instance unique
 
   bool _isLoading = false;
   bool _emailSent = false;
@@ -32,6 +34,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
   @override
   void initState() {
     super.initState();
+    // NOUVEAU: Écouter les changements de thème
+    _themeProvider.addListener(_onThemeChanged);
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -58,9 +63,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
 
   @override
   void dispose() {
+    // NOUVEAU: Arrêter d'écouter les changements
+    _themeProvider.removeListener(_onThemeChanged);
     _animationController.dispose();
     _emailController.dispose();
     super.dispose();
+  }
+
+  // NOUVEAU: Callback pour les changements de thème
+  void _onThemeChanged() {
+    setState(() {});
   }
 
   Future<void> _resetPassword() async {
@@ -105,7 +117,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             stops: const [0.0, 0.3, 0.7, 1.0],
-            colors: widget.isDarkMode
+            // MODIFIÉ: widget.isDarkMode → _themeProvider.isDarkMode
+            colors: _themeProvider.isDarkMode
                 ? [
               Theme.of(context).colorScheme.surface,
               Theme.of(context).colorScheme.surface.withOpacity(0.95),
@@ -163,10 +176,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                       Navigator.of(context).pushReplacement(
                                         MaterialPageRoute(
                                           maintainState: true,
-                                          builder: (context) => LoginScreen(
-                                            isDarkMode: widget.isDarkMode,
-                                            onToggleDarkMode: widget.onToggleDarkMode,
-                                          ),
+                                          builder: (context) => const LoginScreen(), // MODIFIÉ: Suppression des paramètres
                                         ),
                                       );
                                     },
@@ -200,12 +210,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                     ],
                                   ),
                                   child: IconButton(
-                                    onPressed: () => widget.onToggleDarkMode(!widget.isDarkMode),
+                                    // MODIFIÉ: Nouvelle logique de changement de thème
+                                    onPressed: () => _themeProvider.toggleTheme(!_themeProvider.isDarkMode),
                                     icon: AnimatedSwitcher(
                                       duration: const Duration(milliseconds: 300),
                                       child: Icon(
-                                        widget.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                                        key: ValueKey(widget.isDarkMode),
+                                        // MODIFIÉ: widget.isDarkMode → _themeProvider.isDarkMode
+                                        _themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                        key: ValueKey(_themeProvider.isDarkMode),
                                         color: Theme.of(context).colorScheme.primary,
                                       ),
                                     ),
@@ -511,10 +523,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute(
                                         maintainState: true,
-                                        builder: (context) => LoginScreen(
-                                          isDarkMode: widget.isDarkMode,
-                                          onToggleDarkMode: widget.onToggleDarkMode,
-                                        ),
+                                        builder: (context) => const LoginScreen(), // MODIFIÉ: Suppression des paramètres
                                       ),
                                     );
                                   },

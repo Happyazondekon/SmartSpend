@@ -4,15 +4,16 @@ import '../../services/auth_service.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'package:smartspend/budget_screen.dart';
+import '../../theme_provider.dart'; // Nouveau import
 
 class LoginScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final Function(bool) onToggleDarkMode;
+  // SUPPRIMÉ: final bool isDarkMode;
+  // SUPPRIMÉ: final Function(bool) onToggleDarkMode;
 
   const LoginScreen({
     super.key,
-    required this.isDarkMode,
-    required this.onToggleDarkMode,
+    // SUPPRIMÉ: required this.isDarkMode,
+    // SUPPRIMÉ: required this.onToggleDarkMode,
   });
 
   @override
@@ -24,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  final ThemeProvider _themeProvider = ThemeProvider(); // NOUVEAU: Instance unique
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -35,6 +37,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
+    // NOUVEAU: Écouter les changements de thème
+    _themeProvider.addListener(_onThemeChanged);
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -61,10 +66,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   void dispose() {
+    // NOUVEAU: Arrêter d'écouter les changements
+    _themeProvider.removeListener(_onThemeChanged);
     _animationController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // NOUVEAU: Callback pour les changements de thème
+  void _onThemeChanged() {
+    setState(() {});
   }
 
   Future<void> _signInWithEmail() async {
@@ -84,10 +96,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (result != null && mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => BudgetScreen(
-              isDarkMode: widget.isDarkMode,
-              onToggleDarkMode: widget.onToggleDarkMode,
-            ),
+            // MODIFIÉ: Suppression des paramètres de thème
+            builder: (context) => BudgetScreen(),
           ),
         );
       }
@@ -119,10 +129,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             maintainState: true,
-            builder: (context) => BudgetScreen(
-              isDarkMode: widget.isDarkMode,
-              onToggleDarkMode: widget.onToggleDarkMode,
-            ),
+            // MODIFIÉ: Suppression des paramètres de thème
+            builder: (context) => BudgetScreen(),
           ),
         );
       }
@@ -150,7 +158,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             stops: const [0.0, 0.3, 0.7, 1.0],
-            colors: widget.isDarkMode
+            // MODIFIÉ: widget.isDarkMode → _themeProvider.isDarkMode
+            colors: _themeProvider.isDarkMode
                 ? [
               Theme.of(context).colorScheme.surface,
               Theme.of(context).colorScheme.surface.withOpacity(0.95),
@@ -218,12 +227,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     ],
                                   ),
                                   child: IconButton(
-                                    onPressed: () => widget.onToggleDarkMode(!widget.isDarkMode),
+                                    // MODIFIÉ: Nouvelle logique de changement de thème
+                                    onPressed: () => _themeProvider.toggleTheme(!_themeProvider.isDarkMode),
                                     icon: AnimatedSwitcher(
                                       duration: const Duration(milliseconds: 300),
                                       child: Icon(
-                                        widget.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                                        key: ValueKey(widget.isDarkMode),
+                                        // MODIFIÉ: widget.isDarkMode → _themeProvider.isDarkMode
+                                        _themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                        key: ValueKey(_themeProvider.isDarkMode),
                                         color: Theme.of(context).colorScheme.primary,
                                       ),
                                     ),
@@ -437,10 +448,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                         Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(
                                             maintainState: true,
-                                            builder: (context) => ForgotPasswordScreen(
-                                              isDarkMode: widget.isDarkMode,
-                                              onToggleDarkMode: widget.onToggleDarkMode,
-                                            ),
+                                            // MODIFIÉ: Suppression des paramètres de thème
+                                            builder: (context) => ForgotPasswordScreen(),
                                           ),
                                         );
                                       },
@@ -628,10 +637,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute(
                                         maintainState: true,
-                                        builder: (context) => RegisterScreen(
-                                          isDarkMode: widget.isDarkMode,
-                                          onToggleDarkMode: widget.onToggleDarkMode,
-                                        ),
+                                        // MODIFIÉ: Suppression des paramètres de thème
+                                        builder: (context) => RegisterScreen(),
                                       ),
                                     );
                                   },

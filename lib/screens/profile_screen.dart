@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:smartspend/budget_screen.dart';
 import '../services/auth_service.dart';
 import 'auth/login_screen.dart';
+import '../theme_provider.dart'; // NOUVEAU: Importation du ThemeProvider
 
 class ProfileScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final Function(bool) onToggleDarkMode;
+  // SUPPRIMÉ: final bool isDarkMode;
+  // SUPPRIMÉ: final Function(bool) onToggleDarkMode;
 
   const ProfileScreen({
     super.key,
-    required this.isDarkMode,
-    required this.onToggleDarkMode,
+    // SUPPRIMÉ: required this.isDarkMode,
+    // SUPPRIMÉ: required this.onToggleDarkMode,
   });
 
   @override
@@ -19,6 +20,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
+  final ThemeProvider _themeProvider = ThemeProvider(); // NOUVEAU: Instance unique
   final _nameController = TextEditingController();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -33,16 +35,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    // NOUVEAU: Écouter les changements de thème
+    _themeProvider.addListener(_onThemeChanged);
     _nameController.text = _authService.displayName ?? '';
   }
 
   @override
   void dispose() {
+    // NOUVEAU: Arrêter d'écouter les changements
+    _themeProvider.removeListener(_onThemeChanged);
     _nameController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  // NOUVEAU: Callback pour les changements de thème
+  void _onThemeChanged() {
+    setState(() {});
   }
 
   Future<void> _updateProfile() async {
@@ -185,10 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             maintainState: true,
-            builder: (context) => LoginScreen(
-              isDarkMode: widget.isDarkMode,
-              onToggleDarkMode: widget.onToggleDarkMode,
-            ),
+            builder: (context) => const LoginScreen(), // MODIFIÉ: Suppression des paramètres
           ),
               (route) => false,
         );
@@ -246,10 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             maintainState: true,
-            builder: (context) => LoginScreen(
-              isDarkMode: widget.isDarkMode,
-              onToggleDarkMode: widget.onToggleDarkMode,
-            ),
+            builder: (context) => const LoginScreen(), // MODIFIÉ: Suppression des paramètres
           ),
               (route) => false,
         );
@@ -268,16 +273,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(  // Ajout du bouton retour
-          icon: Icon(Icons.arrow_back_ios_rounded),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 maintainState: true,
-                builder: (context) => BudgetScreen(
-                  isDarkMode: widget.isDarkMode,
-                  onToggleDarkMode: widget.onToggleDarkMode,
-                ),
+                builder: (context) => const BudgetScreen(), // MODIFIÉ: Suppression des paramètres
               ),
             );
           },
@@ -285,8 +287,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profil'),
         actions: [
           IconButton(
-            icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () => widget.onToggleDarkMode(!widget.isDarkMode),
+            // MODIFIÉ: Nouvelle logique de changement de thème
+            onPressed: () => _themeProvider.toggleTheme(!_themeProvider.isDarkMode),
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Icon(
+                // MODIFIÉ: widget.isDarkMode → _themeProvider.isDarkMode
+                _themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                key: ValueKey(_themeProvider.isDarkMode),
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
           ),
         ],
       ),
@@ -301,7 +312,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
-
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Theme.of(context).colorScheme.primary,
