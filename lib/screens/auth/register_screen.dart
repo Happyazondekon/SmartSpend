@@ -101,6 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         // Naviguer vers l'écran de vérification
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
+            maintainState: true,
             builder: (context) => EmailVerificationScreen(
               isDarkMode: widget.isDarkMode,
               onToggleDarkMode: widget.onToggleDarkMode,
@@ -147,6 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
         // Connexion réussie, naviguer vers l'écran principal
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
+            maintainState: true,
             builder: (context) => EmailVerificationScreen(
               isDarkMode: widget.isDarkMode,
               onToggleDarkMode: widget.onToggleDarkMode,
@@ -855,6 +857,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
                                   onPressed: () {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute(
+                                        maintainState: true,
                                         builder: (context) => LoginScreen(
                                           isDarkMode: widget.isDarkMode,
                                           onToggleDarkMode: widget.onToggleDarkMode,

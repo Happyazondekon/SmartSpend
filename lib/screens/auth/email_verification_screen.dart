@@ -89,6 +89,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> with 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
+            maintainState: true,
             builder: (context) => BudgetScreen(
               isDarkMode: widget.isDarkMode,
               onToggleDarkMode: widget.onToggleDarkMode,
@@ -158,6 +159,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> with 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
+            maintainState: true,
             builder: (context) => LoginScreen(
               isDarkMode: widget.isDarkMode,
               onToggleDarkMode: widget.onToggleDarkMode,

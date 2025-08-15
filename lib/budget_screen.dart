@@ -1016,8 +1016,9 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                   : null,
             ),
             onPressed: () {
-              Navigator.of(context).push(
+              Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
+                  maintainState: true,
                   builder: (context) => ProfileScreen(
                     isDarkMode: widget.isDarkMode,
                     onToggleDarkMode: widget.onToggleDarkMode,
@@ -1175,8 +1176,9 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                       icon: Icons.person_outline_rounded,
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.of(context).push(
+                        Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
+                            maintainState: true,
                             builder: (context) => ProfileScreen(
                               isDarkMode: widget.isDarkMode,
                               onToggleDarkMode: widget.onToggleDarkMode,

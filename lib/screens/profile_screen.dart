@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartspend/budget_screen.dart';
 import '../services/auth_service.dart';
 import 'auth/login_screen.dart';
 
@@ -183,6 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
+            maintainState: true,
             builder: (context) => LoginScreen(
               isDarkMode: widget.isDarkMode,
               onToggleDarkMode: widget.onToggleDarkMode,
@@ -243,6 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
+            maintainState: true,
             builder: (context) => LoginScreen(
               isDarkMode: widget.isDarkMode,
               onToggleDarkMode: widget.onToggleDarkMode,
@@ -265,6 +268,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(  // Ajout du bouton retour
+          icon: Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                maintainState: true,
+                builder: (context) => BudgetScreen(
+                  isDarkMode: widget.isDarkMode,
+                  onToggleDarkMode: widget.onToggleDarkMode,
+                ),
+              ),
+            );
+          },
+        ),
         title: const Text('Profil'),
         actions: [
           IconButton(
@@ -284,6 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
+
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Theme.of(context).colorScheme.primary,

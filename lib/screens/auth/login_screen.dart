@@ -118,6 +118,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       if (result != null && mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
+            maintainState: true,
             builder: (context) => BudgetScreen(
               isDarkMode: widget.isDarkMode,
               onToggleDarkMode: widget.onToggleDarkMode,
@@ -433,8 +434,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     alignment: Alignment.centerRight,
                                     child: TextButton(
                                       onPressed: () {
-                                        Navigator.of(context).push(
+                                        Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(
+                                            maintainState: true,
                                             builder: (context) => ForgotPasswordScreen(
                                               isDarkMode: widget.isDarkMode,
                                               onToggleDarkMode: widget.onToggleDarkMode,
@@ -625,6 +627,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   onPressed: () {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute(
+                                        maintainState: true,
                                         builder: (context) => RegisterScreen(
                                           isDarkMode: widget.isDarkMode,
                                           onToggleDarkMode: widget.onToggleDarkMode,

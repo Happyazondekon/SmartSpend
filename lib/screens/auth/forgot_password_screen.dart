@@ -159,7 +159,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                     ],
                                   ),
                                   child: IconButton(
-                                    onPressed: () => Navigator.of(context).pop(),
+                                    onPressed: () {
+                                      Navigator.of(context).pushReplacement(
+                                        MaterialPageRoute(
+                                          maintainState: true,
+                                          builder: (context) => LoginScreen(
+                                            isDarkMode: widget.isDarkMode,
+                                            onToggleDarkMode: widget.onToggleDarkMode,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                     icon: Icon(
                                       Icons.arrow_back_ios_rounded,
                                       color: Theme.of(context).colorScheme.primary,
@@ -500,6 +510,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
                                   onPressed: () {
                                     Navigator.of(context).pushReplacement(
                                       MaterialPageRoute(
+                                        maintainState: true,
                                         builder: (context) => LoginScreen(
                                           isDarkMode: widget.isDarkMode,
                                           onToggleDarkMode: widget.onToggleDarkMode,
