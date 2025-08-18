@@ -4,14 +4,14 @@
   ],
   "cleanCommandsComponents": [
     [
-      "C:\\Users\\ELITEBOOK\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "C:\\Users\\ELITEBOOK\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
       "-C",
       "C:\\Users\\ELITEBOOK\\StudioProjects\\smartspend\\android\\app\\.cxx\\RelWithDebInfo\\114r4y3i\\x86_64",
       "clean"
     ]
   ],
   "buildTargetsCommandComponents": [
-    "C:\\Users\\ELITEBOOK\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "C:\\Users\\ELITEBOOK\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
     "-C",
     "C:\\Users\\ELITEBOOK\\StudioProjects\\smartspend\\android\\app\\.cxx\\RelWithDebInfo\\114r4y3i\\x86_64",
     "{LIST_OF_TARGETS_TO_BUILD}"
