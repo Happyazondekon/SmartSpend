@@ -1,74 +1,133 @@
-# SmartSpend - Guide Utilisateur
+# SmartSpend
 
-Bienvenue dans **SmartSpend**, l'application qui vous aide à planifier vos dépenses et à gérer votre salaire de manière intelligente. Ce guide vous expliquera comment utiliser l'application pour optimiser votre budget et suivre vos dépenses.
+Application de gestion de dépenses intelligente développée en C++ et Dart avec Flutter.
 
-## Table des Matières
-1. [Introduction](#introduction)
-2. [Fonctionnalités Principales](#fonctionnalités-principales)
-3. [Comment Utiliser SmartSpend](#comment-utiliser-smartspend)
-   - [Saisie du Salaire](#saisie-du-salaire)
-   - [Calcul du Budget](#calcul-du-budget)
-   - [Ajout de Dépenses](#ajout-de-dépenses)
-   - [Visualisation des Statistiques](#visualisation-des-statistiques)
-   - [Gestion des Transactions](#gestion-des-transactions)
-4. [Mode Sombre](#mode-sombre)
-5. [Sauvegarde des Données](#sauvegarde-des-données)
-6. [Conclusion](#conclusion)
+## Description
 
-## Introduction
+SmartSpend est une application multi-plateforme conçue pour la gestion intelligente des finances personnelles. Elle combine la puissance du C++ pour les calculs complexes avec l'élégance de Flutter pour une interface utilisateur moderne et responsive.
 
-**SmartSpend** est une application conçue pour vous aider à mieux gérer vos finances personnelles. Elle vous permet de planifier vos dépenses en fonction de votre salaire, de suivre vos transactions, et de visualiser vos habitudes de dépenses grâce à des graphiques intuitifs.
+## Architecture Technique
 
-## Fonctionnalités Principales
+### Technologies Utilisées
+- **Backend**: C/C++ pour le moteur de calcul et la logique métier
+- **Frontend**: Dart/Flutter pour l'interface utilisateur
+- **Build System**: CMake pour la gestion de la compilation
+- **Tests**: Framework de test unitaire intégré
 
-- **Planification du Budget** : Répartissez votre salaire en différentes catégories de dépenses (loyer, transport, nourriture, etc.).
-- **Suivi des Dépenses** : Ajoutez des transactions pour suivre vos dépenses réelles.
-- **Statistiques Visuelles** : Visualisez vos dépenses sous forme de graphiques pour mieux comprendre où va votre argent.
-- **Mode Sombre** : Passez en mode sombre pour un confort visuel optimal.
-- **Sauvegarde des Données** : Vos données sont sauvegardées localement pour une utilisation ultérieure.
+### Structure du Projet
+```
+SmartSpend/
+├── src/
+│   ├── core/            # Logique métier en C++
+│   ├── algorithms/      # Algorithmes de calcul budgétaire
+│   └── utils/          # Utilitaires communs
+├── lib/                 # Code Dart/Flutter
+│   ├── screens/        # Écrans de l'application
+│   ├── widgets/        # Composants réutilisables
+│   └── services/       # Services et gestionnaires d'état
+├── tests/              # Tests unitaires et d'intégration
+└── cmake/              # Configuration CMake
+```
 
-## Comment Utiliser SmartSpend
+## Installation
 
-### Saisie du Salaire
+### Prérequis
+- CMake (version 3.10 ou supérieure)
+- Compilateur C++ compatible C++17
+- Flutter SDK (dernière version stable)
+- IDE recommandé: Visual Studio Code ou Android Studio
 
-1. **Ouvrez l'application** : Lancez SmartSpend sur votre appareil.
-2. **Saisissez votre salaire** : Dans l'onglet "Budget", entrez votre salaire mensuel dans le champ prévu à cet effet.
-3. **Sélectionnez la devise** : Choisissez la devise dans laquelle vous souhaitez gérer votre budget (XOF, USD, EUR, etc.).
+### Étapes d'Installation
+1. Cloner le dépôt:
+   ```bash
+   git clone https://github.com/Happyazondekon/SmartSpend.git
+   cd SmartSpend
+   ```
 
-### Calcul du Budget
+2. Configurer le projet:
+   ```bash
+   cmake -B build
+   ```
 
-1. **Cliquez sur "Calculer mon budget"** : Une fois votre salaire saisi, appuyez sur le bouton "Calculer mon budget" pour répartir automatiquement votre salaire en différentes catégories de dépenses.
-2. **Visualisez le budget** : Le budget calculé apparaît sous forme de liste, avec le montant alloué à chaque catégorie.
+3. Compiler:
+   ```bash
+   cmake --build build
+   ```
 
-### Ajout de Dépenses
+4. Installer les dépendances Flutter:
+   ```bash
+   flutter pub get
+   ```
 
-1. **Ouvrez le dialogue d'ajout de dépense** : Cliquez sur le bouton "+" en bas à droite de l'écran.
-2. **Sélectionnez une catégorie** : Choisissez la catégorie de dépense (par exemple, "Nourriture").
-3. **Entrez le montant et la description** : Saisissez le montant dépensé et une description optionnelle.
-4. **Ajoutez la transaction** : Cliquez sur "Ajouter" pour enregistrer la dépense.
+5. Lancer l'application:
+   ```bash
+   flutter run
+   ```
 
-### Visualisation des Statistiques
+## Guide Utilisateur
 
-1. **Accédez à l'onglet "Statistiques"** : Naviguez vers l'onglet "Statistiques" pour voir un graphique en camembert représentant la répartition de votre budget.
-2. **Analysez vos dépenses** : Le graphique montre la part de chaque catégorie dans votre budget total, ainsi que le montant dépensé.
+### Fonctionnalités Principales
 
-### Gestion des Transactions
+- **Planification du Budget**
+   - Répartition automatique du salaire
+   - Support multi-devises (XOF, USD, EUR)
+   - Algorithmes d'optimisation des dépenses
 
-1. **Accédez à l'onglet "Transactions"** : Dans cet onglet, vous pouvez voir la liste de toutes les transactions enregistrées.
-2. **Consultez les détails** : Chaque transaction affiche la catégorie, le montant, la description et la date.
+- **Suivi des Dépenses**
+   - Système de catégorisation intelligent
+   - Reconnaissance automatique des transactions récurrentes
+   - Historique détaillé des transactions
 
-## Mode Sombre
+- **Analyses Statistiques**
+   - Graphiques interactifs
+   - Prédictions de dépenses
+   - Rapports personnalisés
 
-- **Activez/Désactivez le mode sombre** : Cliquez sur l'icône en forme de soleil/lune dans la barre d'application pour basculer entre le mode sombre et le mode clair.
+- **Fonctionnalités Techniques**
+   - Mode hors-ligne
+   - Synchronisation locale
+   - Mode sombre adaptatif
+   - Performance optimisée
 
-## Sauvegarde des Données
+### Utilisation
 
-- **Données sauvegardées automatiquement** : Votre salaire, votre devise, et vos préférences de mode sombre sont sauvegardés localement sur votre appareil. Vous n'avez rien à faire, tout est automatique !
+#### Saisie du Salaire
+1. Ouvrez l'application
+2. Dans l'onglet "Budget", saisissez votre salaire mensuel
+3. Sélectionnez votre devise préférée
 
-## Conclusion
+#### Calcul du Budget
+1. Utilisez le bouton "Calculer mon budget"
+2. Consultez la répartition automatique
+3. Ajustez les catégories selon vos besoins
 
-**SmartSpend** est l'outil ultime pour prendre le contrôle de vos finances. Que vous souhaitiez planifier vos dépenses, suivre vos transactions, ou simplement mieux comprendre où va votre argent, cette application est là pour vous aider. Téléchargez-la dès aujourd'hui et commencez à gérer votre argent de manière plus intelligente !
+#### Gestion des Dépenses
+1. Ajoutez des transactions via le bouton "+"
+2. Catégorisez vos dépenses
+3. Suivez vos statistiques en temps réel
+
+#### Visualisation des Données
+1. Consultez l'onglet "Statistiques"
+2. Analysez les graphiques de répartition
+3. Exportez vos rapports si nécessaire
+
+### Mode Sombre
+- Activation via l'icône dédiée
+- Adaptation automatique selon les préférences système
+
+### Sauvegarde des Données
+- Sauvegarde locale automatique
+- Option de backup manuel
+- Sécurisation des données sensibles
+
+## Contribution
+
+Les contributions sont les bienvenues! Veuillez consulter notre guide de contribution pour plus de détails.
+
+## License
+
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.
 
 ---
 
-**Note** : Ce guide est conçu pour vous aider à démarrer avec SmartSpend. Si vous avez des questions ou des suggestions, n'hésitez pas à nous contacter via l'application.
+**Note Technique**: Pour les développeurs souhaitant contribuer ou modifier l'application, veuillez consulter la documentation technique complète dans le dossier `docs/`.
