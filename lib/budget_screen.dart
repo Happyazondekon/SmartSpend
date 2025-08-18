@@ -449,8 +449,16 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     if (allocated <= 0) return "";
     double percentage = (spent / allocated) * 100;
 
-    if (percentage > 100) return "Budget dépassé. Essayez de réduire vos dépenses.";
-    if (percentage >= 95) return "Attention, vous approchez de la limite de votre budget.";
+    if (percentage > 100) {
+      return "Budget dépassé. Essayez de réduire vos dépenses.";
+    }
+    if (percentage == 100) {
+      // Nouvelle condition pour le cas exact de 100%
+      return "Attention, vous avez atteint la limite de votre budget.";
+    }
+    if (percentage >= 95) {
+      return "Attention, vous approchez de la limite de votre budget.";
+    }
     return "";
   }
 
@@ -876,7 +884,7 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                       child: pw.Row(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('• ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('| ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                           pw.Expanded(child: pw.Text(advice)),
                         ],
                       ),
@@ -1818,11 +1826,16 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     final double remainingPercent = 100 - totalUsedPercent;
     final double remainingAmount = salary * (remainingPercent / 100);
 
+    // AJOUT: Contrôleurs de texte
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController percentController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            // CORRECTION: Calculer amount basé sur isUsingPercent
             double amount = isUsingPercent ? (percent * salary) / 100 : percent;
 
             return AlertDialog(
@@ -1854,19 +1867,36 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                     ),
                     SizedBox(height: 24),
                     TextField(
+                      controller: nameController, // UTILISATION du contrôleur
                       decoration: InputDecoration(labelText: 'Nom de la catégorie'),
                       onChanged: (value) => name = value,
                     ),
                     SizedBox(height: 16),
                     TextField(
+                      controller: percentController, // UTILISATION du contrôleur
                       decoration: InputDecoration(
                         labelText: isUsingPercent ? 'Pourcentage (%)' : 'Montant ($currency)',
                         suffixIcon: IconButton(
                           icon: Icon(Icons.swap_horiz, color: Theme.of(context).colorScheme.primary),
                           tooltip: 'Changer en ${isUsingPercent ? "Montant" : "Pourcentage"}',
-                          onPressed: () => setState(() => isUsingPercent = !isUsingPercent),
+                          onPressed: () {
+                            setState(() {
+                              isUsingPercent = !isUsingPercent;
+                              // CORRECTION: Conversion correcte entre pourcentage et montant
+                              if (isUsingPercent) {
+                                // Passage de montant vers pourcentage
+                                percent = salary > 0 ? (percent / salary * 100) : 0;
+                              } else {
+                                // Passage de pourcentage vers montant
+                                percent = (percent * salary) / 100;
+                              }
+                              percentController.text = percent.toStringAsFixed(2);
+                            });
+                          },
                         ),
-                        helperText: 'Valeur: ${isUsingPercent ? amount.toStringAsFixed(0) + " " + currency : (amount / salary * 100).toStringAsFixed(1) + "%"}',
+                        helperText: isUsingPercent
+                            ? 'Équivalent: ${amount.toStringAsFixed(0)} $currency'
+                            : 'Équivalent: ${salary > 0 ? (amount / salary * 100).toStringAsFixed(1) : 0}%',
                       ),
                       keyboardType: TextInputType.numberWithOptions(decimal: true),
                       onChanged: (value) {
@@ -1979,11 +2009,16 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
     double totalUsedPercent = (_getTotalBudgetPercentage() * 100) - originalPercent;
     double remainingPercent = 100 - totalUsedPercent;
 
+    // AJOUT: Contrôleur de texte pour maintenir le focus
+    final TextEditingController percentController = TextEditingController(text: percent.toString());
+    final TextEditingController nameController = TextEditingController(text: name);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            // CORRECTION: Calculer amount basé sur isUsingPercent
             double amount = isUsingPercent ? (percent * salary) / 100 : percent;
 
             return AlertDialog(
@@ -2015,21 +2050,36 @@ class _BudgetScreenState extends State<BudgetScreen> with SingleTickerProviderSt
                     ),
                     SizedBox(height: 24),
                     TextField(
-                      controller: TextEditingController(text: name),
+                      controller: nameController,
                       decoration: InputDecoration(labelText: 'Nom de la catégorie'),
                       onChanged: (value) => name = value,
                     ),
                     SizedBox(height: 16),
                     TextField(
-                      controller: TextEditingController(text: percent.toString()),
+                      controller: percentController, // UTILISATION du contrôleur
                       decoration: InputDecoration(
                         labelText: isUsingPercent ? 'Pourcentage (%)' : 'Montant ($currency)',
                         suffixIcon: IconButton(
                           icon: Icon(Icons.swap_horiz, color: Theme.of(context).colorScheme.primary),
                           tooltip: 'Changer en ${isUsingPercent ? "Montant" : "Pourcentage"}',
-                          onPressed: () => setState(() => isUsingPercent = !isUsingPercent),
+                          onPressed: () {
+                            setState(() {
+                              isUsingPercent = !isUsingPercent;
+                              // CORRECTION: Conversion correcte entre pourcentage et montant
+                              if (isUsingPercent) {
+                                // Passage de montant vers pourcentage
+                                percent = salary > 0 ? (percent / salary * 100) : 0;
+                              } else {
+                                // Passage de pourcentage vers montant
+                                percent = (percent * salary) / 100;
+                              }
+                              percentController.text = percent.toStringAsFixed(2);
+                            });
+                          },
                         ),
-                        helperText: 'Valeur: ${isUsingPercent ? amount.toStringAsFixed(0) + " " + currency : (amount / salary * 100).toStringAsFixed(1) + "%"}',
+                        helperText: isUsingPercent
+                            ? 'Équivalent: ${amount.toStringAsFixed(0)} $currency'
+                            : 'Équivalent: ${salary > 0 ? (amount / salary * 100).toStringAsFixed(1) : 0}%',
                       ),
                       keyboardType: TextInputType.numberWithOptions(decimal: true),
                       onChanged: (value) {

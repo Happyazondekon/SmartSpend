@@ -193,7 +193,7 @@ class FAQChatBot {
     "📊 Comment consulter mes statistiques?": "📊 **Analyser vos finances:**\n\nL'onglet 'Statistiques' vous offre:\n• Graphiques de dépenses par catégorie\n• Évolution mensuelle de vos finances\n• Comparaisons périodiques\n• Tendances de consommation\n\n🔍 **Utilisez ces données** pour identifier vos habitudes et optimiser votre budget!",
     "💰 Comment économiser efficacement?": "💰 **Stratégies d'épargne éprouvées:**\n\n🎯 **Méthode des 52 semaines:** Épargnez 1€ la 1ère semaine, 2€ la 2ème...\n🏦 **Épargne automatique:** 10-20% de chaque revenu\n📱 **Utilisez SmartSpend** pour tracker vos progrès\n⚡ **Réduisez les abonnements** non-essentiels\n\n**Objectif:** Constituez d'abord un fonds d'urgence (3-6 mois de charges)!",
     "✂️ Comment réduire mes dépenses?": "✂️ **Optimisation des dépenses:**\n\n🔍 **Analysez vos statistiques SmartSpend:**\n• Identifiez les catégories les plus coûteuses\n• Repérez les dépenses récurrentes\n• Trouvez les 'fuites' budgétaires\n\n💡 **Actions concrètes:**\n• Comparez les prix avant d'acheter\n• Cuisinez plus à la maison\n• Renégociez vos contrats (assurance, téléphone)\n• Privilégiez l'occasion quand possible",
-    "Conseils investissement débutant?": "🚀 **Débuter en investissement:**\n\n⚠️ **Prérequis essentiels:**\n✓ Fonds d'urgence constitué (3-6 mois)\n✓ Dettes remboursées (sauf prêt immobilier)\n✓ Budget maîtrisé avec SmartSpend\n\n📈 **Premiers pas:**\n• Commencez petit (50-100€/mois)\n• Diversifiez vos placements\n• Privilégiez le long terme\n• Formez-vous avant d'investir\n\n🏦 **Options:** Livret A, PEL, assurance-vie, PEA",
+    "📊 Conseils investissement débutant?": "🚀 **Débuter en investissement:**\n\n⚠️ **Prérequis essentiels:**\n✓ Fonds d'urgence constitué (3-6 mois)\n✓ Dettes remboursées (sauf prêt immobilier)\n✓ Budget maîtrisé avec SmartSpend\n\n📈 **Premiers pas:**\n• Commencez petit (50-100€/mois)\n• Diversifiez vos placements\n• Privilégiez le long terme\n• Formez-vous avant d'investir\n\n🏦 **Options:** Livret A, PEL, assurance-vie, PEA",
     "💳Comment gérer mes dettes?": "💳 **Stratégie de remboursement:**\n\n🎯 **Méthode 'Boule de neige':**\n1. Listez toutes vos dettes\n2. Payez les minimums partout\n3. Attaquez la plus petite dette en premier\n4. Une fois remboursée, passez à la suivante\n\n📊 **Utilisez SmartSpend** pour tracker vos remboursements et célébrer vos progrès!\n\n⚡ **Négociez** avec vos créanciers si nécessaire.",
   };
 
@@ -441,51 +441,56 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.95,
-      decoration: BoxDecoration(
-        color: colorScheme.background,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(28),
-        ),
-      ),
-      child: Column(
-        children: [
-          _buildElegantHeader(colorScheme, textTheme),
-          Expanded(
-            child: AnimatedList(
-              key: _listKey,
-              controller: _scrollController,
-              padding: const EdgeInsets.all(20),
-              initialItemCount: messages.length + (isTyping ? 1 : 0),
-              itemBuilder: (context, index, animation) {
-                if (isTyping && index == messages.length) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: _buildTypingIndicator(colorScheme),
-                  );
-                }
-
-                if (index < messages.length) {
-                  final message = messages[index];
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    axisAlignment: -1.0,
-                    child: _buildMessageBubble(message, colorScheme, textTheme),
-                  );
-                }
-
-                return const SizedBox.shrink();
-              },
-            ),
+    return Scaffold(
+      resizeToAvoidBottomInset: true, // 🔑 permet d'éviter que le clavier cache l'input
+      backgroundColor: Colors.transparent,
+      body: Container(
+        height: MediaQuery.of(context).size.height * 0.95,
+        decoration: BoxDecoration(
+          color: colorScheme.background,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
           ),
-          _buildSuggestionsSection(colorScheme, textTheme),
-          _buildInputSection(colorScheme, textTheme),
-        ],
+        ),
+        child: Column(
+          children: [
+            _buildElegantHeader(colorScheme, textTheme),
+            Expanded(
+              child: AnimatedList(
+                key: _listKey,
+                controller: _scrollController,
+                padding: const EdgeInsets.all(20),
+                initialItemCount: messages.length + (isTyping ? 1 : 0),
+                itemBuilder: (context, index, animation) {
+                  if (isTyping && index == messages.length) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: _buildTypingIndicator(colorScheme),
+                    );
+                  }
+
+                  if (index < messages.length) {
+                    final message = messages[index];
+                    return SizeTransition(
+                      sizeFactor: animation,
+                      axisAlignment: -1.0,
+                      child: _buildMessageBubble(message, colorScheme, textTheme),
+                    );
+                  }
+
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+            _buildSuggestionsSection(colorScheme, textTheme),
+            _buildInputSection(colorScheme, textTheme),
+          ],
+        ),
       ),
     );
   }
+
 
   Widget _buildElegantHeader(ColorScheme colorScheme, TextTheme textTheme) {
     return Container(
