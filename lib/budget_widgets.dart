@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smartspend/services/auth_service.dart';
 import 'models/transaction.dart';
 import 'budget_logic.dart';
 import 'faq_chatbot.dart';
@@ -50,22 +51,80 @@ class BudgetWidgets {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    final userName = AuthService().currentUser?.displayName ?? 'Utilisateur';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Bienvenue,',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+          // Message de bienvenue avec animation subtile
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              fontWeight: FontWeight.w400,
+              letterSpacing: 0.5,
+            ) ?? const TextStyle(),
+            child: Text('Bienvenue,'),
+          ),
+
+          // Nom de l'utilisateur avec style distinctif
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primary.withOpacity(0.8),
+              ],
+            ).createShader(bounds),
+            child: Text(
+              userName,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontSize: 32,
+                fontWeight: FontWeight.w600,
+                color: Colors.white, // Nécessaire pour le ShaderMask
+                height: 1.1,
+              ),
             ),
           ),
-          Text(
-            'Gérez vos finances',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontSize: 28,
-              color: Theme.of(context).colorScheme.onBackground,
+
+          const SizedBox(height: 8),
+
+          // Titre principal avec gradient subtil
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.onBackground,
+                Theme.of(context).colorScheme.onBackground.withOpacity(0.8),
+              ],
+            ).createShader(bounds),
+            child: Text(
+              'Gérez vos finances',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontSize: 28,
+                color: Colors.white, // Requis pour ShaderMask
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+                height: 1.1,
+              ),
+            ),
+          ),
+
+          // Ligne décorative subtile
+          Container(
+            margin: const EdgeInsets.only(top: 20),
+            height: 3,
+            width: 300,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(1),
             ),
           ),
         ],
