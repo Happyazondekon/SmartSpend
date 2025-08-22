@@ -166,7 +166,7 @@ class NotificationService {
             'Rappel quotidien pour saisir vos dépenses et vérifier vos objectifs',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@drawable/ic_notification',
+            icon: '@mipmap/ic_launcher',
             color: Color(0xFF00A9A9),
             category: AndroidNotificationCategory.reminder,
           ),
@@ -207,7 +207,7 @@ class NotificationService {
       channelDescription: 'Notifications pour les objectifs financiers',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@drawable/ic_notification',
+      icon: '@mipmap/ic_launcher',
       color: Color(0xFF4CAF50),
       playSound: true,
       sound: RawResourceAndroidNotificationSound('success_sound'),
@@ -234,7 +234,7 @@ class NotificationService {
       channelDescription: 'Notifications pour les objectifs financiers',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@drawable/ic_notification',
+      icon: '@mipmap/ic_launcher',
       color: Color(0xFFFF9800),
     );
 
