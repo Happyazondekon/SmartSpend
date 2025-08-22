@@ -13,6 +13,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smartspend/screens/financial_goals_screen.dart';
 import 'package:smartspend/screens/profile_screen.dart';
 import 'models/transaction.dart';
 import 'notification_service.dart';
@@ -81,7 +82,7 @@ class _BudgetScreenState extends State<BudgetScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     // Initialiser la logique métier
     _budgetLogic = BudgetLogic(
@@ -173,30 +174,46 @@ class _BudgetScreenState extends State<BudgetScreen>
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(child: Text('Budget')),
-            Tab(child: Text('Statistiques')),
-            Tab(child: Text('Transactions')),
+            Tab(child: Text('Budget', style: TextStyle(fontSize: 12))),
+            Tab(child: Text('Objectifs', style: TextStyle(fontSize: 12))),
+            Tab(child: Text('Statistiques', style: TextStyle(fontSize: 11))),
+            Tab(child: Text('Transactions', style: TextStyle(fontSize: 10))),
           ],
         ),
+
       ),
       drawer: _budgetWidgets.buildDrawer(),
       body: TabBarView(
         controller: _tabController,
         children: [
           _budgetWidgets.buildBudgetTab(),
+          _budgetWidgets.buildGoalsTab(),
           _budgetWidgets.buildStatsTab(),
           _budgetWidgets.buildTransactionsTab(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (_tabController.index == 0) _budgetWidgets.showAddCategoryDialog();
-          else if (_tabController.index == 2) _budgetWidgets.showAddTransactionDialog();
-          else _budgetLogic.showMonthPicker();
+          if (_tabController.index == 0) {
+            _budgetWidgets.showAddCategoryDialog();
+          } else if (_tabController.index == 1) {
+            // Naviguer vers l'écran des objectifs
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const FinancialGoalsScreen(),
+              ),
+            );
+          } else if (_tabController.index == 3) {
+            _budgetWidgets.showAddTransactionDialog();
+          } else {
+            _budgetLogic.showMonthPicker();
+          }
         },
         child: Icon(_tabController.index == 0
             ? Icons.add_chart
-            : _tabController.index == 2
+            : _tabController.index == 1
+            ? Icons.track_changes_outlined
+            : _tabController.index == 3
             ? Icons.add
             : Icons.calendar_today_outlined),
       ),

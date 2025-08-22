@@ -7,6 +7,9 @@ import 'models/transaction.dart';
 import 'budget_logic.dart';
 import 'faq_chatbot.dart';
 import 'package:smartspend/screens/profile_screen.dart';
+import '../models/financial_goal.dart';
+import '../screens/financial_goals_screen.dart';
+import 'models/user_data.dart';
 
 class BudgetWidgets {
   final BuildContext context;
@@ -563,7 +566,7 @@ class BudgetWidgets {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     child: Text(
-                      'ASSISTANCE',
+                      'GESTION',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -572,6 +575,20 @@ class BudgetWidgets {
                       ),
                     ),
                   ),
+                  _buildListTile(
+                    title: 'Objectifs financiers',
+                    subtitle: 'Définir et suivre vos objectifs d\'épargne',
+                    icon: Icons.track_changes_outlined,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const FinancialGoalsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(indent: 24, endIndent: 24, height: 1, thickness: 1),
                   _buildListTile(
                     title: 'Assistant financier',
                     subtitle: 'Obtenez des conseils personnalisés',
@@ -853,6 +870,363 @@ class BudgetWidgets {
             ),
           ],
         )
+    );
+  }
+
+  // ===================================================================
+  // ====================== ONGLET OBJECTIFS ==========================
+  // ===================================================================
+
+  Widget buildGoalsTab() {
+    return StreamBuilder<UserData?>(
+      stream: budgetLogic.getUserDataStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final userData = snapshot.data;
+        if (userData == null || userData.financialGoals.isEmpty) {
+          return _buildGoalsEmptyState();
+        }
+
+        final goals = userData.financialGoals;
+        final activeGoals = goals.where((g) => !g.isCompleted).toList();
+        final completedGoals = goals.where((g) => g.isCompleted).toList();
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Statistiques rapides
+              _buildGoalsOverviewCard(goals, userData.currency),
+
+              const SizedBox(height: 24),
+
+              // Objectifs actifs
+              if (activeGoals.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Objectifs en cours (${activeGoals.length})',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const FinancialGoalsScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text('Voir tout'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...activeGoals.take(3).map((goal) => _buildGoalSummaryCard(goal, userData.currency)),
+              ],
+
+              // Objectifs terminés
+              if (completedGoals.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Text(
+                  'Objectifs terminés (${completedGoals.length})',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...completedGoals.take(2).map((goal) => _buildGoalSummaryCard(goal, userData.currency)),
+              ],
+
+              const SizedBox(height: 80), // Espace pour le FAB
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGoalsEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.track_changes_outlined,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Aucun objectif défini',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Définissez vos objectifs financiers pour donner un sens à votre épargne !',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const FinancialGoalsScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Créer un objectif'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoalsOverviewCard(List<FinancialGoal> goals, String currency) {
+    if (goals.isEmpty) return const SizedBox();
+
+    final totalTargetAmount = goals.fold(0.0, (sum, goal) => sum + goal.targetAmount);
+    final totalCurrentAmount = goals.fold(0.0, (sum, goal) => sum + goal.currentAmount);
+    final completedGoalsCount = goals.where((g) => g.isCompleted).length;
+    final overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) : 0.0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.trending_up,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Vue d\'ensemble',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    'Objectifs',
+                    '${goals.length}',
+                    Icons.flag_outlined,
+                    Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    'Terminés',
+                    '$completedGoalsCount',
+                    Icons.check_circle_outline,
+                    Colors.green,
+                  ),
+                ),
+                Expanded(
+                  child: _buildStatItem(
+                    'Progression',
+                    '${(overallProgress * 100).toStringAsFixed(0)}%',
+                    Icons.percent,
+                    Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            Text(
+              'Épargne totale: ${totalCurrentAmount.toStringAsFixed(0)} / ${totalTargetAmount.toStringAsFixed(0)} $currency',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+
+            const SizedBox(height: 8),
+
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: overallProgress.clamp(0.0, 1.0),
+                minHeight: 8,
+                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  overallProgress >= 1.0 ? Colors.green : Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalSummaryCard(FinancialGoal goal, String currency) {
+    final progress = goal.progressPercentage / 100;
+    final isCompleted = goal.isCompleted;
+    final isOverdue = goal.isOverdue;
+    final isNearDeadline = goal.isNearDeadline;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: goal.color.withOpacity(0.15),
+                  child: Icon(goal.icon, color: goal.color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              goal.name,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                decoration: isCompleted ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                          ),
+                          if (isCompleted)
+                            Icon(Icons.check_circle, color: Colors.green, size: 16),
+                          if (isOverdue && !isCompleted)
+                            Icon(Icons.warning, color: Colors.red, size: 16),
+                          if (isNearDeadline && !isCompleted)
+                            Icon(Icons.schedule, color: Colors.orange, size: 16),
+                        ],
+                      ),
+                      Text(
+                        '${goal.currentAmount.toStringAsFixed(0)} / ${goal.targetAmount.toStringAsFixed(0)} $currency',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '${goal.progressPercentage.toStringAsFixed(1)}%',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isCompleted ? Colors.green : goal.color,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Barre de progression
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isCompleted ? Colors.green : goal.color,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Échéance: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(goal.targetDate)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  isCompleted
+                      ? 'Terminé ✓'
+                      : isOverdue
+                      ? 'En retard'
+                      : '${goal.daysRemaining} jours',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isCompleted
+                        ? Colors.green
+                        : isOverdue
+                        ? Colors.red
+                        : isNearDeadline
+                        ? Colors.orange
+                        : null,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+
+            // Suggestion d'épargne pour les objectifs actifs
+            if (!isCompleted && goal.remainingAmount > 0 && !isOverdue) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: goal.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Épargner ${goal.monthlySavingsNeeded.toStringAsFixed(0)} $currency/mois pour atteindre votre objectif',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: goal.color,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

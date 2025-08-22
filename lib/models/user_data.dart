@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'transaction.dart';
+import 'financial_goal.dart';
+
 
 class UserData {
   final String userId;
@@ -7,6 +9,7 @@ class UserData {
   final String currency;
   final Map<String, Map<String, dynamic>> budget;
   final List<Transaction> transactions;
+  final List<FinancialGoal> financialGoals; // NOUVEAU
   final bool notificationsEnabled;
   final DateTime lastUpdated;
 
@@ -16,6 +19,7 @@ class UserData {
     required this.currency,
     required this.budget,
     required this.transactions,
+    required this.financialGoals, // NOUVEAU
     required this.notificationsEnabled,
     required this.lastUpdated,
   });
@@ -40,6 +44,7 @@ class UserData {
       'currency': currency,
       'budget': encodableBudget,
       'transactions': transactions.map((t) => t.toJson()).toList(),
+      'financialGoals': financialGoals.map((g) => g.toJson()).toList(), // NOUVEAU
       'notificationsEnabled': notificationsEnabled,
       'lastUpdated': lastUpdated,
     };
@@ -71,12 +76,22 @@ class UserData {
           .toList();
     }
 
+    // Décoder les objectifs financiers - NOUVEAU
+    List<FinancialGoal> decodedGoals = [];
+    if (doc['financialGoals'] != null) {
+      List<dynamic> goalsData = doc['financialGoals'];
+      decodedGoals = goalsData
+          .map((item) => FinancialGoal.fromJson(item))
+          .toList();
+    }
+
     return UserData(
       userId: doc['userId'] ?? docId,
       salary: (doc['salary'] as num?)?.toDouble() ?? 0.0,
       currency: doc['currency'] ?? 'XOF',
       budget: decodedBudget,
       transactions: decodedTransactions,
+      financialGoals: decodedGoals, // NOUVEAU
       notificationsEnabled: doc['notificationsEnabled'] ?? false,
       lastUpdated: doc['lastUpdated']?.toDate() ?? DateTime.now(),
     );
@@ -90,6 +105,7 @@ class UserData {
       currency: 'XOF',
       budget: _getDefaultBudget(),
       transactions: [],
+      financialGoals: [], // NOUVEAU
       notificationsEnabled: false,
       lastUpdated: DateTime.now(),
     );
@@ -156,6 +172,7 @@ class UserData {
     String? currency,
     Map<String, Map<String, dynamic>>? budget,
     List<Transaction>? transactions,
+    List<FinancialGoal>? financialGoals, // NOUVEAU
     bool? notificationsEnabled,
   }) {
     return UserData(
@@ -164,6 +181,7 @@ class UserData {
       currency: currency ?? this.currency,
       budget: budget ?? this.budget,
       transactions: transactions ?? this.transactions,
+      financialGoals: financialGoals ?? this.financialGoals, // NOUVEAU
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       lastUpdated: DateTime.now(),
     );

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'models/user_data.dart';
 import 'models/transaction.dart';
+import 'models/financial_goal.dart';
 
 class FirestoreService {
   static final FirestoreService _instance = FirestoreService._internal();
@@ -296,6 +297,148 @@ class FirestoreService {
       debugPrint('Synchronisation forcée terminée');
     } catch (e) {
       debugPrint('Erreur lors de la synchronisation forcée: $e');
+    }
+  }
+
+  // ===================================================================
+// =================== GESTION DES OBJECTIFS FINANCIERS =============
+// ===================================================================
+
+// Ajouter un objectif financier
+  Future<void> addFinancialGoal(FinancialGoal goal) async {
+    if (currentUserId == null) return;
+
+    try {
+      // Charger les données actuelles
+      final userData = await loadUserData();
+      if (userData == null) return;
+
+      // Ajouter le nouvel objectif
+      final updatedGoals = List<FinancialGoal>.from(userData.financialGoals);
+      updatedGoals.add(goal);
+
+      // Sauvegarder
+      final updatedUserData = userData.copyWith(financialGoals: updatedGoals);
+      await saveUserData(updatedUserData);
+
+      debugPrint('Objectif financier ajouté avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de l\'ajout de l\'objectif financier: $e');
+      throw 'Erreur lors de l\'ajout de l\'objectif financier';
+    }
+  }
+
+// Modifier un objectif financier
+  Future<void> updateFinancialGoal(FinancialGoal updatedGoal) async {
+    if (currentUserId == null) return;
+
+    try {
+      // Charger les données actuelles
+      final userData = await loadUserData();
+      if (userData == null) return;
+
+      // Modifier l'objectif
+      final updatedGoals = userData.financialGoals.map((g) {
+        if (g.id == updatedGoal.id) {
+          return updatedGoal;
+        }
+        return g;
+      }).toList();
+
+      // Sauvegarder
+      final updatedUserData = userData.copyWith(financialGoals: updatedGoals);
+      await saveUserData(updatedUserData);
+
+      debugPrint('Objectif financier modifié avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de la modification de l\'objectif financier: $e');
+      throw 'Erreur lors de la modification de l\'objectif financier';
+    }
+  }
+
+// Supprimer un objectif financier
+  Future<void> deleteFinancialGoal(String goalId) async {
+    if (currentUserId == null) return;
+
+    try {
+      // Charger les données actuelles
+      final userData = await loadUserData();
+      if (userData == null) return;
+
+      // Supprimer l'objectif
+      final updatedGoals = userData.financialGoals
+          .where((g) => g.id != goalId)
+          .toList();
+
+      // Sauvegarder
+      final updatedUserData = userData.copyWith(financialGoals: updatedGoals);
+      await saveUserData(updatedUserData);
+
+      debugPrint('Objectif financier supprimé avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de la suppression de l\'objectif financier: $e');
+      throw 'Erreur lors de la suppression de l\'objectif financier';
+    }
+  }
+
+// Mettre à jour le montant épargné pour un objectif
+  Future<void> updateGoalProgress(String goalId, double additionalAmount) async {
+    if (currentUserId == null) return;
+
+    try {
+      // Charger les données actuelles
+      final userData = await loadUserData();
+      if (userData == null) return;
+
+      // Trouver et modifier l'objectif
+      final updatedGoals = userData.financialGoals.map((g) {
+        if (g.id == goalId) {
+          final newCurrentAmount = g.currentAmount + additionalAmount;
+          final isCompleted = newCurrentAmount >= g.targetAmount;
+          return g.copyWith(
+            currentAmount: newCurrentAmount,
+            isCompleted: isCompleted,
+          );
+        }
+        return g;
+      }).toList();
+
+      // Sauvegarder
+      final updatedUserData = userData.copyWith(financialGoals: updatedGoals);
+      await saveUserData(updatedUserData);
+
+      debugPrint('Progression de l\'objectif mise à jour avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de la mise à jour de la progression: $e');
+      throw 'Erreur lors de la mise à jour de la progression';
+    }
+  }
+
+// Marquer un objectif comme terminé
+  Future<void> completeFinancialGoal(String goalId) async {
+    if (currentUserId == null) return;
+
+    try {
+      // Charger les données actuelles
+      final userData = await loadUserData();
+      if (userData == null) return;
+
+      // Marquer l'objectif comme terminé
+      final updatedGoals = userData.financialGoals.map((g) {
+        if (g.id == goalId) {
+          return g.copyWith(isCompleted: true);
+        }
+        return g;
+      }).toList();
+
+      // Sauvegarder
+      final updatedUserData = userData.copyWith(financialGoals: updatedGoals);
+      await saveUserData(updatedUserData);
+
+      debugPrint('Objectif financier marqué comme terminé');
+    } catch (e) {
+      debugPrint('Erreur lors de la finalisation de l\'objectif: $e');
+      throw 'Erreur lors de la finalisation de l\'objectif';
     }
   }
 }

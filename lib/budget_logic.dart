@@ -14,6 +14,7 @@ import 'models/transaction.dart';
 import 'notification_service.dart';
 import 'firestore_service.dart';
 import 'models/user_data.dart';
+import '../models/financial_goal.dart';
 
 
 class BudgetLogic {
@@ -61,6 +62,8 @@ class BudgetLogic {
   // ===================================================================
   // ===================== GESTION DES NOTIFICATIONS ==================
   // ===================================================================
+
+
 
   Future<void> toggleDailyReminders(bool enabled) async {
     final prefs = await SharedPreferences.getInstance();
@@ -180,7 +183,7 @@ class BudgetLogic {
         return;
       }
 
-      await NotificationService().debugNotifications();
+
       await NotificationService().showImmediateNotification();
       await NotificationService().scheduleInstantReminder();
 
@@ -260,7 +263,7 @@ class BudgetLogic {
         budget: getBudget(),
         transactions: getTransactions(),
         notificationsEnabled: getNotificationsEnabled(),
-        lastUpdated: DateTime.now(),
+        lastUpdated: DateTime.now(), financialGoals: [],
       );
 
       await _firestoreService.saveUserData(userData);
@@ -1080,5 +1083,201 @@ class BudgetLogic {
     }
 
     return advice;
+  }
+  // ===================================================================
+  // =================== GESTION DES OBJECTIFS FINANCIERS =============
+  // ===================================================================
+
+  Future<void> addFinancialGoal(FinancialGoal goal) async {
+    try {
+      await _firestoreService.addFinancialGoal(goal);
+      _showSnackBar('Objectif financier créé avec succès !', Colors.green);
+      updateState();
+    } catch (e) {
+      debugPrint('Erreur lors de l\'ajout de l\'objectif: $e');
+      _showSnackBar('Erreur lors de la création de l\'objectif', Colors.red);
+    }
+  }
+
+  Future<void> updateFinancialGoal(FinancialGoal goal) async {
+    try {
+      await _firestoreService.updateFinancialGoal(goal);
+      _showSnackBar('Objectif modifié avec succès !', Colors.green);
+      updateState();
+    } catch (e) {
+      debugPrint('Erreur lors de la modification de l\'objectif: $e');
+      _showSnackBar('Erreur lors de la modification', Colors.red);
+    }
+  }
+
+  Future<void> deleteFinancialGoal(String goalId) async {
+    try {
+      await _firestoreService.deleteFinancialGoal(goalId);
+      _showSnackBar('Objectif supprimé', Colors.orange);
+      updateState();
+    } catch (e) {
+      debugPrint('Erreur lors de la suppression de l\'objectif: $e');
+      _showSnackBar('Erreur lors de la suppression', Colors.red);
+    }
+  }
+
+  Future<void> addMoneyToGoal(String goalId, double amount) async {
+    try {
+      await _firestoreService.updateGoalProgress(goalId, amount);
+
+      // Vérifier si l'objectif est maintenant atteint
+      final userData = await _firestoreService.loadUserData();
+      if (userData != null) {
+        final goal = userData.financialGoals.firstWhere(
+              (g) => g.id == goalId,
+          orElse: () => throw 'Objectif non trouvé',
+        );
+
+        if (goal.currentAmount >= goal.targetAmount) {
+          _showSnackBar('🎉 Félicitations ! Objectif "${goal.name}" atteint !', Colors.green);
+
+          // Optionnel : marquer automatiquement comme terminé
+          await _firestoreService.completeFinancialGoal(goalId);
+        } else {
+          _showSnackBar('Montant ajouté avec succès !', Colors.green);
+        }
+      }
+
+      updateState();
+    } catch (e) {
+      debugPrint('Erreur lors de l\'ajout d\'argent: $e');
+      _showSnackBar('Erreur lors de l\'ajout', Colors.red);
+    }
+  }
+
+  Future<void> completeFinancialGoal(String goalId) async {
+    try {
+      await _firestoreService.completeFinancialGoal(goalId);
+      _showSnackBar('🎉 Objectif marqué comme terminé !', Colors.green);
+      updateState();
+    } catch (e) {
+      debugPrint('Erreur lors de la finalisation: $e');
+      _showSnackBar('Erreur lors de la finalisation', Colors.red);
+    }
+  }
+
+  // Méthode pour suggérer l'épargne automatique vers les objectifs
+  Future<void> suggestGoalSaving(double availableMoney) async {
+    try {
+      final userData = await _firestoreService.loadUserData();
+      if (userData == null) return;
+
+      final activeGoals = userData.financialGoals
+          .where((g) => !g.isCompleted && !g.isOverdue)
+          .toList();
+
+      if (activeGoals.isEmpty) return;
+
+      // Trier par priorité (échéance proche)
+      activeGoals.sort((a, b) => a.daysRemaining.compareTo(b.daysRemaining));
+
+      final urgentGoals = activeGoals.where((g) => g.isNearDeadline).toList();
+
+      if (urgentGoals.isNotEmpty && availableMoney > 0) {
+        final goal = urgentGoals.first;
+        final suggestedAmount = (availableMoney * 0.3).clamp(0, goal.remainingAmount);
+
+        if (suggestedAmount > 1000) {
+          _showGoalSuggestionDialog(goal, suggestedAmount.toDouble(), userData.currency);
+        }
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de la suggestion d\'épargne: $e');
+    }
+  }
+  void _showGoalSuggestionDialog(FinancialGoal goal, double suggestedAmount, String currency) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.lightbulb_outline, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('Suggestion d\'épargne'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Votre objectif "${goal.name}" arrive bientôt à échéance !',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: goal.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Progression: ${goal.progressPercentage.toStringAsFixed(1)}%'),
+                  Text('Restant: ${goal.remainingAmount.toStringAsFixed(0)} $currency'),
+                  Text('Échéance: ${DateFormat('dd/MM/yyyy').format(goal.targetDate)}'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Voulez-vous épargner ${suggestedAmount.toStringAsFixed(0)} $currency pour cet objectif ?',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Plus tard'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              addMoneyToGoal(goal.id, suggestedAmount);
+            },
+            child: const Text('Épargner'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Méthode pour calculer les statistiques des objectifs
+  Map<String, dynamic> getGoalsStatistics() {
+    // Cette méthode peut être utilisée pour afficher des stats dans l'interface
+    // Elle sera implémentée en fonction des besoins spécifiques
+    return {
+      'totalGoals': 0,
+      'completedGoals': 0,
+      'totalTargetAmount': 0.0,
+      'totalSavedAmount': 0.0,
+      'overallProgress': 0.0,
+    };
+  }
+
+  // Vérifier les objectifs proches de l'échéance (pour les notifications)
+  Future<List<FinancialGoal>> checkUpcomingDeadlines() async {
+    try {
+      final userData = await _firestoreService.loadUserData();
+      if (userData == null) return [];
+
+      final upcomingGoals = userData.financialGoals
+          .where((g) => !g.isCompleted && g.isNearDeadline)
+          .toList();
+
+      return upcomingGoals;
+    } catch (e) {
+      debugPrint('Erreur lors de la vérification des échéances: $e');
+      return [];
+    }
   }
 }

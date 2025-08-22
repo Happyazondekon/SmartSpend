@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -38,19 +39,19 @@ class NotificationService {
       final bool? initialized = await _notificationsPlugin.initialize(
         initializationSettings,
         onDidReceiveNotificationResponse: (details) {
-          print('Notification cliquée: ${details.payload}');
+          debugPrint('Notification cliquée: ${details.payload}');
         },
       );
 
       if (initialized == true) {
         _isInitialized = true;
-        print('Service de notification initialisé avec succès');
+        debugPrint('Service de notification initialisé avec succès');
         await _createNotificationChannel();
       } else {
-        print('Erreur: Impossible d\'initialiser les notifications');
+        debugPrint('Erreur: Impossible d\'initialiser les notifications');
       }
     } catch (e) {
-      print('Erreur lors de l\'initialisation des notifications: $e');
+      debugPrint('Erreur lors de l\'initialisation des notifications: $e');
     }
   }
 
@@ -65,22 +66,21 @@ class NotificationService {
     );
 
     await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
 
-    print('Canal de notification créé: ${channel.id}');
+    debugPrint('Canal de notification créé: ${channel.id}');
   }
 
   Future<void> scheduleInstantReminder() async {
     try {
-      if (!_isInitialized) {
-        await initialize();
-      }
+      if (!_isInitialized) await initialize();
 
-      print('Programmation d\'une notification dans 3 secondes...');
+      debugPrint('Programmation d\'une notification dans 3 secondes...');
 
       await _notificationsPlugin.zonedSchedule(
-        DateTime.now().millisecondsSinceEpoch ~/ 1000, // ID unique basé sur le timestamp
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
         'Test SmartSpend ✅',
         'Cette notification de test a été envoyée avec succès! 🎉',
         tz.TZDateTime.now(tz.local).add(const Duration(seconds: 3)),
@@ -88,7 +88,8 @@ class NotificationService {
           android: AndroidNotificationDetails(
             'smartspend_reminders',
             'Rappels SmartSpend',
-            channelDescription: 'Notifications de rappel pour enregistrer les transactions',
+            channelDescription:
+            'Notifications de rappel pour enregistrer les transactions',
             importance: Importance.high,
             priority: Priority.high,
             showWhen: true,
@@ -108,28 +109,26 @@ class NotificationService {
         UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      print('Notification test programmée avec succès');
+      debugPrint('Notification test programmée avec succès');
     } catch (e) {
-      print('Erreur lors de la programmation de la notification test: $e');
-      rethrow;
+      debugPrint('Erreur lors de la programmation de la notification test: $e');
     }
   }
 
   Future<void> showImmediateNotification() async {
     try {
-      if (!_isInitialized) {
-        await initialize();
-      }
+      if (!_isInitialized) await initialize();
 
       await _notificationsPlugin.show(
-        DateTime.now().millisecondsSinceEpoch ~/ 1000 + 1, // ID unique
+        DateTime.now().millisecondsSinceEpoch ~/ 1000 + 1,
         'SmartSpend - Test Immédiat',
         'Cette notification s\'affiche immédiatement!',
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_reminders',
             'Rappels SmartSpend',
-            channelDescription: 'Notifications de rappel pour enregistrer les transactions',
+            channelDescription:
+            'Notifications de rappel pour enregistrer les transactions',
             importance: Importance.high,
             priority: Priority.high,
             enableVibration: true,
@@ -138,40 +137,37 @@ class NotificationService {
         ),
       );
 
-      print('Notification immédiate affichée');
+      debugPrint('Notification immédiate affichée');
     } catch (e) {
-      print('Erreur notification immédiate: $e');
-      rethrow;
+      debugPrint('Erreur notification immédiate: $e');
     }
   }
 
-  // CORRECTION PRINCIPALE : Éviter cancel() qui pose problème
+  /// ✅ Version finale et unique
   Future<void> scheduleDailyReminder() async {
     try {
-      if (!_isInitialized) {
-        await initialize();
-      }
+      if (!_isInitialized) await initialize();
 
-      final scheduledTime = _nextInstanceOfTime(21, 0);
-      print('Programmation rappel quotidien pour: $scheduledTime');
+      const int dailyReminderId = 999;
 
-      // IMPORTANT: Ne pas utiliser cancel() avant, utiliser un ID fixe
-      const int dailyReminderId = 999; // ID fixe pour les rappels quotidiens
+      final tz.TZDateTime scheduledTime = _nextInstanceOfTime(20, 0);
+      debugPrint('Programmation rappel quotidien pour: $scheduledTime');
 
       await _notificationsPlugin.zonedSchedule(
         dailyReminderId,
-        'SmartSpend - Rappel quotidien 💰',
-        'N\'oubliez pas d\'enregistrer vos transactions aujourd\'hui!',
+        '💰 SmartSpend - Rappel du soir',
+        'N\'oubliez pas de saisir vos dépenses du jour et de vérifier vos objectifs !',
         scheduledTime,
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'smartspend_reminders',
-            'Rappels SmartSpend',
-            channelDescription: 'Notifications de rappel pour enregistrer les transactions',
+            'daily_reminder',
+            'Rappels Quotidiens',
+            channelDescription:
+            'Rappel quotidien pour saisir vos dépenses et vérifier vos objectifs',
             importance: Importance.high,
             priority: Priority.high,
-            enableVibration: true,
-            playSound: true,
+            icon: '@drawable/ic_notification',
+            color: Color(0xFF00A9A9),
             category: AndroidNotificationCategory.reminder,
           ),
           iOS: DarwinNotificationDetails(
@@ -186,108 +182,87 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.time,
       );
 
-      print('Rappel quotidien programmé avec succès');
+      debugPrint('Rappel quotidien programmé à 20h00');
     } catch (e) {
-      print('Erreur programmation rappel quotidien: $e');
-
-      // En cas d'erreur, essayer une approche alternative
-      await _scheduleSimpleReminder();
-    }
-  }
-
-  // Méthode alternative plus simple
-  Future<void> _scheduleSimpleReminder() async {
-    try {
-      await _notificationsPlugin.periodicallyShow(
-        998, // ID différent
-        'SmartSpend - Rappel 💰',
-        'Pensez à vos transactions!',
-        RepeatInterval.daily,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'smartspend_reminders',
-            'Rappels SmartSpend',
-            channelDescription: 'Notifications de rappel pour enregistrer les transactions',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-        ),
-      );
-      print('Rappel périodique simple activé');
-    } catch (e) {
-      print('Erreur rappel périodique: $e');
+      debugPrint('Erreur programmation rappel quotidien: $e');
     }
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
+    tz.TZDateTime scheduledDate =
+    tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-
     return scheduledDate;
   }
 
-  Future<void> debugNotifications() async {
-    print('=== DEBUG NOTIFICATIONS SMARTSPEND ===');
-    print('Service initialisé: $_isInitialized');
+  Future<void> showGoalAchievedNotification(String goalName) async {
+    const AndroidNotificationDetails androidNotificationDetails =
+    AndroidNotificationDetails(
+      'goals_channel',
+      'Objectifs Financiers',
+      channelDescription: 'Notifications pour les objectifs financiers',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@drawable/ic_notification',
+      color: Color(0xFF4CAF50),
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound('success_sound'),
+    );
 
-    var scheduleStatus = await Permission.scheduleExactAlarm.status;
-    var notificationStatus = await Permission.notification.status;
-    print('Permission alarme exacte: $scheduleStatus');
-    print('Permission notification: $notificationStatus');
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+    );
 
-    var batteryStatus = await Permission.ignoreBatteryOptimizations.status;
-    print('Permission optimisation batterie: $batteryStatus');
+    await _notificationsPlugin.show(
+      2,
+      '🎉 Objectif atteint !',
+      'Félicitations ! Vous avez atteint votre objectif "$goalName"',
+      notificationDetails,
+    );
+  }
 
-    // ÉVITER pendingNotificationRequests() qui peut causer des crashes
-    try {
-      final pending = await _notificationsPlugin.pendingNotificationRequests();
-      print('Notifications en attente: ${pending.length}');
-    } catch (e) {
-      print('Impossible de lister les notifications en attente: $e');
-    }
+  Future<void> showGoalDeadlineWarning(
+      String goalName, int daysRemaining) async {
+    const AndroidNotificationDetails androidNotificationDetails =
+    AndroidNotificationDetails(
+      'goals_channel',
+      'Objectifs Financiers',
+      channelDescription: 'Notifications pour les objectifs financiers',
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@drawable/ic_notification',
+      color: Color(0xFFFF9800),
+    );
 
-    print('--- Tests de notifications ---');
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+    );
 
-    try {
-      await showImmediateNotification();
-      print('✅ Test notification immédiate envoyé');
-    } catch (e) {
-      print('❌ Erreur notification immédiate: $e');
-    }
-
-    try {
-      await scheduleInstantReminder();
-      print('✅ Test notification programmée envoyé (dans 3s)');
-    } catch (e) {
-      print('❌ Erreur notification programmée: $e');
-    }
+    await _notificationsPlugin.show(
+      3,
+      '⏰ Objectif bientôt échéant',
+      'Plus que $daysRemaining jours pour atteindre "$goalName"',
+      notificationDetails,
+    );
   }
 
   Future<void> cancelAllNotifications() async {
     try {
       await _notificationsPlugin.cancelAll();
-      print('Toutes les notifications ont été annulées');
+      debugPrint('Toutes les notifications ont été annulées');
     } catch (e) {
-      print('Erreur lors de l\'annulation des notifications: $e');
-      // En cas d'erreur, on ignore silencieusement
+      debugPrint('Erreur lors de l\'annulation des notifications: $e');
     }
   }
 
   Future<bool> areNotificationsEnabled() async {
     try {
-      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-      _notificationsPlugin.resolvePlatformSpecificImplementation<
+      final androidImplementation = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidImplementation != null) {
@@ -295,7 +270,7 @@ class NotificationService {
       }
       return false;
     } catch (e) {
-      print('Erreur vérification notifications: $e');
+      debugPrint('Erreur vérification notifications: $e');
       return false;
     }
   }
