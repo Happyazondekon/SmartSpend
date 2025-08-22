@@ -12,10 +12,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'models/transaction.dart';
 import 'notification_service.dart';
+import 'firestore_service.dart';
+import 'models/user_data.dart';
+
 
 class BudgetLogic {
   final BuildContext context;
   final VoidCallback updateState;
+  final FirestoreService _firestoreService = FirestoreService();
 
   // Getters et setters pour accéder aux variables d'état
   final Map<String, Map<String, dynamic>> Function() getBudget;
@@ -191,12 +195,229 @@ class BudgetLogic {
   // ===================================================================
 
   Future<void> loadSavedData() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      // Charger depuis Firestore
+      final userData = await _firestoreService.loadUserData();
 
-    final salary = getSalary();
-    final currency = getCurrency();
-    final budget = getBudget();
+      if (userData != null) {
+        setSalary(userData.salary);
+        setCurrency(userData.currency);
+        setBudget(userData.budget);
+        setTransactions(userData.transactions);
+        setNotificationsEnabled(userData.notificationsEnabled);
+
+        if (getSalary() > 0) {
+          getSalaryController().text = getSalary().toString();
+          calculateBudget();
+        }
+
+        updateFilteredTransactions();
+        updateState();
+
+        debugPrint('Données chargées depuis Firestore avec succès');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors du chargement depuis Firestore: $e');
+      // Fallback vers SharedPreferences si Firestore échoue
+      await _loadFromSharedPreferences();
+    }
+  }
+
+  void updateFilteredTransactions() {
+    final selectedMonth = getSelectedMonth();
     final transactions = getTransactions();
+    final budget = getBudget();
+
+    final filtered = transactions.where((t) =>
+    t.date.year == selectedMonth.year &&
+        t.date.month == selectedMonth.month
+    ).toList();
+
+    setFilteredTransactions(filtered);
+
+    // Reset des dépenses
+    budget.forEach((key, value) {
+      budget[key]!['spent'] = 0.0;
+    });
+
+    // Recalcul des dépenses
+    for (var transaction in filtered) {
+      if (budget.containsKey(transaction.category)) {
+        budget[transaction.category]!['spent'] =
+            (budget[transaction.category]!['spent'] as double) + transaction.amount;
+      }
+    }
+
+    setBudget(budget);
+  }
+
+  Future<void> saveData() async {
+    try {
+      final userData = UserData(
+        userId: _firestoreService.currentUserId ?? '',
+        salary: getSalary(),
+        currency: getCurrency(),
+        budget: getBudget(),
+        transactions: getTransactions(),
+        notificationsEnabled: getNotificationsEnabled(),
+        lastUpdated: DateTime.now(),
+      );
+
+      await _firestoreService.saveUserData(userData);
+      debugPrint('Données sauvegardées dans Firestore avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de la sauvegarde dans Firestore: $e');
+      // Fallback vers SharedPreferences si Firestore échoue
+      await _saveToSharedPreferences();
+    }
+  }
+
+  // ===================================================================
+  // =================== LOGIQUE BUDGET ET CALCULS ===================
+  // ===================================================================
+
+  void calculateBudget() async {
+    final salaryController = getSalaryController();
+    double inputSalary = double.tryParse(salaryController.text) ?? 0;
+
+    if (inputSalary <= 0) {
+      _showSnackBar('Veuillez entrer un salaire valide', Colors.red);
+      return;
+    }
+
+    setSalary(inputSalary);
+    final budget = getBudget();
+
+    budget.forEach((key, value) {
+      budget[key]!['amount'] = inputSalary * value['percent'];
+    });
+
+    setBudget(budget);
+    updateState();
+
+    // Sauvegarde dans Firestore
+    try {
+      await _firestoreService.updateSalary(inputSalary);
+      await _firestoreService.updateBudget(budget);
+    } catch (e) {
+      debugPrint('Erreur lors de la sauvegarde du budget: $e');
+    }
+
+    FocusScope.of(context).unfocus();
+  }
+
+  double getTotalBudgetPercentage() {
+    final budget = getBudget();
+    return budget.values.fold(0.0, (sum, item) => sum + (item['percent'] as double));
+  }
+
+  String getSpendingRecommendation(String category) {
+    final budget = getBudget();
+    double spent = budget[category]!['spent'] as double;
+    double allocated = budget[category]!['amount'] as double;
+
+    if (allocated <= 0) return "";
+    double percentage = (spent / allocated) * 100;
+
+    if (percentage > 100) {
+      return "Budget dépassé. Essayez de réduire vos dépenses.";
+    }
+    if (percentage == 100) {
+      return "Attention, vous avez atteint la limite de votre budget.";
+    }
+    if (percentage >= 95) {
+      return "Attention, vous approchez de la limite de votre budget.";
+    }
+    return "";
+  }
+
+  // ===================================================================
+  // =================== GESTION DES TRANSACTIONS ====================
+  // ===================================================================
+
+  void addTransaction(String category, double amount, String description) async {
+    final transaction = Transaction(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      category: category,
+      amount: amount,
+      description: description,
+      date: DateTime.now(),
+    );
+
+    try {
+      // Mise à jour locale immédiate
+      final transactions = getTransactions();
+      transactions.add(transaction);
+      setTransactions(transactions);
+      updateFilteredTransactions();
+      updateState();
+
+      // Sauvegarde dans Firestore
+      await _firestoreService.addTransaction(transaction);
+
+      debugPrint('Transaction ajoutée avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de l\'ajout de la transaction: $e');
+      _showSnackBar('Erreur lors de l\'ajout de la transaction', Colors.red);
+    }
+  }
+
+  void editTransaction(Transaction transaction, double newAmount, String newDescription) async {
+    try {
+      // Mise à jour locale immédiate
+      final transactions = getTransactions();
+      int index = transactions.indexWhere((t) => t.id == transaction.id);
+
+      if (index != -1) {
+        transactions[index] = Transaction(
+          id: transaction.id,
+          category: transaction.category,
+          amount: newAmount,
+          description: newDescription,
+          date: transaction.date,
+        );
+      }
+
+      setTransactions(transactions);
+      updateFilteredTransactions();
+      updateState();
+
+      // Sauvegarde dans Firestore
+      await _firestoreService.updateTransaction(transaction.id, newAmount, newDescription);
+
+      debugPrint('Transaction modifiée avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de la modification de la transaction: $e');
+      _showSnackBar('Erreur lors de la modification de la transaction', Colors.red);
+    }
+  }
+
+  void deleteTransaction(Transaction transaction) async {
+    try {
+      // Mise à jour locale immédiate
+      final transactions = getTransactions();
+      transactions.removeWhere((t) => t.id == transaction.id);
+      setTransactions(transactions);
+      updateFilteredTransactions();
+      updateState();
+
+      // Suppression dans Firestore
+      await _firestoreService.deleteTransaction(transaction.id);
+
+      debugPrint('Transaction supprimée avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de la suppression de la transaction: $e');
+      _showSnackBar('Erreur lors de la suppression de la transaction', Colors.red);
+    }
+  }
+
+  // ===================================================================
+  // =================== MÉTHODES FALLBACK ============================
+  // ===================================================================
+
+  // Méthodes de fallback pour SharedPreferences (à conserver pour la compatibilité)
+  Future<void> _loadFromSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
 
     setSalary(prefs.getDouble('salary') ?? 0);
     setCurrency(prefs.getString('currency') ?? 'XOF');
@@ -232,35 +453,7 @@ class BudgetLogic {
     updateState();
   }
 
-  void updateFilteredTransactions() {
-    final selectedMonth = getSelectedMonth();
-    final transactions = getTransactions();
-    final budget = getBudget();
-
-    final filtered = transactions.where((t) =>
-    t.date.year == selectedMonth.year &&
-        t.date.month == selectedMonth.month
-    ).toList();
-
-    setFilteredTransactions(filtered);
-
-    // Reset des dépenses
-    budget.forEach((key, value) {
-      budget[key]!['spent'] = 0.0;
-    });
-
-    // Recalcul des dépenses
-    for (var transaction in filtered) {
-      if (budget.containsKey(transaction.category)) {
-        budget[transaction.category]!['spent'] =
-            (budget[transaction.category]!['spent'] as double) + transaction.amount;
-      }
-    }
-
-    setBudget(budget);
-  }
-
-  Future<void> saveData() async {
+  Future<void> _saveToSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final salary = getSalary();
     final currency = getCurrency();
@@ -288,112 +481,56 @@ class BudgetLogic {
   }
 
   // ===================================================================
-  // =================== LOGIQUE BUDGET ET CALCULS ===================
+  // =================== SYNCHRONISATION ==============================
   // ===================================================================
 
-  void calculateBudget() {
-    final salaryController = getSalaryController();
-    double inputSalary = double.tryParse(salaryController.text) ?? 0;
-
-    if (inputSalary <= 0) {
-      _showSnackBar('Veuillez entrer un salaire valide', Colors.red);
-      return;
+  // Nouvelle méthode pour forcer la synchronisation
+  Future<void> forceSynchronization() async {
+    try {
+      await _firestoreService.forceSynchronization();
+      await loadSavedData();
+      _showSnackBar('Synchronisation terminée', Colors.green);
+    } catch (e) {
+      _showSnackBar('Erreur de synchronisation', Colors.red);
     }
-
-    setSalary(inputSalary);
-    final budget = getBudget();
-
-    budget.forEach((key, value) {
-      budget[key]!['amount'] = inputSalary * value['percent'];
-    });
-
-    setBudget(budget);
-    saveData();
-    updateState();
-
-    FocusScope.of(context).unfocus();
   }
 
-  double getTotalBudgetPercentage() {
-    final budget = getBudget();
-    return budget.values.fold(0.0, (sum, item) => sum + (item['percent'] as double));
+  // Vérifier le statut de connexion
+  Future<bool> checkConnectionStatus() async {
+    return await _firestoreService.isOnline();
   }
 
-  String getSpendingRecommendation(String category) {
-    final budget = getBudget();
-    double spent = budget[category]!['spent'] as double;
-    double allocated = budget[category]!['amount'] as double;
-
-    if (allocated <= 0) return "";
-    double percentage = (spent / allocated) * 100;
-
-    if (percentage > 100) {
-      return "Budget dépassé. Essayez de réduire vos dépenses.";
+  // Initialiser les données utilisateur (première connexion)
+  Future<void> initializeUserData() async {
+    try {
+      await _firestoreService.initializeUserData();
+      await loadSavedData();
+    } catch (e) {
+      debugPrint('Erreur lors de l\'initialisation: $e');
+      _showSnackBar('Erreur lors de l\'initialisation des données', Colors.red);
     }
-    if (percentage == 100) {
-      return "Attention, vous avez atteint la limite de votre budget.";
+  }
+
+  // Écouter les changements de données en temps réel
+  Stream<UserData?> getUserDataStream() {
+    return _firestoreService.userDataStream();
+  }
+
+  // Supprimer toutes les données utilisateur
+  Future<void> deleteAllUserData() async {
+    try {
+      await _firestoreService.deleteUserData();
+      _showSnackBar('Toutes les données ont été supprimées', Colors.green);
+    } catch (e) {
+      debugPrint('Erreur lors de la suppression des données: $e');
+      _showSnackBar('Erreur lors de la suppression des données', Colors.red);
     }
-    if (percentage >= 95) {
-      return "Attention, vous approchez de la limite de votre budget.";
-    }
-    return "";
   }
-
-  // ===================================================================
-  // =================== GESTION DES TRANSACTIONS ====================
-  // ===================================================================
-
-  void addTransaction(String category, double amount, String description) {
-    final transaction = Transaction(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      category: category,
-      amount: amount,
-      description: description,
-      date: DateTime.now(),
-    );
-
-    final transactions = getTransactions();
-    transactions.add(transaction);
-    setTransactions(transactions);
-    updateFilteredTransactions();
-    saveData();
-    updateState();
-  }
-
-  void editTransaction(Transaction transaction, double newAmount, String newDescription) {
-    final transactions = getTransactions();
-    int index = transactions.indexWhere((t) => t.id == transaction.id);
-
-    if (index != -1) {
-      transactions[index] = Transaction(
-        id: transaction.id,
-        category: transaction.category,
-        amount: newAmount,
-        description: newDescription,
-        date: transaction.date,
-      );
-    }
-
-    setTransactions(transactions);
-    updateFilteredTransactions();
-    saveData();
-    updateState();
-  }
-
-  void deleteTransaction(Transaction transaction) {
-    final transactions = getTransactions();
-    transactions.removeWhere((t) => t.id == transaction.id);
-    setTransactions(transactions);
-    updateFilteredTransactions();
-    saveData();
-    updateState();
-  }
-
   // ===================================================================
   // =================== GESTION DES CATÉGORIES ======================
   // ===================================================================
 
-  void addCategory(String name, double percent, IconData icon, Color color) {
+  void addCategory(String name, double percent, IconData icon, Color color) async {
     if (name.isEmpty || percent <= 0) {
       _showSnackBar('Nom ou pourcentage invalide', Colors.red);
       return;
@@ -421,11 +558,17 @@ class BudgetLogic {
     };
 
     setBudget(budget);
-    saveData();
     updateState();
+
+    // Sauvegarde dans Firestore
+    try {
+      await _firestoreService.updateBudget(budget);
+    } catch (e) {
+      debugPrint('Erreur lors de la sauvegarde de la catégorie: $e');
+    }
   }
 
-  void editCategory(String oldName, String newName, double percent, IconData icon, Color color) {
+  void editCategory(String oldName, String newName, double percent, IconData icon, Color color) async {
     if (newName.isEmpty || percent <= 0) {
       _showSnackBar('Veuillez entrer un nom valide et un pourcentage supérieur à 0', Colors.red);
       return;
@@ -438,48 +581,71 @@ class BudgetLogic {
     }
 
     double currentTotal = getTotalBudgetPercentage() - (budget[oldName]!['percent'] as double);
-    if (currentTotal + percent/100 > 1.0) {
-      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Après modification: ${((currentTotal + percent/100) * 100).toStringAsFixed(0)}%', Colors.red);
+    if (currentTotal + percent / 100 > 1.0) {
+      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Après modification: ${((currentTotal + percent / 100) * 100).toStringAsFixed(0)}%', Colors.red);
       return;
     }
 
-    final salary = getSalary();
-    Map<String, dynamic> updatedCategory = {
-      'percent': percent / 100,
-      'amount': salary * (percent / 100),
-      'icon': icon,
-      'color': color,
-      'spent': budget[oldName]!['spent'],
-    };
+    try {
+      // 1. Charger les données utilisateur depuis Firestore
+      final userData = await _firestoreService.loadUserData();
+      if (userData == null) return;
 
-    if (oldName != newName) {
-      final transactions = getTransactions();
-      for (int i = 0; i < transactions.length; i++) {
-        if (transactions[i].category == oldName) {
-          transactions[i] = Transaction(
-            id: transactions[i].id,
-            category: newName,
-            amount: transactions[i].amount,
-            description: transactions[i].description,
-            date: transactions[i].date,
-          );
-        }
+      // 2. Modifier le budget et les transactions dans l'objet UserData
+      final updatedBudget = Map<String, dynamic>.from(userData.budget);
+      final salary = userData.salary;
+      final updatedCategory = {
+        'percent': percent / 100,
+        'amount': salary * (percent / 100),
+        'icon': icon,
+        'color': color,
+        'spent': updatedBudget[oldName]!['spent'],
+      };
+
+      List<Transaction> updatedTransactions = userData.transactions;
+      if (oldName != newName) {
+        updatedTransactions = userData.transactions.map((t) {
+          if (t.category == oldName) {
+            return Transaction(
+              id: t.id,
+              category: newName,
+              amount: t.amount,
+              description: t.description,
+              date: t.date,
+            );
+          }
+          return t;
+        }).toList();
+
+        updatedBudget.remove(oldName);
+        updatedBudget[newName] = updatedCategory;
+
+      } else {
+        updatedBudget[oldName] = updatedCategory;
       }
-      setTransactions(transactions);
 
-      budget.remove(oldName);
-      budget[newName] = updatedCategory;
-    } else {
-      budget[oldName] = updatedCategory;
+      // 3. Sauvegarder l'objet UserData complet
+      final updatedUserData = userData.copyWith(
+        budget: updatedBudget.cast<String, Map<String, dynamic>>(),
+        transactions: updatedTransactions,
+      );
+
+      await _firestoreService.saveUserData(updatedUserData);
+      debugPrint('Catégorie et transactions mises à jour avec succès sur Firestore');
+
+      // Mettre à jour l'état local après la sauvegarde réussie
+      setBudget(updatedBudget.cast<String, Map<String, dynamic>>());
+      setTransactions(updatedTransactions);
+      updateFilteredTransactions();
+      updateState();
+
+    } catch (e) {
+      debugPrint('Erreur lors de la modification de la catégorie: $e');
+      _showSnackBar('Erreur lors de la modification sur le serveur', Colors.red);
     }
-
-    setBudget(budget);
-    updateFilteredTransactions();
-    saveData();
-    updateState();
   }
 
-  void deleteCategory(String name) {
+  void deleteCategory(String name) async {
     final transactions = getTransactions();
     bool hasTransactions = transactions.any((t) => t.category == name);
 
@@ -491,8 +657,15 @@ class BudgetLogic {
     final budget = getBudget();
     budget.remove(name);
     setBudget(budget);
-    saveData();
     updateState();
+
+    // Sauvegarde dans Firestore
+    try {
+      await _firestoreService.updateBudget(budget);
+    } catch (e) {
+      debugPrint('Erreur lors de la suppression de la catégorie: $e');
+      _showSnackBar('Erreur lors de la suppression sur le serveur', Colors.red);
+    }
   }
 
   // ===================================================================
