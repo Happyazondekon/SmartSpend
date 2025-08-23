@@ -413,35 +413,330 @@ class PremiumService {
   }
 
   // Simuler un achat (dans un vrai projet, utilisez un vrai système de paiement)
+  // Simuler un achat avec paiement par carte (dans un vrai projet, utilisez un vrai système de paiement)
   Future<bool> simulatePurchase(BuildContext context) async {
-    // Afficher un dialogue de confirmation de paiement
+    final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+    final TextEditingController cardNumberController = TextEditingController();
+    final TextEditingController expiryController = TextEditingController();
+    final TextEditingController cvvController = TextEditingController();
+    final TextEditingController nameController = TextEditingController();
+    bool isProcessing = false;
+
     return await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Confirmation d\'achat'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.payment, size: 48, color: Theme.of(context).primaryColor),
-            const SizedBox(height: 16),
-            Text('Confirmez-vous l\'achat de SmartSpend Premium ?'),
-            const SizedBox(height: 8),
-            Text(
-              '\$${premiumPrice.toStringAsFixed(2)} pour 1 an',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.credit_card, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Paiement Premium',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '\$${premiumPrice.toStringAsFixed(2)} / an',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFFFFA500),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            width: double.maxFinite,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Numéro de carte
+                  TextFormField(
+                    controller: cardNumberController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 19,
+                    decoration: InputDecoration(
+                      labelText: 'Numéro de carte',
+                      hintText: '1234 5678 9012 3456',
+                      prefixIcon: Icon(Icons.credit_card),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      counterText: '',
+                    ),
+                    onChanged: (value) {
+                      // Formatage automatique du numéro de carte
+                      String formatted = value.replaceAll(' ', '');
+                      if (formatted.length <= 16) {
+                        formatted = formatted.replaceAllMapped(
+                          RegExp(r'(.{4})'),
+                              (match) => '${match.group(1)} ',
+                        );
+                        if (formatted.endsWith(' ')) {
+                          formatted = formatted.substring(0, formatted.length - 1);
+                        }
+                        cardNumberController.value = TextEditingValue(
+                          text: formatted,
+                          selection: TextSelection.collapsed(offset: formatted.length),
+                        );
+                      }
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Veuillez saisir le numéro de carte';
+                      }
+                      String cleanValue = value.replaceAll(' ', '');
+                      if (cleanValue.length != 16) {
+                        return 'Le numéro doit contenir 16 chiffres';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nom sur la carte
+                  TextFormField(
+                    controller: nameController,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: InputDecoration(
+                      labelText: 'Nom sur la carte',
+                      hintText: 'JOHN SMITH',
+                      prefixIcon: Icon(Icons.person),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Veuillez saisir le nom sur la carte';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Date d'expiration et CVV
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: expiryController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 5,
+                          decoration: InputDecoration(
+                            labelText: 'MM/AA',
+                            hintText: '12/25',
+                            prefixIcon: Icon(Icons.calendar_month),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            counterText: '',
+                          ),
+                          onChanged: (value) {
+                            if (value.length == 2 && !value.contains('/')) {
+                              expiryController.value = TextEditingValue(
+                                text: '$value/',
+                                selection: TextSelection.collapsed(offset: 3),
+                              );
+                            }
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Date requise';
+                            }
+                            if (!RegExp(r'^\d{2}/\d{2}$').hasMatch(value)) {
+                              return 'Format: MM/AA';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: cvvController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 3,
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: 'CVV',
+                            hintText: '123',
+                            prefixIcon: Icon(Icons.security),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            counterText: '',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'CVV requis';
+                            }
+                            if (value.length != 3) {
+                              return '3 chiffres';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Informations de sécurité
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.security, color: Colors.green, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Paiement sécurisé - Vos données sont protégées',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isProcessing ? null : () => Navigator.of(context).pop(false),
+              child: Text('Annuler'),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ElevatedButton(
+                onPressed: isProcessing ? null : () async {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    setState(() {
+                      isProcessing = true;
+                    });
+
+                    // Simuler le traitement du paiement
+                    await Future.delayed(Duration(seconds: 2));
+
+                    // Simuler une réponse aléatoire (90% de succès)
+                    bool paymentSuccess = DateTime.now().millisecond % 10 != 0;
+
+                    if (paymentSuccess) {
+                      // Afficher un message de succès
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Text('Paiement effectué avec succès !'),
+                            ],
+                          ),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      Navigator.of(context).pop(true);
+                    } else {
+                      setState(() {
+                        isProcessing = false;
+                      });
+                      // Afficher un message d'erreur
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(Icons.error, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Text('Erreur de paiement. Veuillez réessayer.'),
+                            ],
+                          ),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                child: isProcessing
+                    ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Traitement...',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                )
+                    : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.credit_card, color: Colors.white, size: 18),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Payer \$${premiumPrice.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Confirmer l\'achat'),
-          ),
-        ],
       ),
     ) ?? false;
   }
