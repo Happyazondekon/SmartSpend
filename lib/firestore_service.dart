@@ -441,4 +441,99 @@ class FirestoreService {
       throw 'Erreur lors de la finalisation de l\'objectif';
     }
   }
+  // ===================================================================
+// =================== GESTION PREMIUM =============================
+// ===================================================================
+
+// Mettre à jour le statut Premium
+  Future<void> updatePremiumStatus(bool isPremium, {DateTime? expiryDate}) async {
+    if (currentUserId == null) return;
+
+    try {
+      final updateData = <String, dynamic>{
+        'isPremium': isPremium,
+        'premiumUpgradeDate': isPremium ? Timestamp.now() : null,
+      };
+
+      if (expiryDate != null) {
+        updateData['premiumExpiryDate'] = Timestamp.fromDate(expiryDate);
+      }
+
+      await _userDocument!.update(updateData);
+      debugPrint('Statut Premium mis à jour avec succès');
+    } catch (e) {
+      debugPrint('Erreur lors de la mise à jour du statut Premium: $e');
+      throw 'Erreur lors de la mise à jour du statut Premium';
+    }
+  }
+
+// Incrémenter le compteur d'exports PDF
+  Future<void> incrementPDFExports() async {
+    if (currentUserId == null) return;
+
+    try {
+      await _userDocument!.update({
+        'pdfExportsUsed': FieldValue.increment(1),
+      });
+      debugPrint('Compteur d\'exports PDF incrémenté');
+    } catch (e) {
+      debugPrint('Erreur lors de l\'incrémentation des exports PDF: $e');
+      throw 'Erreur lors de l\'incrémentation des exports PDF';
+    }
+  }
+
+// Incrémenter le compteur d'utilisations du chatbot
+  Future<void> incrementChatbotUses() async {
+    if (currentUserId == null) return;
+
+    try {
+      await _userDocument!.update({
+        'chatbotUsesUsed': FieldValue.increment(1),
+      });
+      debugPrint('Compteur d\'utilisations du chatbot incrémenté');
+    } catch (e) {
+      debugPrint('Erreur lors de l\'incrémentation des utilisations du chatbot: $e');
+      throw 'Erreur lors de l\'incrémentation des utilisations du chatbot';
+    }
+  }
+
+// Obtenir les statistiques d'utilisation Premium
+  Future<Map<String, dynamic>?> getPremiumStats() async {
+    if (currentUserId == null) return null;
+
+    try {
+      final userDoc = await _userDocument!.get();
+
+      if (userDoc.exists && userDoc.data() != null) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        return {
+          'isPremium': data['isPremium'] ?? false,
+          'premiumExpiryDate': (data['premiumExpiryDate'] as Timestamp?)?.toDate(),
+          'pdfExportsUsed': data['pdfExportsUsed'] ?? 0,
+          'chatbotUsesUsed': data['chatbotUsesUsed'] ?? 0,
+          'premiumUpgradeDate': (data['premiumUpgradeDate'] as Timestamp?)?.toDate(),
+        };
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Erreur lors de la récupération des stats Premium: $e');
+      throw 'Erreur lors de la récupération des stats Premium';
+    }
+  }
+
+// Réinitialiser les compteurs (utile pour les tests)
+  Future<void> resetFreeUsageCounters() async {
+    if (currentUserId == null) return;
+
+    try {
+      await _userDocument!.update({
+        'pdfExportsUsed': 0,
+        'chatbotUsesUsed': 0,
+      });
+      debugPrint('Compteurs d\'utilisation gratuite réinitialisés');
+    } catch (e) {
+      debugPrint('Erreur lors de la réinitialisation des compteurs: $e');
+      throw 'Erreur lors de la réinitialisation des compteurs';
+    }
+  }
 }

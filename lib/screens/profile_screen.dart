@@ -3,6 +3,8 @@ import 'package:smartspend/budget_screen.dart';
 import '../services/auth_service.dart';
 import 'auth/login_screen.dart';
 import '../theme_provider.dart'; // NOUVEAU: Importation du ThemeProvider
+import '../services/premium_service.dart';
+import 'package:intl/intl.dart'; // NOUVEAU: Importation pour DateFormat
 
 class ProfileScreen extends StatefulWidget {
   // SUPPRIMÉ: final bool isDarkMode;
@@ -13,6 +15,7 @@ class ProfileScreen extends StatefulWidget {
     // SUPPRIMÉ: required this.isDarkMode,
     // SUPPRIMÉ: required this.onToggleDarkMode,
   });
+
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -376,6 +379,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 24),
 
+            // NOUVEAU: Section Premium
+            PremiumSection(),
+
+            const SizedBox(height: 24),
+
             // Messages de feedback
             if (_errorMessage != null)
               Container(
@@ -597,5 +605,292 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+}
+
+// NOUVEAU: Ajout de la section Premium
+class PremiumSection extends StatefulWidget {
+  @override
+  _PremiumSectionState createState() => _PremiumSectionState();
+}
+
+class _PremiumSectionState extends State<PremiumSection> {
+  final PremiumService _premiumService = PremiumService();
+  bool _isPremium = false;
+  int _pdfExportsUsed = 0;
+  int _chatbotUsesUsed = 0;
+  DateTime? _premiumExpiryDate;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPremiumStatus();
+  }
+
+  Future<void> _loadPremiumStatus() async {
+    try {
+      final isPremium = await _premiumService.isPremiumUser();
+      final pdfExports = await _premiumService.getPDFExportsUsed();
+      final chatbotUses = await _premiumService.getChatbotUsesUsed();
+      setState(() {
+        _isPremium = isPremium;
+        _pdfExportsUsed = pdfExports;
+        _chatbotUsesUsed = chatbotUses;
+      });
+    } catch (e) {
+      debugPrint('Erreur lors du chargement du statut Premium: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.star, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _isPremium ? 'SmartSpend Premium' : 'Version Gratuite',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (_isPremium && _premiumExpiryDate != null)
+                        Text(
+                          'Expire le ${DateFormat('dd/MM/yyyy').format(_premiumExpiryDate!)}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
+                ),
+                if (_isPremium)
+                  _premiumService.buildPremiumBadge(),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            if (!_isPremium) ...[
+              // Statistiques d'utilisation gratuite
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    _buildUsageRow(
+                      'Exports PDF',
+                      _pdfExportsUsed,
+                      PremiumService.maxFreeExports,
+                      Icons.picture_as_pdf_outlined,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildUsageRow(
+                      'Assistant financier',
+                      _chatbotUsesUsed,
+                      PremiumService.maxFreeChatbotUses,
+                      Icons.chat_bubble_outline,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Bouton d'upgrade
+              SizedBox(
+                width: double.infinity,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () => _showUpgradeDialog(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.star, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Passer à Premium - \$${PremiumService.premiumPrice.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              // Avantages Premium
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Avantages Premium actifs',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...[
+                      'Exports PDF illimités',
+                      'Assistant financier illimité',
+                      'Analyses avancées',
+                      'Support prioritaire',
+                    ].map((benefit) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.check, color: Colors.green, size: 16),
+                          const SizedBox(width: 8),
+                          Text(benefit),
+                        ],
+                      ),
+                    )).toList(),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUsageRow(String label, int used, int max, IconData icon) {
+    final remaining = (max - used).clamp(0, max);
+    final progress = used / max;
+
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  Text(
+                    '$used/$max utilisés',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: remaining == 0 ? Colors.red : null,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: Colors.grey.withOpacity(0.3),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    remaining == 0 ? Colors.red : Colors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showUpgradeDialog() async {
+    _premiumService.showPremiumDialog(
+      context,
+      feature: 'toutes les fonctionnalités',
+      onUpgrade: () => _handleUpgrade(),
+    );
+  }
+
+  Future<void> _handleUpgrade() async {
+    final purchased = await _premiumService.simulatePurchase(context);
+
+    if (purchased) {
+      try {
+        await _premiumService.upgradeToPremium();
+        setState(() {
+          _isPremium = true;
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.celebration, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Bienvenue dans SmartSpend Premium !'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur lors de la mise à niveau'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }

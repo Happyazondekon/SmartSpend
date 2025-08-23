@@ -11,12 +11,14 @@ import 'package:smartspend/screens/profile_screen.dart';
 import '../models/financial_goal.dart';
 import '../screens/financial_goals_screen.dart';
 import 'models/user_data.dart';
+import 'services/premium_service.dart';
 
 class BudgetWidgets {
   final BuildContext context;
   final BudgetLogic budgetLogic;
   final List<IconData> availableIcons;
   final List<Color> availableColors;
+  final PremiumService _premiumService = PremiumService();
 
   BudgetWidgets({
     required this.context,
@@ -499,9 +501,12 @@ class BudgetWidgets {
               ),
               position: PopupMenuPosition.under,
               offset: Offset(0, 10),
-              onSelected: (value) {
-                if (value == 'csv') budgetLogic.exportTransactions();
-                if (value == 'pdf') budgetLogic.exportTransactionsToPDF();
+              onSelected: (value) async {
+                if (value == 'csv') {
+                  budgetLogic.exportTransactions();
+                } else if (value == 'pdf') {
+                  await _handlePDFExport();
+                }
               },
               itemBuilder: (BuildContext context) => [
                 PopupMenuItem<String>(
@@ -522,7 +527,8 @@ class BudgetWidgets {
                       Icon(Icons.picture_as_pdf_outlined,
                           color: Theme.of(context).colorScheme.onSurface),
                       SizedBox(width: 12),
-                      Text('Exporter en PDF'),
+                      Expanded(child: Text('Exporter en PDF')),
+                      _premiumService.buildPremiumBadge(),
                     ],
                   ),
                 ),
@@ -532,6 +538,152 @@ class BudgetWidgets {
         ],
       ),
     );
+  }
+
+  // Ajoutez cette nouvelle méthode dans BudgetWidgets
+  Future<void> _handlePDFExport() async {
+    try {
+      final canExport = await _premiumService.canExportPDF();
+      final isPremium = await _premiumService.isPremiumUser();
+
+      if (canExport) {
+        // Permettre l'export
+        if (!isPremium) {
+          await _premiumService.incrementPDFExports();
+          final remaining = await _premiumService.getRemainingPDFExports();
+
+          if (remaining == 0) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('🎉 Export réussi ! Plus d\'essais gratuits disponibles.'),
+                backgroundColor: Colors.orange,
+                action: SnackBarAction(
+                  label: 'Premium',
+                  textColor: Colors.white,
+                  onPressed: () => _showUpgradeDialog('export PDF'),
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('🎉 Export réussi ! $remaining essais restants.'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+
+        // Procéder à l'export
+        await budgetLogic.exportTransactionsToPDF();
+
+      } else {
+        // Afficher le dialogue Premium
+        final remaining = await _premiumService.getRemainingPDFExports();
+        _premiumService.showPremiumDialog(
+          context,
+          feature: 'l\'export PDF',
+          remainingUses: remaining,
+          onUpgrade: () => _showUpgradeDialog('export PDF'),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'export PDF'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+  // Ajoutez cette nouvelle méthode dans BudgetWidgets
+  Future<void> _showUpgradeDialog(String feature) async {
+    final purchased = await _premiumService.simulatePurchase(context);
+
+    if (purchased) {
+      // Simuler l'achat réussi
+      try {
+        await _premiumService.upgradeToPremium();
+
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.star, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('Bienvenue Premium !'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.celebration,
+                    size: 64,
+                    color: Color(0xFFFFD700),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Félicitations ! Vous avez maintenant accès à toutes les fonctionnalités Premium.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Vous pouvez maintenant utiliser $feature sans limite !',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text('Parfait !'),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur lors de la mise à niveau'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   // ===================================================================
@@ -652,23 +804,56 @@ class BudgetWidgets {
                     title: 'Assistant financier',
                     subtitle: 'Obtenez des conseils personnalisés',
                     icon: Icons.chat_bubble_outline_rounded,
-                    onTap: () {
+                    onTap: () async {
                       Navigator.pop(context);
-                      showElegantFAQChatBot(context);
+
+                      try {
+                        final canUse = await _premiumService.canUseChatbot();
+                        final isPremium = await _premiumService.isPremiumUser();
+
+                        if (canUse) {
+                          // Permettre l'utilisation
+                          if (!isPremium) {
+                            await _premiumService.incrementChatbotUses();
+                            final remaining = await _premiumService.getRemainingChatbotUses();
+
+                            if (remaining == 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Plus d\'essais gratuits pour l\'assistant.'),
+                                  backgroundColor: Colors.orange,
+                                  action: SnackBarAction(
+                                    label: 'Premium',
+                                    textColor: Colors.white,
+                                    onPressed: () => _showUpgradeDialog('assistant financier'),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+
+                          // Ouvrir l'assistant
+                          showElegantFAQChatBot(context);
+
+                        } else {
+                          // Afficher le dialogue Premium
+                          final remaining = await _premiumService.getRemainingChatbotUses();
+                          _premiumService.showPremiumDialog(
+                            context,
+                            feature: 'l\'assistant financier',
+                            remainingUses: remaining,
+                            onUpgrade: () => _showUpgradeDialog('assistant financier'),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erreur lors de l\'accès à l\'assistant'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     },
-                  ),
-                  const Divider(indent: 24, endIndent: 24, height: 1, thickness: 1),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: Text(
-                      'COMPTE',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                        letterSpacing: 1.5,
-                      ),
-                    ),
                   ),
                   _buildListTile(
                     title: 'Mon Profil',

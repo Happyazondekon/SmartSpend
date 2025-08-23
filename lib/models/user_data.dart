@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:flutter/material.dart';
 import 'transaction.dart';
 import 'financial_goal.dart';
@@ -13,6 +14,11 @@ class UserData {
   final bool notificationsEnabled;
   final DateTime lastUpdated;
 
+  final bool isPremium;
+  final DateTime? premiumExpiryDate;
+  final int pdfExportsUsed;
+  final int chatbotUsesUsed;
+
   UserData({
     required this.userId,
     required this.salary,
@@ -22,78 +28,86 @@ class UserData {
     required this.financialGoals, // NOUVEAU
     required this.notificationsEnabled,
     required this.lastUpdated,
+    this.isPremium = false,
+    this.premiumExpiryDate,
+    this.pdfExportsUsed = 0,
+    this.chatbotUsesUsed = 0,
   });
 
   // Convertir en Map pour Firestore
   Map<String, dynamic> toFirestore() {
-    // Convertir le budget en format encodable
-    Map<String, dynamic> encodableBudget = {};
-    budget.forEach((key, value) {
-      encodableBudget[key] = {
+    return {
+      'userId': userId,
+      'salary': salary,
+      'currency': currency,
+      'budget': budget.map((key, value) => MapEntry(key, {
         'percent': value['percent'],
         'amount': value['amount'],
         'icon': (value['icon'] as IconData).codePoint,
         'color': (value['color'] as Color).value,
         'spent': value['spent'],
-      };
-    });
-
-    return {
-      'userId': userId,
-      'salary': salary,
-      'currency': currency,
-      'budget': encodableBudget,
+      })),
       'transactions': transactions.map((t) => t.toJson()).toList(),
-      'financialGoals': financialGoals.map((g) => g.toJson()).toList(), // NOUVEAU
       'notificationsEnabled': notificationsEnabled,
-      'lastUpdated': lastUpdated,
+      'lastUpdated': Timestamp.fromDate(lastUpdated),
+      'financialGoals': financialGoals.map((g) => g.toJson()).toList(),
+      // Nouvelles propriétés Premium
+      'isPremium': isPremium,
+      'premiumExpiryDate': premiumExpiryDate != null ? Timestamp.fromDate(premiumExpiryDate!) : null,
+      'pdfExportsUsed': pdfExportsUsed,
+      'chatbotUsesUsed': chatbotUsesUsed,
     };
   }
 
   // Créer depuis Firestore
-  factory UserData.fromFirestore(Map<String, dynamic> doc, String docId) {
-    // Décoder le budget
-    Map<String, Map<String, dynamic>> decodedBudget = {};
-    if (doc['budget'] != null) {
-      Map<String, dynamic> budgetData = doc['budget'];
+  factory UserData.fromFirestore(Map<String, dynamic> data, String userId) {
+    // Conversion du budget
+    final Map<String, Map<String, dynamic>> budget = {};
+    if (data['budget'] != null) {
+      final budgetData = data['budget'] as Map<String, dynamic>;
       budgetData.forEach((key, value) {
-        decodedBudget[key] = {
+        budget[key] = {
           'percent': (value['percent'] as num).toDouble(),
           'amount': (value['amount'] as num).toDouble(),
-          'icon': IconData(value['icon'], fontFamily: 'MaterialIcons'),
-          'color': Color(value['color']),
+          'icon': IconData(value['icon'] as int, fontFamily: 'MaterialIcons'),
+          'color': Color(value['color'] as int),
           'spent': (value['spent'] as num?)?.toDouble() ?? 0.0,
         };
       });
     }
 
-    // Décoder les transactions
-    List<Transaction> decodedTransactions = [];
-    if (doc['transactions'] != null) {
-      List<dynamic> transactionsData = doc['transactions'];
-      decodedTransactions = transactionsData
-          .map((item) => Transaction.fromJson(item))
-          .toList();
+    // Conversion des transactions
+    final List<Transaction> transactions = [];
+    if (data['transactions'] != null) {
+      final transactionsList = data['transactions'] as List<dynamic>;
+      transactions.addAll(
+          transactionsList.map((t) => Transaction.fromJson(t as Map<String, dynamic>))
+      );
     }
 
-    // Décoder les objectifs financiers - NOUVEAU
-    List<FinancialGoal> decodedGoals = [];
-    if (doc['financialGoals'] != null) {
-      List<dynamic> goalsData = doc['financialGoals'];
-      decodedGoals = goalsData
-          .map((item) => FinancialGoal.fromJson(item))
-          .toList();
+    // Conversion des objectifs financiers
+    final List<FinancialGoal> financialGoals = [];
+    if (data['financialGoals'] != null) {
+      final goalsList = data['financialGoals'] as List<dynamic>;
+      financialGoals.addAll(
+          goalsList.map((g) => FinancialGoal.fromJson(g as Map<String, dynamic>))
+      );
     }
 
     return UserData(
-      userId: doc['userId'] ?? docId,
-      salary: (doc['salary'] as num?)?.toDouble() ?? 0.0,
-      currency: doc['currency'] ?? 'XOF',
-      budget: decodedBudget,
-      transactions: decodedTransactions,
-      financialGoals: decodedGoals, // NOUVEAU
-      notificationsEnabled: doc['notificationsEnabled'] ?? false,
-      lastUpdated: doc['lastUpdated']?.toDate() ?? DateTime.now(),
+      userId: userId,
+      salary: (data['salary'] as num?)?.toDouble() ?? 0.0,
+      currency: data['currency'] as String? ?? 'XOF',
+      budget: budget,
+      transactions: transactions,
+      notificationsEnabled: data['notificationsEnabled'] as bool? ?? false,
+      lastUpdated: (data['lastUpdated'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      financialGoals: financialGoals,
+      // Nouvelles propriétés Premium
+      isPremium: data['isPremium'] as bool? ?? false,
+      premiumExpiryDate: (data['premiumExpiryDate'] as Timestamp?)?.toDate(),
+      pdfExportsUsed: data['pdfExportsUsed'] as int? ?? 0,
+      chatbotUsesUsed: data['chatbotUsesUsed'] as int? ?? 0,
     );
   }
 
@@ -105,9 +119,13 @@ class UserData {
       currency: 'XOF',
       budget: _getDefaultBudget(),
       transactions: [],
-      financialGoals: [], // NOUVEAU
       notificationsEnabled: false,
       lastUpdated: DateTime.now(),
+      financialGoals: [],
+      isPremium: false,
+      premiumExpiryDate: null,
+      pdfExportsUsed: 0,
+      chatbotUsesUsed: 0,
     );
   }
 
@@ -168,22 +186,45 @@ class UserData {
 
   // Créer une copie avec des modifications
   UserData copyWith({
+    String? userId,
     double? salary,
     String? currency,
     Map<String, Map<String, dynamic>>? budget,
     List<Transaction>? transactions,
-    List<FinancialGoal>? financialGoals, // NOUVEAU
     bool? notificationsEnabled,
+    DateTime? lastUpdated,
+    List<FinancialGoal>? financialGoals,
+    bool? isPremium,
+    DateTime? premiumExpiryDate,
+    int? pdfExportsUsed,
+    int? chatbotUsesUsed,
   }) {
     return UserData(
-      userId: userId,
+      userId: userId ?? this.userId,
       salary: salary ?? this.salary,
       currency: currency ?? this.currency,
       budget: budget ?? this.budget,
       transactions: transactions ?? this.transactions,
-      financialGoals: financialGoals ?? this.financialGoals, // NOUVEAU
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
-      lastUpdated: DateTime.now(),
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      financialGoals: financialGoals ?? this.financialGoals,
+      isPremium: isPremium ?? this.isPremium,
+      premiumExpiryDate: premiumExpiryDate ?? this.premiumExpiryDate,
+      pdfExportsUsed: pdfExportsUsed ?? this.pdfExportsUsed,
+      chatbotUsesUsed: chatbotUsesUsed ?? this.chatbotUsesUsed,
     );
+  }
+  // Méthode pour vérifier si l'utilisateur est Premium actif
+  bool get isPremiumActive {
+    if (!isPremium) return false;
+    if (premiumExpiryDate == null) return isPremium;
+    return premiumExpiryDate!.isAfter(DateTime.now());
+  }
+
+  // Méthode pour obtenir les jours restants de Premium
+  int get premiumDaysRemaining {
+    if (!isPremium || premiumExpiryDate == null) return 0;
+    final difference = premiumExpiryDate!.difference(DateTime.now());
+    return difference.inDays.clamp(0, double.infinity).toInt();
   }
 }

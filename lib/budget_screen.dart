@@ -21,6 +21,7 @@ import 'theme.dart';
 import 'faq_chatbot.dart';
 import '../services/auth_service.dart';
 import 'theme_provider.dart';
+import 'services/premium_service.dart';
 
 // Nouveaux imports pour les fichiers séparés
 import 'budget_logic.dart';
@@ -28,6 +29,7 @@ import 'budget_widgets.dart';
 
 class BudgetScreen extends StatefulWidget {
   const BudgetScreen({super.key});
+
 
   @override
   _BudgetScreenState createState() => _BudgetScreenState();
@@ -45,6 +47,8 @@ class _BudgetScreenState extends State<BudgetScreen>
   List<Transaction> transactions = [];
   bool _notificationsEnabled = false;
   final ThemeProvider _themeProvider = ThemeProvider();
+  final PremiumService _premiumService = PremiumService();
+  bool _isPremiumUser = false;
 
   // Filtre par mois
   DateTime selectedMonth = DateTime.now();
@@ -115,9 +119,19 @@ class _BudgetScreenState extends State<BudgetScreen>
 
     _budgetLogic.loadSavedData();
     _budgetLogic.loadNotificationStatus();
+    _checkPremiumStatus(); // Nouvelle méthode
     _themeProvider.addListener(_onThemeChanged);
   }
-
+  Future<void> _checkPremiumStatus() async {
+    try {
+      final isPremium = await _premiumService.isPremiumUser();
+      setState(() {
+        _isPremiumUser = isPremium;
+      });
+    } catch (e) {
+      debugPrint('Erreur lors de la vérification du statut Premium: $e');
+    }
+  }
   @override
   void dispose() {
     _tabController.dispose();
@@ -138,7 +152,16 @@ class _BudgetScreenState extends State<BudgetScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('SmartSpend'),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('SmartSpend'),
+            if (_isPremiumUser) ...[
+              const SizedBox(width: 8),
+              _premiumService.buildPremiumBadge(),
+            ],
+          ],
+        ),
         actions: [
           IconButton(
             icon: CircleAvatar(
