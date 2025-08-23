@@ -90,25 +90,24 @@ class _FuturisticBackgroundState extends State<FuturisticBackground>
         center: const Alignment(-0.8, -0.6),
         radius: 1.8,
         colors: [
-          const Color(0xFF4CDADA).withOpacity(0.6), // Primary cyan
-          const Color(0xFF005050).withOpacity(0.8), // Primary container
-          const Color(0xFF1A2F2F).withOpacity(0.9), // Darker variant
+          const Color(0xFF0F1414), // Primary cyan
+    const Color(0xFF0F1414).withOpacity(0.8), // Primary container
+    const Color(0xFF0F1414).withOpacity(0.9), // Darker variant
           const Color(0xFF0F1414), // Background
           const Color(0xFF0F1414), // Background
         ],
         stops: const [0.0, 0.3, 0.6, 0.8, 1.0],
       );
     } else {
-      // MODE LIGHT: Uniquement blanc et blue 700
       return RadialGradient(
-        center: const Alignment(-1.8, -0.6),
+        center: const Alignment(-0.7, -0.5),
         radius: 1.6,
         colors: [
-          const Color(0xFFF5F7FA), // Blue 700 léger
-          const Color(0xFFF5F7FA), // Blue 700 très léger
-          const Color(0xFFF5F7FA), // Blanc pur
-          const Color(0xFFF5F7FA), // Blanc pur
-          const Color(0xFFF5F7FA), // Blanc pur
+          const Color(0xFFF4FAFA), // Primary blue
+          const Color(0xFFF4FAFA), // Medium blue
+          const Color(0xFFF4FAFA), // Primary container
+          const Color(0xFFF4FAFA), // Background
+          const Color(0xFFF4FAFA), // Background
         ],
         stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
       );
@@ -124,24 +123,24 @@ class _FuturisticBackgroundState extends State<FuturisticBackground>
             0.4 + math.cos(animValue * math.pi) * 0.3),
         radius: 1.4 + animValue * 0.4,
         colors: [
-          const Color(0xFFB1CCCB).withOpacity(0.3 * (1 - animValue)), // Secondary
-          const Color(0xFF70F7F7).withOpacity(0.2 * animValue), // Primary container
-          const Color(0xFF4CDADA).withOpacity(0.15 * (1 - animValue)), // Primary
+
+          const Color(0xFF4CDADA).withOpacity(0.7 * (1 - animValue)), // Secondary
+          const Color(0xFF4CDADA).withOpacity(0.7 * animValue), // Primary container
+          const Color(0xFF4CDADA).withOpacity(0.7 * (1 - animValue)), // Primary
           Colors.transparent,
           Colors.transparent,
         ],
         stops: const [0.0, 0.2, 0.4, 0.7, 1.0],
       );
     } else {
-      // MODE LIGHT: Uniquement blanc et blue 700 pour les transitions
       return RadialGradient(
         center: Alignment(0.7 + math.sin(animValue * math.pi) * 0.2,
             0.3 + math.cos(animValue * math.pi) * 0.3),
         radius: 1.2 + animValue * 0.3,
         colors: [
-          Colors.blue[700]!.withOpacity(0.15 * (1 - animValue)), // Blue 700 subtil
-          Colors.white.withOpacity(0.2 * animValue), // Blanc subtil
-          Colors.blue[700]!.withOpacity(0.08 * (1 - animValue)), // Blue 700 très subtil
+          const Color(0xFFFFFFFF).withOpacity(0.25 * (1 - animValue)),
+          Colors.blue[300]!..withOpacity(0.04 * animValue),
+          const Color(0xFFFFFFFF).withOpacity(0.15 * (1 - animValue)),
           Colors.transparent,
           Colors.transparent,
         ],
@@ -166,75 +165,45 @@ class FluidShapesPainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
 
-    if (isDarkMode) {
-      // Formes du mode sombre (inchangées)
-      _drawFluidBlob(
-          canvas,
-          paint,
-          canvasSize,
-          Offset(canvasSize.width * 0.3, canvasSize.height * 0.2),
-          200 + animation.value * 50,
-          const Color(0xFF4CDADA).withOpacity(0.2),
-          animation.value
-      );
+    // Grande forme fluide principale (style blob)
+    _drawFluidBlob(
+        canvas,
+        paint,
+        canvasSize,
+        Offset(canvasSize.width * 0.3, canvasSize.height * 0.2),
+        200 + animation.value * 50,
+        isDarkMode
+            ? const Color(0xFF4CDADA).withOpacity(0.2)
+            : const Color(0xFFFFFFFF).withOpacity(0.15),
+        animation.value
+    );
 
-      _drawFluidBlob(
-          canvas,
-          paint,
-          canvasSize,
-          Offset(canvasSize.width * 0.8, canvasSize.height * 0.7),
-          150 + (1 - animation.value) * 40,
-          const Color(0xFF70F7F7).withOpacity(0.15),
-          1 - animation.value
-      );
+    // Forme fluide secondaire
+    _drawFluidBlob(
+        canvas,
+        paint,
+        canvasSize,
+        Offset(canvasSize.width * 0.8, canvasSize.height * 0.7),
+        150 + (1 - animation.value) * 40,
+        isDarkMode
+            ? const Color(0xFF4CDADA).withOpacity(0.15)
+            : Colors.blue[400]!.withOpacity(0.12),
+        1 - animation.value
+    );
 
-      paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
-      _drawFluidBlob(
-          canvas,
-          paint,
-          canvasSize,
-          Offset(canvasSize.width * 0.6, canvasSize.height * 0.4),
-          80 + math.sin(animation.value * math.pi) * 20,
-          const Color(0xFFB1CCCB).withOpacity(0.1),
-          animation.value * 0.5
-      );
-    } else {
-      // MODE LIGHT: Uniquement blue 700 et blanc pour les blobs
-
-      // Grande forme fluide principale - Blue 700
-      _drawFluidBlob(
-          canvas,
-          paint,
-          canvasSize,
-          Offset(canvasSize.width * 0.3, canvasSize.height * 0.2),
-          200 + animation.value * 50,
-          Colors.blue[700]!.withOpacity(0.08), // Blue 700 très subtil
-          animation.value
-      );
-
-      // Forme fluide secondaire - Blue 700 plus léger
-      _drawFluidBlob(
-          canvas,
-          paint,
-          canvasSize,
-          Offset(canvasSize.width * 0.8, canvasSize.height * 0.7),
-          150 + (1 - animation.value) * 40,
-          Colors.blue[700]!.withOpacity(0.05), // Blue 700 encore plus subtil
-          1 - animation.value
-      );
-
-      // Petite forme d'accent - Blue 700 minimal
-      paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
-      _drawFluidBlob(
-          canvas,
-          paint,
-          canvasSize,
-          Offset(canvasSize.width * 0.6, canvasSize.height * 0.4),
-          80 + math.sin(animation.value * math.pi) * 20,
-          Colors.blue[700]!.withOpacity(0.03), // Blue 700 minimal
-          animation.value * 0.5
-      );
-    }
+    // Petite forme d'accent
+    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
+    _drawFluidBlob(
+        canvas,
+        paint,
+        canvasSize,
+        Offset(canvasSize.width * 0.6, canvasSize.height * 0.4),
+        80 + math.sin(animation.value * math.pi) * 20,
+        isDarkMode
+            ? const Color(0xFF0F1414).withOpacity(0.1)
+            : const Color(0xFF70F7F7).withOpacity(0.2),
+        animation.value * 0.5
+    );
   }
 
   void _drawFluidBlob(Canvas canvas, Paint paint, Size canvasSize,
@@ -315,10 +284,9 @@ class MinimalGridPainter extends CustomPainter {
       ..strokeWidth = 0.3
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.5);
 
-    // MODE LIGHT: Uniquement blue 700 pour la grille
     final gridColor = isDarkMode
-        ? const Color(0xFF4CDADA).withOpacity(0.02)
-        : Colors.blue[700]!.withOpacity(0.02); // Blue 700 très subtil
+        ? const Color(0xFF4CDADA).withOpacity(0.04)
+        : Colors.blue[700]!.withOpacity(0.04);
 
     paint.color = gridColor;
 

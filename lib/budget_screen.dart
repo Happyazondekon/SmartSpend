@@ -437,21 +437,21 @@ class _BudgetScreenState extends State<BudgetScreen>
         colors: isDarkMode
             ? [
           // Mode Dark - Gradient avec plus de profondeur
-          Colors.white.withOpacity(0.12),
           Colors.white.withOpacity(0.08),
-          Colors.white.withOpacity(0.04),
+          Colors.white.withOpacity(0.05),
+          Colors.white.withOpacity(0.03),
         ]
             : [
           // Mode Light - Gradient futuriste élégant
-          const Color(0xFFFFFFFF).withOpacity(0.4),
-          const Color(0xFFF8F9FF).withOpacity(0.6),
-          const Color(0xFF667EEA).withOpacity(0.02),
+          const Color(0xFFFFFFFF).withOpacity(0.08),
+          const Color(0xFFF8F9FF).withOpacity(0.05),
+          Colors.blue[300]!.withOpacity(0.03),
         ],
       ),
       border: Border.all(
         color: isDarkMode
             ? Colors.white.withOpacity(0.18)
-            : const Color(0xFF667EEA).withOpacity(0.15),
+            : Colors.blue[700]!.withOpacity(0.18),
         width: 1,
       ),
       boxShadow: [
