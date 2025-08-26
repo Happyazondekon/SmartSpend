@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:smartspend/services/auth_service.dart';
 import 'dart:convert';
 import 'theme.dart';
 
@@ -304,9 +305,13 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
   }
 
   void _addWelcomeMessages() {
+    // Récupérer les informations utilisateur
+    final user = AuthService().currentUser;
+    final userName = user?.displayName ?? user?.email?.split('@').first ?? 'Utilisateur';
+
     messages.add({
       'sender': 'bot',
-      'text': '👋 Bonjour et bienvenue !',
+      'text': '👋 Bonjour et bienvenue, $userName !',
       'timestamp': DateTime.now(),
       'type': 'welcome',
     });

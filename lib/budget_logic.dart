@@ -709,9 +709,6 @@ class BudgetLogic {
     );
   }
 
-  // Dans budget_logic.dart, remplacez la méthode exportTransactionsToPDF() par cette version améliorée :
-
-  // Dans budget_logic.dart, remplacez la méthode exportTransactionsToPDF() par cette version améliorée :
 
   Future<void> exportTransactionsToPDF() async {
     // Couleurs personnalisées
