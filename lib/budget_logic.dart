@@ -8,6 +8,7 @@ import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:smartspend/services/auth_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'models/transaction.dart';
@@ -708,6 +709,10 @@ class BudgetLogic {
     );
   }
 
+  // Dans budget_logic.dart, remplacez la méthode exportTransactionsToPDF() par cette version améliorée :
+
+  // Dans budget_logic.dart, remplacez la méthode exportTransactionsToPDF() par cette version améliorée :
+
   Future<void> exportTransactionsToPDF() async {
     // Couleurs personnalisées
     final pdfBlue = PdfColor.fromInt(Colors.blue[700]!.value);
@@ -723,6 +728,10 @@ class BudgetLogic {
     final salary = getSalary();
     final currency = getCurrency();
     final budget = getBudget();
+
+    // Récupérer les informations utilisateur
+    final user = AuthService().currentUser;
+    final userName = user?.displayName ?? user?.email?.split('@').first ?? 'Utilisateur';
 
     final monthTransactions = transactions.where((t) =>
     t.date.month == selectedMonth.month &&
@@ -751,7 +760,7 @@ class BudgetLogic {
           marginRight: 1.0 * PdfPageFormat.cm,
         ),
         build: (pw.Context context) => [
-          // En-tête stylé
+          // En-tête stylé avec nom d'utilisateur
           pw.Container(
             width: double.infinity,
             padding: const pw.EdgeInsets.all(16),
@@ -769,12 +778,14 @@ class BudgetLogic {
                     color: pdfWhite,
                   ),
                 ),
+
                 pw.SizedBox(height: 8),
                 pw.Text(
-                  'Relevé Financier - ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
+                  'Relevé Financier de : ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
                   style: pw.TextStyle(
                     fontSize: 16,
                     color: pdfWhite,
+                    fontWeight: pw.FontWeight.bold,
                   ),
                 ),
               ],
@@ -782,13 +793,18 @@ class BudgetLogic {
           ),
           pw.SizedBox(height: 20),
 
-          // Informations de génération
-          pw.Text(
-            'Généré le ${DateFormat('dd/MM/yyyy à HH:mm', 'fr_FR').format(DateTime.now())}',
-            style: pw.TextStyle(
-              fontSize: 10,
-              color: pdfGrey,
-            ),
+          // Informations de génération avec nom utilisateur
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Généré le ${DateFormat('dd/MM/yyyy à HH:mm', 'fr_FR').format(DateTime.now())}',
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  color: pdfGrey,
+                ),
+              ),
+            ],
           ),
           pw.SizedBox(height: 30),
 
@@ -804,13 +820,60 @@ class BudgetLogic {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(
-                  'VOTRE SITUATION FINANCIÈRE',
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                    color: pdfBlue,
-                  ),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'SITUATION FINANCIÈRE',
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: pdfBlue,
+                      ),
+                    ),
+                    // 🆕 Icône utilisateur stylisée avec alternative visuelle
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColor.fromInt(0xFFE8F4FD), // Bleu très clair
+                        borderRadius: pw.BorderRadius.circular(15),
+                        border: pw.Border.all(color: PdfColor.fromInt(0xFFB3D9F2), width: 1.5),
+                      ),
+                      child: pw.Row(
+                        mainAxisSize: pw.MainAxisSize.min,
+                        children: [
+                          // Alternative visuelle à l'icône utilisateur
+                          pw.Container(
+                            width: 12,
+                            height: 12,
+                            decoration: pw.BoxDecoration(
+                              shape: pw.BoxShape.circle,
+                              color: pdfBlue,
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                                style: pw.TextStyle(
+                                  fontSize: 7,
+                                  color: pdfWhite,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          pw.SizedBox(width: 6),
+                          pw.Text(
+                            userName,
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: pdfBlue,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 pw.SizedBox(height: 16),
                 _infoRow('Salaire mensuel:', '${salary.toStringAsFixed(2)} $currency', bold: true),
@@ -915,7 +978,7 @@ class BudgetLogic {
 
           pw.SizedBox(height: 30),
 
-          // Conseils personnalisés
+          // Conseils personnalisés avec mention du nom
           pw.Container(
             padding: const pw.EdgeInsets.all(16),
             decoration: pw.BoxDecoration(
@@ -926,22 +989,45 @@ class BudgetLogic {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(
-                  'CONSEILS SMARTSPEND',
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                    color: pdfBlue,
-                  ),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(
+                      'CONSEILS SMARTSPEND',
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: pdfBlue,
+                      ),
+                    ),
+                    // 🆕 Badge personnalisé pour l'utilisateur
+                    pw.Text(
+                      'Pour $userName',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColor.fromInt(0xFF7A9CC6), // Bleu moyen
+                        fontStyle: pw.FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
                 pw.SizedBox(height: 12),
-                ...generateDetailedAdvice(totalDepenses, totalRestant, depensesParCategorie).map((advice) =>
+                ...generateDetailedAdvice(totalDepenses, totalRestant, depensesParCategorie, userName).map((advice) =>
                     pw.Padding(
                       padding: const pw.EdgeInsets.only(bottom: 8),
                       child: pw.Row(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('| ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          // Alternative visuelle à la puce
+                          pw.Container(
+                            width: 8,
+                            height: 8,
+                            margin: const pw.EdgeInsets.only(top: 6, right: 8),
+                            decoration: pw.BoxDecoration(
+                              shape: pw.BoxShape.circle,
+                              color: pdfBlue,
+                            ),
+                          ),
                           pw.Expanded(child: pw.Text(advice)),
                         ],
                       ),
@@ -950,20 +1036,76 @@ class BudgetLogic {
               ],
             ),
           ),
+
+          // 🆕 Pied de page avec informations utilisateur
+          pw.SizedBox(height: 40),
+          pw.Divider(color: pdfGrey),
+          pw.SizedBox(height: 10),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'SmartSpend - Gestion financière intelligente',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: pdfGrey,
+                  fontStyle: pw.FontStyle.italic,
+                ),
+              ),
+              pw.Text(
+                'Rapport financier personnel de $userName',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: pdfBlue,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
 
     final output = await getTemporaryDirectory();
-    final fileName = 'SmartSpend_Rapport_${DateFormat('yyyy-MM', 'fr_FR').format(selectedMonth)}.pdf';
+    // 🆕 Nom de fichier personnalisé avec nom d'utilisateur
+    final fileName = 'SmartSpend_${userName.replaceAll(' ', '_')}_${DateFormat('yyyy-MM', 'fr_FR').format(selectedMonth)}.pdf';
     final file = File('${output.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
 
     await Share.shareFiles(
       [file.path],
-      text: 'Votre rapport financier SmartSpend - ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
+      text: 'Rapport financier SmartSpend de $userName - ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
       subject: fileName,
     );
+  }
+
+// 🆕 Méthode generateDetailedAdvice modifiée pour inclure le nom d'utilisateur
+  List<String> generateDetailedAdvice(double totalSpent, double remaining, Map<String, double> byCategory, String userName) {
+    final advice = <String>[];
+    final salary = getSalary();
+
+    if (remaining < 0) {
+      advice.add('$userName, attention ! Vous avez dépassé votre budget ce mois-ci. Essayez de réduire vos dépenses le mois prochain.');
+    } else if (remaining > salary * 0.3) {
+      advice.add('Excellent travail, $userName ! Vous avez économisé plus de 30% de votre salaire ce mois-ci.');
+    } else if (remaining > 0) {
+      advice.add('$userName, vous êtes dans les clous avec ${remaining.toStringAsFixed(2)} ${getCurrency()} restants ce mois-ci.');
+    }
+
+    final maxCategory = byCategory.entries.reduce((a, b) => a.value > b.value ? a : b);
+    if (maxCategory.value > totalSpent * 0.4) {
+      advice.add('$userName, la catégorie "${maxCategory.key}" représente une part importante (${(maxCategory.value/totalSpent*100).toStringAsFixed(1)}%) de vos dépenses. Pensez à diversifier.');
+    }
+
+    if (byCategory.containsKey('Épargne') && byCategory['Épargne']! < salary * 0.1) {
+      advice.add('$userName, votre épargne est inférieure à 10% de votre salaire. Essayez d\'augmenter cette part progressivement.');
+    }
+
+    if (advice.isEmpty) {
+      advice.add('$userName, votre gestion financière est équilibrée ce mois-ci. Continuez ainsi !');
+    }
+
+    return advice;
   }
 
 // Méthodes helper pour le PDF
@@ -1057,33 +1199,7 @@ class BudgetLogic {
     return result;
   }
 
-  List<String> generateDetailedAdvice(double totalSpent, double remaining, Map<String, double> byCategory) {
-    final advice = <String>[];
-    final salary = getSalary();
 
-    if (remaining < 0) {
-      advice.add('Attention! Vous avez dépassé votre budget ce mois-ci. Essayez de réduire vos dépenses le mois prochain.');
-    } else if (remaining > salary * 0.3) {
-      advice.add('Excellent! Vous avez économisé plus de 30% de votre salaire ce mois-ci.');
-    } else if (remaining > 0) {
-      advice.add('Vous êtes dans les clous avec ${remaining.toStringAsFixed(2)} ${getCurrency()} restants ce mois-ci.');
-    }
-
-    final maxCategory = byCategory.entries.reduce((a, b) => a.value > b.value ? a : b);
-    if (maxCategory.value > totalSpent * 0.4) {
-      advice.add('La catégorie "${maxCategory.key}" représente une part importante (${(maxCategory.value/totalSpent*100).toStringAsFixed(1)}%) de vos dépenses. Pensez à diversifier.');
-    }
-
-    if (byCategory.containsKey('Épargne') && byCategory['Épargne']! < salary * 0.1) {
-      advice.add('Votre épargne est inférieure à 10% de votre salaire. Essayez d\'augmenter cette part progressivement.');
-    }
-
-    if (advice.isEmpty) {
-      advice.add('Votre gestion financière est équilibrée ce mois-ci. Continuez ainsi!');
-    }
-
-    return advice;
-  }
   // ===================================================================
   // =================== GESTION DES OBJECTIFS FINANCIERS =============
   // ===================================================================
