@@ -236,7 +236,15 @@ class _BudgetScreenState extends State<BudgetScreen>
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // ✅ Texte toujours centré avec style futuriste
+                          if (_isPremiumUser)
+                            Positioned(
+                              right: 0,
+                              child: Opacity(
+                                opacity: 0.5,
+                                child: _premiumService.buildPremiumBadge(),
+                              ),
+                            ),
+
                           ShaderMask(
                             shaderCallback: (bounds) => LinearGradient(
                               colors: isDarkMode
@@ -253,16 +261,10 @@ class _BudgetScreenState extends State<BudgetScreen>
                               ),
                             ),
                           ),
-
-                          // ✅ Badge aligné à droite sans bouger le texte
-                          if (_isPremiumUser)
-                            Positioned(
-                              right: 0,
-                              child: _premiumService.buildPremiumBadge(),
-                            ),
                         ],
                       ),
                     ),
+
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

@@ -196,6 +196,7 @@ class FAQChatBot {
     "✂️ Comment réduire mes dépenses?": "✂️ **Optimisation des dépenses:**\n\n🔍 **Analysez vos statistiques SmartSpend:**\n• Identifiez les catégories les plus coûteuses\n• Repérez les dépenses récurrentes\n• Trouvez les 'fuites' budgétaires\n\n💡 **Actions concrètes:**\n• Comparez les prix avant d'acheter\n• Cuisinez plus à la maison\n• Renégociez vos contrats (assurance, téléphone)\n• Privilégiez l'occasion quand possible",
     "📊 Conseils investissement débutant?": "🚀 **Débuter en investissement:**\n\n⚠️ **Prérequis essentiels:**\n✓ Fonds d'urgence constitué (3-6 mois)\n✓ Dettes remboursées (sauf prêt immobilier)\n✓ Budget maîtrisé avec SmartSpend\n\n📈 **Premiers pas:**\n• Commencez petit (50-100€/mois)\n• Diversifiez vos placements\n• Privilégiez le long terme\n• Formez-vous avant d'investir\n\n🏦 **Options:** Livret A, PEL, assurance-vie, PEA",
     "💳Comment gérer mes dettes?": "💳 **Stratégie de remboursement:**\n\n🎯 **Méthode 'Boule de neige':**\n1. Listez toutes vos dettes\n2. Payez les minimums partout\n3. Attaquez la plus petite dette en premier\n4. Une fois remboursée, passez à la suivante\n\n📊 **Utilisez SmartSpend** pour tracker vos remboursements et célébrer vos progrès!\n\n⚡ **Négociez** avec vos créanciers si nécessaire.",
+    "🎯 Comment créer un objectif?": "🎯 **Créer un objectif financier:**\n\n1. Accédez à l’onglet 'Objectifs'\n2. Appuyez sur '+' pour ajouter un nouvel objectif\n3. Indiquez le nom, la description (facultative), le montant cible et la date limite\n4. Choisissez une icône et une couleur pour personnaliser votre objectif\n5. Validez en appuyant sur 'Créer'\n",
   };
 
   static final List<String> financialTopics = [
@@ -214,6 +215,7 @@ class FAQChatBot {
     "🔔 Configurer les notifications",
     "⚙️ Problème de synchronisation",
     "✏️ Modifier/supprimer une transaction",
+    "🎯 Comment créer un objectif?"
   ];
 
   static List<String> getSuggestions(String query) {
