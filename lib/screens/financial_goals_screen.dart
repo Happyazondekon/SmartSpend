@@ -819,14 +819,24 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
   Future<void> _addMoneyToGoal(String goalId, double amount) async {
     try {
+      // Trouver l'objectif localement
+      final goal = _goals.firstWhere((g) => g.id == goalId, orElse: () => throw 'Objectif non trouvé');
+      final montantRestant = goal.targetAmount - goal.currentAmount;
+
+      if (amount > montantRestant) {
+        _showSnackBar(
+          'Le montant ajouté dépasse le montant restant à atteindre.\nIl reste ${montantRestant.toStringAsFixed(2)} à compléter.',
+          Colors.red,
+        );
+        return;
+      }
+
       await _firestoreService.updateGoalProgress(goalId, amount);
 
-      // Vérifier si l'objectif est maintenant atteint
-      final updatedGoal = _goals.firstWhere((g) => g.id == goalId);
-      final newAmount = updatedGoal.currentAmount + amount;
+      final newAmount = goal.currentAmount + amount;
 
-      if (newAmount >= updatedGoal.targetAmount) {
-        _showSnackBar('🎉 Félicitations ! Objectif atteint !', Colors.green);
+      if (newAmount >= goal.targetAmount) {
+        _showSnackBar('🎉 Félicitations ! Objectif "${goal.name}" atteint !', Colors.green);
       } else {
         _showSnackBar('Montant ajouté avec succès !', Colors.green);
       }
@@ -836,7 +846,6 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       _showSnackBar('Erreur lors de l\'ajout', Colors.red);
     }
   }
-
   Future<void> _completeGoal(FinancialGoal goal) async {
     try {
       await _firestoreService.completeFinancialGoal(goal.id);
