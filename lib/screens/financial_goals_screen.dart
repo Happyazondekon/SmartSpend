@@ -244,14 +244,15 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                           ),
                         ),
                     ],
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(
-                        leading: Icon(Icons.edit_outlined),
-                        title: Text('Modifier'),
-                        contentPadding: EdgeInsets.zero,
+                    if (!goal.isCompleted)
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: ListTile(
+                          leading: Icon(Icons.edit_outlined),
+                          title: Text('Modifier'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
                       ),
-                    ),
                     PopupMenuItem(
                       value: 'delete',
                       child: ListTile(
