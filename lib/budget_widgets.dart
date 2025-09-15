@@ -151,7 +151,7 @@ class BudgetWidgets {
                 suffix: DropdownButton<String>(
                   value: budgetLogic.getCurrency(),
                   underline: Container(),
-                  items: ['XOF', 'USD', 'EUR', 'GBP', 'CAD'].map((String value) =>
+                  items: ['XOF', 'USD', 'EUR', 'GBP', 'CAD', 'NGN', 'GHS', 'AUD', 'JPY', 'CNY'].map((String value) =>
                       DropdownMenuItem<String>(value: value, child: Text(value))
                   ).toList(),
                   onChanged: (newValue) {
