@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';  // Nouveau import
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smartspend/services/premium_service.dart';
 import 'auth_wrapper.dart';
 import 'notification_service.dart';
 import 'theme.dart';
@@ -20,6 +21,8 @@ void main() async {
 
   // Initialiser la locale
   await initializeLocale();
+  // NOUVEAU: Initialiser le service Premium/In-App Purchase
+  await PremiumService().initialize();
 
   // Initialiser le ThemeProvider
   await ThemeProvider().initialize();
