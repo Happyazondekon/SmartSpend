@@ -183,10 +183,14 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.account_balance_wallet_rounded,
-                              color: Colors.white,
-                              size: 40,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                'assets/smartlogo.webp',
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),

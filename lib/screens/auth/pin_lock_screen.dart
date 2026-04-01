@@ -231,10 +231,13 @@ class _PinLockScreenState extends State<PinLockScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.account_balance_wallet,
-                      color: Colors.white,
-                      size: 40,
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/smartlogo.webp',
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   
