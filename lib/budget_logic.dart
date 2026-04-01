@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,105 +16,206 @@ import 'models/user_data.dart';
 import '../models/financial_goal.dart';
 
 
-class BudgetLogic {
-  final BuildContext context;
-  final VoidCallback updateState;
+class BudgetLogic extends ChangeNotifier {
+  BuildContext? _context;
   final FirestoreService _firestoreService = FirestoreService();
 
-  // Getters et setters pour accéder aux variables d'état
-  final Map<String, Map<String, dynamic>> Function() getBudget;
-  final Function(Map<String, Map<String, dynamic>>) setBudget;
-  final double Function() getSalary;
-  final Function(double) setSalary;
-  final String Function() getCurrency;
-  final Function(String) setCurrency;
-  final List<Transaction> Function() getTransactions;
-  final Function(List<Transaction>) setTransactions;
-  final List<Transaction> Function() getFilteredTransactions;
-  final Function(List<Transaction>) setFilteredTransactions;
-  final DateTime Function() getSelectedMonth;
-  final Function(DateTime) setSelectedMonth;
-  final bool Function() getNotificationsEnabled;
-  final Function(bool) setNotificationsEnabled;
-  final TextEditingController Function() getSalaryController;
+  // État interne pour le mode Provider
+  Map<String, Map<String, dynamic>> _budget = {
+    'Loyer': {'percentage': 30, 'amount': 0.0, 'icon': Icons.home_work_outlined, 'color': const Color(0xFF6366F1), 'spent': 0.0},
+    'Transport': {'percentage': 10, 'amount': 0.0, 'icon': Icons.directions_bus_filled_outlined, 'color': const Color(0xFF3B82F6), 'spent': 0.0},
+    'Électricité/Eau': {'percentage': 7, 'amount': 0.0, 'icon': Icons.lightbulb_outline, 'color': const Color(0xFFF59E0B), 'spent': 0.0},
+    'Internet': {'percentage': 5, 'amount': 0.0, 'icon': Icons.wifi, 'color': const Color(0xFF8B5CF6), 'spent': 0.0},
+    'Nourriture': {'percentage': 15, 'amount': 0.0, 'icon': Icons.restaurant_menu_outlined, 'color': const Color(0xFFEF4444), 'spent': 0.0},
+    'Loisirs': {'percentage': 8, 'amount': 0.0, 'icon': Icons.sports_esports_outlined, 'color': const Color(0xFFEC4899), 'spent': 0.0},
+    'Épargne': {'percentage': 25, 'amount': 0.0, 'icon': Icons.savings_outlined, 'color': const Color(0xFF10B981), 'spent': 0.0},
+  };
+  double _salary = 0;
+  String _currency = 'XAF';
+  List<Transaction> _transactions = [];
+  List<Transaction> _filteredTransactions = [];
+  DateTime _selectedMonth = DateTime.now();
+  bool _notificationsEnabled = false;
+  final TextEditingController _salaryController = TextEditingController();
+  List<FinancialGoal> _financialGoals = [];
+  List<MonthlyData> _monthlyHistory = [];
+  int _activeMonth = DateTime.now().month;
+  int _activeYear = DateTime.now().year;
+  bool _isPremium = false;
+  int _pdfExportsUsed = 0;
+  int _chatbotUsesUsed = 0;
+  bool _isLoading = true;
 
+  // Getters pour le mode Provider
+  Map<String, Map<String, dynamic>> getBudget() => _budget;
+  double getSalary() => _salary;
+  String getCurrency() => _currency;
+  List<Transaction> getTransactions() => _transactions;
+  List<Transaction> getFilteredTransactions() => _filteredTransactions;
+  DateTime getSelectedMonth() => _selectedMonth;
+  bool getNotificationsEnabled() => _notificationsEnabled;
+  TextEditingController getSalaryController() => _salaryController;
+  List<FinancialGoal> getFinancialGoals() => _financialGoals;
+  List<MonthlyData> getMonthlyHistory() => _monthlyHistory;
+  bool get isPremium => _isPremium;
+  int get pdfExportsUsed => _pdfExportsUsed;
+  int get chatbotUsesUsed => _chatbotUsesUsed;
+  bool get isLoading => _isLoading;
+
+  // Setters pour le mode Provider
+  void setBudget(Map<String, Map<String, dynamic>> budget) {
+    _budget = budget;
+    notifyListeners();
+  }
+  void setSalary(double salary) {
+    _salary = salary;
+    notifyListeners();
+  }
+  void setCurrency(String currency) {
+    _currency = currency;
+    _firestoreService.updateCurrency(currency);
+    notifyListeners();
+  }
+  void setTransactions(List<Transaction> transactions) {
+    _transactions = transactions;
+    notifyListeners();
+  }
+  void setFilteredTransactions(List<Transaction> transactions) {
+    _filteredTransactions = transactions;
+    notifyListeners();
+  }
+  void setSelectedMonth(DateTime month) {
+    _selectedMonth = month;
+    updateFilteredTransactions();
+    notifyListeners();
+  }
+  void setNotificationsEnabled(bool enabled) {
+    _notificationsEnabled = enabled;
+    notifyListeners();
+  }
+
+  // Constructeur pour Provider
+  BudgetLogic.withContext(BuildContext context) {
+    _context = context;
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    _isLoading = true;
+    notifyListeners();
+    
+    await loadSavedData();
+    await loadNotificationStatus();
+    
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void updateState() {
+    notifyListeners();
+  }
+
+  // Legacy support - pour l'ancien système basé sur callbacks
+  late final VoidCallback? _legacyUpdateState;
+  late final Map<String, Map<String, dynamic>> Function()? _legacyGetBudget;
+  late final Function(Map<String, Map<String, dynamic>>)? _legacySetBudget;
+  late final double Function()? _legacyGetSalary;
+  late final Function(double)? _legacySetSalary;
+  late final String Function()? _legacyGetCurrency;
+  late final Function(String)? _legacySetCurrency;
+  late final List<Transaction> Function()? _legacyGetTransactions;
+  late final Function(List<Transaction>)? _legacySetTransactions;
+  late final List<Transaction> Function()? _legacyGetFilteredTransactions;
+  late final Function(List<Transaction>)? _legacySetFilteredTransactions;
+  late final DateTime Function()? _legacyGetSelectedMonth;
+  late final Function(DateTime)? _legacySetSelectedMonth;
+  late final bool Function()? _legacyGetNotificationsEnabled;
+  late final Function(bool)? _legacySetNotificationsEnabled;
+  late final TextEditingController Function()? _legacyGetSalaryController;
+
+  // Ancien constructeur pour rétrocompatibilité
   BudgetLogic({
-    required this.context,
-    required this.updateState,
-    required this.getBudget,
-    required this.setBudget,
-    required this.getSalary,
-    required this.setSalary,
-    required this.getCurrency,
-    required this.setCurrency,
-    required this.getTransactions,
-    required this.setTransactions,
-    required this.getFilteredTransactions,
-    required this.setFilteredTransactions,
-    required this.getSelectedMonth,
-    required this.setSelectedMonth,
-    required this.getNotificationsEnabled,
-    required this.setNotificationsEnabled,
-    required this.getSalaryController,
-  });
+    required BuildContext context,
+    required VoidCallback updateState,
+    required Map<String, Map<String, dynamic>> Function() getBudget,
+    required Function(Map<String, Map<String, dynamic>>) setBudget,
+    required double Function() getSalary,
+    required Function(double) setSalary,
+    required String Function() getCurrency,
+    required Function(String) setCurrency,
+    required List<Transaction> Function() getTransactions,
+    required Function(List<Transaction>) setTransactions,
+    required List<Transaction> Function() getFilteredTransactions,
+    required Function(List<Transaction>) setFilteredTransactions,
+    required DateTime Function() getSelectedMonth,
+    required Function(DateTime) setSelectedMonth,
+    required bool Function() getNotificationsEnabled,
+    required Function(bool) setNotificationsEnabled,
+    required TextEditingController Function() getSalaryController,
+  }) {
+    _context = context;
+    _legacyUpdateState = updateState;
+    _legacyGetBudget = getBudget;
+    _legacySetBudget = setBudget;
+    _legacyGetSalary = getSalary;
+    _legacySetSalary = setSalary;
+    _legacyGetCurrency = getCurrency;
+    _legacySetCurrency = setCurrency;
+    _legacyGetTransactions = getTransactions;
+    _legacySetTransactions = setTransactions;
+    _legacyGetFilteredTransactions = getFilteredTransactions;
+    _legacySetFilteredTransactions = setFilteredTransactions;
+    _legacyGetSelectedMonth = getSelectedMonth;
+    _legacySetSelectedMonth = setSelectedMonth;
+    _legacyGetNotificationsEnabled = getNotificationsEnabled;
+    _legacySetNotificationsEnabled = setNotificationsEnabled;
+    _legacyGetSalaryController = getSalaryController;
+  }
+
+  // Contexte actif
+  BuildContext get context => _context!;
+  set context(BuildContext ctx) => _context = ctx;
 
   // ===================================================================
   // ===================== GESTION DES NOTIFICATIONS ==================
   // ===================================================================
 
-
-
+  /// Active/désactive les rappels quotidiens (stocké en local)
   Future<void> toggleDailyReminders(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
+    final notificationService = NotificationService();
 
     if (enabled) {
-      var scheduleStatus = await Permission.scheduleExactAlarm.status;
-      var notificationStatus = await Permission.notification.status;
-      var batteryStatus = await Permission.ignoreBatteryOptimizations.status;
-
-      print('Statut permissions:');
-      print('- Alarme exacte: $scheduleStatus');
-      print('- Notifications: $notificationStatus');
-      print('- Optimisation batterie: $batteryStatus');
-
-      if (notificationStatus.isDenied) {
-        notificationStatus = await Permission.notification.request();
-        if (notificationStatus.isDenied || notificationStatus.isPermanentlyDenied) {
-          setNotificationsEnabled(false);
-          updateState();
-          _showSnackBar('Permission de notification refusée. Activez-la dans les paramètres Android.', Colors.red);
-          return;
-        }
-      }
-
-      bool systemEnabled = await NotificationService().areNotificationsEnabled();
-      if (!systemEnabled) {
+      // Vérifier et demander les permissions
+      final hasPermissions = await notificationService.requestPermissions();
+      if (!hasPermissions) {
         setNotificationsEnabled(false);
         updateState();
-        _showSnackBar('Les notifications sont désactivées dans les paramètres Android pour cette app', Colors.red);
+        _showSnackBar('Permission de notification refusée. Activez-la dans les paramètres.', Colors.red);
         return;
       }
 
-      if (scheduleStatus.isDenied) {
-        scheduleStatus = await Permission.scheduleExactAlarm.request();
-        if (scheduleStatus.isDenied || scheduleStatus.isPermanentlyDenied) {
-          setNotificationsEnabled(false);
-          updateState();
-          _showSnackBar('Permission d\'alarme exacte refusée. Activez "Applications autorisées" dans les paramètres système.', Colors.red);
-          return;
-        }
+      // Vérifier les permissions système
+      final systemEnabled = await notificationService.areSystemNotificationsEnabled();
+      if (!systemEnabled) {
+        setNotificationsEnabled(false);
+        updateState();
+        _showSnackBar('Les notifications sont désactivées dans les paramètres Android', Colors.red);
+        return;
       }
 
+      // Vérifier l'optimisation batterie
+      final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
       if (batteryStatus.isDenied) {
         _showSnackBar('Pour des rappels fiables, désactivez l\'optimisation de batterie pour SmartSpend', Colors.orange);
       }
 
       try {
-        await NotificationService().scheduleDailyReminder();
-        await prefs.setBool('daily_reminders', true);
+        // Activer et programmer tous les rappels
+        await notificationService.setNotificationsEnabled(true);
+        await notificationService.scheduleNewMonthReminder();
         setNotificationsEnabled(true);
         updateState();
-        _showSnackBar('✅ Rappels quotidiens activés!\nVous recevrez un rappel le soir.', Colors.green);
+        _showSnackBar('✅ Rappels activés !\nMatin (8h30) et Soir (20h00)', Colors.green);
       } catch (e) {
         setNotificationsEnabled(false);
         updateState();
@@ -124,71 +223,62 @@ class BudgetLogic {
       }
     } else {
       try {
-        await NotificationService().cancelAllNotifications();
-        await prefs.setBool('daily_reminders', false);
+        await notificationService.setNotificationsEnabled(false);
         setNotificationsEnabled(false);
         updateState();
-        _showSnackBar('Rappels quotidiens désactivés', Colors.orange);
+        _showSnackBar('Rappels désactivés', Colors.orange);
       } catch (e) {
         _showSnackBar('Erreur lors de la désactivation: $e', Colors.red);
       }
     }
   }
 
+  /// Charge l'état des notifications depuis le stockage local
   Future<void> loadNotificationStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedSetting = prefs.getBool('daily_reminders') ?? false;
-
-    if (savedSetting) {
-      var scheduleStatus = await Permission.scheduleExactAlarm.status;
-      var notificationStatus = await Permission.notification.status;
-      bool systemEnabled = await NotificationService().areNotificationsEnabled();
-
-      if (scheduleStatus.isGranted && notificationStatus.isGranted && systemEnabled) {
-        final pending = await FlutterLocalNotificationsPlugin().pendingNotificationRequests();
-        bool hasScheduledReminder = pending.any((n) => n.id == 0);
-
-        if (!hasScheduledReminder) {
-          try {
-            await NotificationService().scheduleDailyReminder();
-            print('Rappel quotidien reprogrammé');
-          } catch (e) {
-            print('Erreur reprogrammation: $e');
-            await prefs.setBool('daily_reminders', false);
-            setNotificationsEnabled(false);
-            updateState();
-            return;
-          }
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    
+    final enabled = await notificationService.areNotificationsEnabled();
+    
+    if (enabled) {
+      // Vérifier que les permissions sont toujours valides
+      final hasPermissions = await notificationService.hasRequiredPermissions();
+      final systemEnabled = await notificationService.areSystemNotificationsEnabled();
+      
+      if (hasPermissions && systemEnabled) {
+        // Reprogrammer les rappels si nécessaire
+        final pending = await notificationService.getPendingNotifications();
+        if (pending.isEmpty) {
+          await notificationService.scheduleAllReminders();
+          await notificationService.scheduleNewMonthReminder();
         }
-
         setNotificationsEnabled(true);
-        updateState();
-        print('Rappels quotidiens chargés et actifs');
       } else {
-        print('Permissions révoquées: alarme=$scheduleStatus, notif=$notificationStatus, système=$systemEnabled');
-        await prefs.setBool('daily_reminders', false);
+        // Permissions révoquées
+        await notificationService.setNotificationsEnabled(false);
         setNotificationsEnabled(false);
-        updateState();
       }
     } else {
       setNotificationsEnabled(false);
-      updateState();
     }
+    updateState();
   }
 
+  /// Test des notifications
   Future<void> testNotification() async {
     try {
-      bool enabled = await NotificationService().areNotificationsEnabled();
-      if (!enabled) {
+      final notificationService = NotificationService();
+      final systemEnabled = await notificationService.areSystemNotificationsEnabled();
+      
+      if (!systemEnabled) {
         _showSnackBar('Les notifications ne sont pas activées au niveau système', Colors.orange);
         return;
       }
 
-
-      await NotificationService().showImmediateNotification();
-      await NotificationService().scheduleInstantReminder();
-
-      _showSnackBar('Tests de notification lancés:\n• Immédiate\n• Dans 3 secondes\nVérifiez la barre de notification!', Colors.blue);
+      await notificationService.showTestNotification();
+      await notificationService.scheduleTestNotification(delaySeconds: 3);
+      
+      _showSnackBar('Tests lancés :\n• Notification immédiate\n• Notification dans 3 secondes', Colors.blue);
     } catch (e) {
       _showSnackBar('Erreur test notification: $e', Colors.red);
     }
@@ -208,7 +298,14 @@ class BudgetLogic {
         setCurrency(userData.currency);
         setBudget(userData.budget);
         setTransactions(userData.transactions);
-        setNotificationsEnabled(userData.notificationsEnabled);
+        // Les notifications sont gérées localement maintenant
+        await loadNotificationStatus();
+
+        // Vérifier si un nouveau mois a commencé
+        if (userData.isNewMonthStarted) {
+          // Afficher un rappel pour clôturer le mois précédent
+          _showNewMonthDialog(userData);
+        }
 
         if (getSalary() > 0) {
           getSalaryController().text = getSalary().toString();
@@ -224,6 +321,81 @@ class BudgetLogic {
       debugPrint('Erreur lors du chargement depuis Firestore: $e');
       // Fallback vers SharedPreferences si Firestore échoue
       await _loadFromSharedPreferences();
+    }
+  }
+
+  /// Affiche un dialogue pour informer l'utilisateur qu'un nouveau mois a commencé
+  void _showNewMonthDialog(UserData userData) {
+    final now = DateTime.now();
+    const months = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('🎉 Nouveau mois !'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bienvenue en ${months[now.month - 1]} ${now.year} !',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Voulez-vous clôturer ${months[userData.activeMonth - 1]} ${userData.activeYear} et commencer le nouveau mois ?',
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '• Vos catégories seront conservées\n• Les dépenses seront archivées\n• Vous pourrez entrer vos nouveaux revenus',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Plus tard'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await closeCurrentMonth();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00A9A9),
+            ),
+            child: const Text('Clôturer le mois', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Clôturer le mois actuel et passer au nouveau mois
+  Future<void> closeCurrentMonth() async {
+    try {
+      final success = await _firestoreService.closeCurrentMonth();
+      
+      if (success) {
+        // Recharger les données
+        await loadSavedData();
+        
+        // Afficher une notification si activée
+        final notificationService = NotificationService();
+        await notificationService.showNewMonthNotification();
+        
+        _showSnackBar('✅ Mois clôturé ! Entrez vos revenus pour ce mois.', Colors.green);
+      } else {
+        _showSnackBar('Erreur lors de la clôture du mois', Colors.red);
+      }
+    } catch (e) {
+      debugPrint('Erreur clôture mois: $e');
+      _showSnackBar('Erreur lors de la clôture du mois', Colors.red);
     }
   }
 
@@ -257,14 +429,25 @@ class BudgetLogic {
 
   Future<void> saveData() async {
     try {
+      // Charger d'abord les données existantes pour conserver activeMonth/Year/History
+      final existingData = await _firestoreService.loadUserData();
+      final now = DateTime.now();
+      
       final userData = UserData(
         userId: _firestoreService.currentUserId ?? '',
         salary: getSalary(),
         currency: getCurrency(),
         budget: getBudget(),
         transactions: getTransactions(),
-        notificationsEnabled: getNotificationsEnabled(),
-        lastUpdated: DateTime.now(), financialGoals: [],
+        lastUpdated: now,
+        financialGoals: existingData?.financialGoals ?? [],
+        activeMonth: existingData?.activeMonth ?? now.month,
+        activeYear: existingData?.activeYear ?? now.year,
+        monthlyHistory: existingData?.monthlyHistory ?? [],
+        isPremium: existingData?.isPremium ?? false,
+        premiumExpiryDate: existingData?.premiumExpiryDate,
+        pdfExportsUsed: existingData?.pdfExportsUsed ?? 0,
+        chatbotUsesUsed: existingData?.chatbotUsesUsed ?? 0,
       );
 
       await _firestoreService.saveUserData(userData);
@@ -285,7 +468,7 @@ class BudgetLogic {
     double inputSalary = double.tryParse(salaryController.text) ?? 0;
 
     if (inputSalary <= 0) {
-      _showSnackBar('Veuillez entrer un salaire valide', Colors.red);
+      _showSnackBar('Veuillez entrer des revenus valides', Colors.red);
       return;
     }
 
@@ -578,6 +761,7 @@ class BudgetLogic {
       return;
     }
 
+    // Utiliser l'état local au lieu de recharger depuis Firestore
     final budget = getBudget();
     if (oldName != newName && budget.containsKey(newName)) {
       _showSnackBar('Cette catégorie existe déjà', Colors.red);
@@ -591,24 +775,22 @@ class BudgetLogic {
     }
 
     try {
-      // 1. Charger les données utilisateur depuis Firestore
-      final userData = await _firestoreService.loadUserData();
-      if (userData == null) return;
-
-      // 2. Modifier le budget et les transactions dans l'objet UserData
-      final updatedBudget = Map<String, dynamic>.from(userData.budget);
-      final salary = userData.salary;
+      final salary = getSalary();
+      final transactions = getTransactions();
+      
+      // Créer la catégorie mise à jour
       final updatedCategory = {
         'percent': percent / 100,
         'amount': salary * (percent / 100),
         'icon': icon,
         'color': color,
-        'spent': updatedBudget[oldName]!['spent'],
+        'spent': budget[oldName]!['spent'],
       };
 
-      List<Transaction> updatedTransactions = userData.transactions;
+      // Mettre à jour les transactions si le nom de catégorie change
+      List<Transaction> updatedTransactions = transactions;
       if (oldName != newName) {
-        updatedTransactions = userData.transactions.map((t) {
+        updatedTransactions = transactions.map((t) {
           if (t.category == oldName) {
             return Transaction(
               id: t.id,
@@ -621,27 +803,25 @@ class BudgetLogic {
           return t;
         }).toList();
 
-        updatedBudget.remove(oldName);
-        updatedBudget[newName] = updatedCategory;
-
+        budget.remove(oldName);
+        budget[newName] = updatedCategory;
       } else {
-        updatedBudget[oldName] = updatedCategory;
+        budget[oldName] = updatedCategory;
       }
 
-      // 3. Sauvegarder l'objet UserData complet
-      final updatedUserData = userData.copyWith(
-        budget: updatedBudget.cast<String, Map<String, dynamic>>(),
-        transactions: updatedTransactions,
-      );
-
-      await _firestoreService.saveUserData(updatedUserData);
-      debugPrint('Catégorie et transactions mises à jour avec succès sur Firestore');
-
-      // Mettre à jour l'état local après la sauvegarde réussie
-      setBudget(updatedBudget.cast<String, Map<String, dynamic>>());
+      // Mettre à jour l'état local immédiatement
+      setBudget(budget);
       setTransactions(updatedTransactions);
       updateFilteredTransactions();
       updateState();
+
+      // Sauvegarder dans Firestore
+      await _firestoreService.updateBudget(budget);
+      if (oldName != newName) {
+        // Sauvegarder aussi les transactions mises à jour
+        await saveData();
+      }
+      debugPrint('Catégorie et transactions mises à jour avec succès');
 
     } catch (e) {
       debugPrint('Erreur lors de la modification de la catégorie: $e');
@@ -873,7 +1053,7 @@ class BudgetLogic {
                   ],
                 ),
                 pw.SizedBox(height: 16),
-                _infoRow('Salaire mensuel:', '${salary.toStringAsFixed(2)} $currency', bold: true),
+                _infoRow('Revenus mensuels:', '${salary.toStringAsFixed(2)} $currency', bold: true),
                 pw.Divider(color: pdfBlue, height: 20),
                 _infoRow('Total des dépenses:', '${totalDepenses.toStringAsFixed(2)} $currency',
                     bold: true, colorValue: pdfRed),
@@ -893,7 +1073,7 @@ class BudgetLogic {
                 ),
                 pw.SizedBox(height: 8),
                 pw.Text(
-                  '${(ratioDepenses * 100).toStringAsFixed(1)}% de votre salaire dépensé',
+                  '${(ratioDepenses * 100).toStringAsFixed(1)}% de vos revenus dépensés',
                   textAlign: pw.TextAlign.center,
                   style: pw.TextStyle(fontSize: 10),
                 ),
@@ -1084,7 +1264,7 @@ class BudgetLogic {
     if (remaining < 0) {
       advice.add('$userName, attention ! Vous avez dépassé votre budget ce mois-ci. Essayez de réduire vos dépenses le mois prochain.');
     } else if (remaining > salary * 0.3) {
-      advice.add('Excellent travail, $userName ! Vous avez économisé plus de 30% de votre salaire ce mois-ci.');
+      advice.add('Excellent travail, $userName ! Vous avez économisé plus de 30% de vos revenus ce mois-ci.');
     } else if (remaining > 0) {
       advice.add('$userName, vous êtes dans les clous avec ${remaining.toStringAsFixed(2)} ${getCurrency()} restants ce mois-ci.');
     }
@@ -1095,7 +1275,7 @@ class BudgetLogic {
     }
 
     if (byCategory.containsKey('Épargne') && byCategory['Épargne']! < salary * 0.1) {
-      advice.add('$userName, votre épargne est inférieure à 10% de votre salaire. Essayez d\'augmenter cette part progressivement.');
+      advice.add('$userName, votre épargne est inférieure à 10% de vos revenus. Essayez d\'augmenter cette part progressivement.');
     }
 
     if (advice.isEmpty) {
@@ -1391,6 +1571,157 @@ class BudgetLogic {
     } catch (e) {
       debugPrint('Erreur lors de la vérification des échéances: $e');
       return [];
+    }
+  }
+
+  // ===================================================================
+  // =================== NOUVELLES MÉTHODES POUR LE PROVIDER ==========
+  // ===================================================================
+
+  /// Retourne le symbole de la devise
+  String getCurrencySymbol() {
+    final symbols = {
+      'XAF': 'FCFA ',
+      'XOF': 'FCFA ',
+      'EUR': '€',
+      'USD': '\$',
+      'GBP': '£',
+      'NGN': '₦',
+      'GHS': 'GH₵',
+      'CAD': 'CA\$',
+      'AUD': 'AU\$',
+      'JPY': '¥',
+      'CNY': '¥',
+    };
+    return symbols[_currency] ?? _currency;
+  }
+
+  /// Incrémente le compteur d'utilisations du chatbot
+  Future<void> incrementChatbotUses() async {
+    if (!_isPremium) {
+      _chatbotUsesUsed++;
+      notifyListeners();
+      await _firestoreService.incrementChatbotUses();
+    }
+  }
+
+  /// Incrémente le compteur d'exports PDF
+  Future<void> incrementPdfExports() async {
+    if (!_isPremium) {
+      _pdfExportsUsed++;
+      notifyListeners();
+      await _firestoreService.incrementPDFExports();
+    }
+  }
+
+  /// Ouvre l'écran d'achat Premium
+  void openPremiumPurchase(BuildContext ctx) {
+    showDialog(
+      context: ctx,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Text('⭐', style: TextStyle(fontSize: 24)),
+            SizedBox(width: 8),
+            Text('SmartSpend Premium'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Débloquez toutes les fonctionnalités :'),
+            SizedBox(height: 12),
+            Text('✓ Exports PDF illimités'),
+            Text('✓ Assistant IA illimité'),
+            Text('✓ Analyses avancées'),
+            Text('✓ Pas de publicités'),
+            SizedBox(height: 16),
+            Text('2,99€ / mois ou 24,99€ / an',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Plus tard'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Intégrer l'achat in-app
+              _showSnackBar('Achat Premium bientôt disponible', Colors.blue);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700),
+              foregroundColor: Colors.black87,
+            ),
+            child: const Text('S\'abonner'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Réinitialise toutes les données de l'utilisateur
+  Future<void> resetAllData() async {
+    try {
+      _budget = {
+        'Loyer': {'percentage': 30, 'amount': 0.0, 'icon': Icons.home_work_outlined, 'color': const Color(0xFF6366F1), 'spent': 0.0},
+        'Transport': {'percentage': 10, 'amount': 0.0, 'icon': Icons.directions_bus_filled_outlined, 'color': const Color(0xFF3B82F6), 'spent': 0.0},
+        'Électricité/Eau': {'percentage': 7, 'amount': 0.0, 'icon': Icons.lightbulb_outline, 'color': const Color(0xFFF59E0B), 'spent': 0.0},
+        'Internet': {'percentage': 5, 'amount': 0.0, 'icon': Icons.wifi, 'color': const Color(0xFF8B5CF6), 'spent': 0.0},
+        'Nourriture': {'percentage': 15, 'amount': 0.0, 'icon': Icons.restaurant_menu_outlined, 'color': const Color(0xFFEF4444), 'spent': 0.0},
+        'Loisirs': {'percentage': 8, 'amount': 0.0, 'icon': Icons.sports_esports_outlined, 'color': const Color(0xFFEC4899), 'spent': 0.0},
+        'Épargne': {'percentage': 25, 'amount': 0.0, 'icon': Icons.savings_outlined, 'color': const Color(0xFF10B981), 'spent': 0.0},
+      };
+      _salary = 0;
+      _transactions = [];
+      _filteredTransactions = [];
+      _financialGoals = [];
+      _monthlyHistory = [];
+      _salaryController.clear();
+      _activeMonth = DateTime.now().month;
+      _activeYear = DateTime.now().year;
+
+      await saveData();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erreur reset: $e');
+    }
+  }
+
+  /// Export vers PDF (simplifié pour le nouveau design)
+  Future<void> exportToPDF(BuildContext ctx) async {
+    if (!_isPremium && _pdfExportsUsed >= 3) {
+      showDialog(
+        context: ctx,
+        builder: (context) => AlertDialog(
+          title: const Text('Limite atteinte'),
+          content: const Text(
+            'Vous avez utilisé vos 3 exports gratuits. Passez à Premium pour des exports illimités.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fermer'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                openPremiumPurchase(ctx);
+              },
+              child: const Text('Voir Premium'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    await exportTransactionsToPDF();
+    if (!_isPremium) {
+      await incrementPdfExports();
     }
   }
 }

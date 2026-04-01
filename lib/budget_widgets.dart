@@ -12,6 +12,7 @@ import '../models/financial_goal.dart';
 import '../screens/financial_goals_screen.dart';
 import 'models/user_data.dart';
 import 'services/premium_service.dart';
+import 'design_system.dart';
 
 class BudgetWidgets {
   final BuildContext context;
@@ -27,106 +28,91 @@ class BudgetWidgets {
     required this.availableColors,
   });
 
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+
   // ===================================================================
   // ====================== ONGLET BUDGET =============================
   // ===================================================================
 
   Widget buildBudgetTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(vertical: 24.0),
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
-          SizedBox(height: 24),
-          _buildSalaryCard(),
-          SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text("Répartition du Budget", style: Theme.of(context).textTheme.titleLarge),
-          ),
-          SizedBox(height: 8),
-          _buildBudgetList(),
+          _buildSkyViewHeader(),
+          const SizedBox(height: 24),
+          _buildAvailableBalanceCard(),
+          const SizedBox(height: 16),
+          _buildMonthlyIncomeCard(),
+          const SizedBox(height: 16),
+          _buildTotalBudgetProgress(),
+          const SizedBox(height: 24),
+          _buildCoreAllocationsSection(),
+          const SizedBox(height: 24),
+          _buildWeeklyInsightsCard(),
+          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    final userName = AuthService().currentUser?.displayName ?? 'Utilisateur';
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 32.0),
+  Widget _buildSkyViewHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Message de bienvenue avec animation subtile
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 300),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.5,
-            ) ?? const TextStyle(),
-            child: Text('Bienvenue,'),
-          ),
-
-          // Nom de l'utilisateur avec style distinctif
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              ],
-            ).createShader(bounds),
-            child: Text(
-              userName,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: 32,
-                fontWeight: FontWeight.w600,
-                color: Colors.white, // Nécessaire pour le ShaderMask
-                height: 1.1,
-              ),
+          Text(
+            'CURRENT ALLOCATION',
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppDesign.primary(_isDark),
+              letterSpacing: 1.5,
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // Titre principal avec gradient subtil
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).colorScheme.onBackground,
-                Theme.of(context).colorScheme.onBackground.withOpacity(0.8),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'The ',
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: AppDesign.textPrimary(_isDark),
+                    height: 1.2,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Sky View',
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: AppDesign.primary(_isDark),
+                    height: 1.2,
+                  ),
+                ),
               ],
-            ).createShader(bounds),
-            child: Text(
-              'Gérez vos finances',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontSize: 28,
-                color: Colors.white, // Requis pour ShaderMask
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                height: 1.1,
-              ),
             ),
           ),
-
-          // Ligne décorative subtile
-          Container(
-            margin: const EdgeInsets.only(top: 20),
-            height: 3,
-            width: 300,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primary,
-                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(1),
+          Text(
+            'Of Wealth.',
+            style: GoogleFonts.poppins(
+              fontSize: 32,
+              fontWeight: FontWeight.w700,
+              color: AppDesign.textPrimary(_isDark),
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Financial sovereignty begins with precision.\nEvery ${budgetLogic.getCurrency()} accounted for, every goal within reach.',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppDesign.textSecondary(_isDark),
+              height: 1.5,
             ),
           ),
         ],
@@ -134,172 +120,355 @@ class BudgetWidgets {
     );
   }
 
-  Widget _buildSalaryCard() {
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+  Widget _buildAvailableBalanceCard() {
+    final salary = budgetLogic.getSalary();
+    final budget = budgetLogic.getBudget();
+    final currency = budgetLogic.getCurrency();
+    
+    double totalSpent = 0;
+    budget.forEach((key, value) {
+      totalSpent += value['spent'] as double;
+    });
+    final availableBalance = salary - totalSpent;
+
+    return SmartCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppDesign.primary(_isDark),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'AVAILABLE BALANCE',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppDesign.textSecondary(_isDark),
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _formatCurrency(availableBalance),
+                style: GoogleFonts.poppins(
+                  fontSize: 42,
+                  fontWeight: FontWeight.w700,
+                  color: availableBalance >= 0 
+                      ? AppDesign.textPrimary(_isDark)
+                      : AppDesign.error,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  currency,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthlyIncomeCard() {
+    final salary = budgetLogic.getSalary();
+    final currency = budgetLogic.getCurrency();
+
+    return SmartCard(
+      onTap: _showSalaryEditDialog,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppDesign.primary(_isDark).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.trending_up_rounded,
+                  color: AppDesign.primary(_isDark),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Monthly Income',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppDesign.textSecondary(_isDark),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          _formatCurrency(salary),
+                          style: GoogleFonts.poppins(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: AppDesign.textPrimary(_isDark),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          currency,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: AppDesign.textSecondary(_isDark),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.edit_outlined,
+                color: AppDesign.textSecondary(_isDark),
+                size: 20,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalBudgetProgress() {
+    final salary = budgetLogic.getSalary();
+    final budget = budgetLogic.getBudget();
+    final currency = budgetLogic.getCurrency();
+    
+    double totalSpent = 0;
+    budget.forEach((key, value) {
+      totalSpent += value['spent'] as double;
+    });
+    
+    final progress = salary > 0 ? (totalSpent / salary).clamp(0.0, 1.0) : 0.0;
+    final percentage = (progress * 100).toInt();
+
+    return BudgetProgressCard(
+      title: 'Total Budget Progress',
+      subtitle: 'You have used $percentage% of your monthly plan',
+      spent: totalSpent,
+      total: salary,
+      currency: currency,
+      color: AppDesign.primary(_isDark),
+    );
+  }
+
+  Widget _buildCoreAllocationsSection() {
+    final budget = budgetLogic.getBudget();
+    final currency = budgetLogic.getCurrency();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Core Allocations',
+          trailing: TextButton.icon(
+            onPressed: showAddCategoryDialog,
+            icon: Icon(Icons.add, size: 18, color: AppDesign.primary(_isDark)),
+            label: Text(
+              'Add Category',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppDesign.primary(_isDark),
+              ),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+        if (budget.isEmpty)
+          _buildEmptyAllocationsState()
+        else
+          ...budget.entries.map((entry) {
+            final spent = entry.value['spent'] as double;
+            final allocated = entry.value['amount'] as double;
+            final icon = entry.value['icon'] as IconData;
+            final color = entry.value['color'] as Color;
+            final percent = entry.value['percent'] as double;
+            
+            return AllocationCard(
+              name: entry.key,
+              subtitle: '${(percent * 100).toStringAsFixed(0)}% of income',
+              spent: spent,
+              allocated: allocated,
+              currency: currency,
+              icon: icon,
+              color: color,
+              onEdit: () => showEditCategoryDialog(entry.key),
+              onDelete: () => budgetLogic.deleteCategory(entry.key),
+            );
+          }).toList(),
+      ],
+    );
+  }
+
+  Widget _buildEmptyAllocationsState() {
+    return SmartCard(
+      child: Column(
+        children: [
+          Icon(
+            Icons.category_outlined,
+            size: 48,
+            color: AppDesign.textSecondary(_isDark),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No allocations yet',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppDesign.textPrimary(_isDark),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add your first budget category to start tracking',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: AppDesign.textSecondary(_isDark),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyInsightsCard() {
+    final budget = budgetLogic.getBudget();
+    final salary = budgetLogic.getSalary();
+    
+    double totalSpent = 0;
+    budget.forEach((key, value) {
+      totalSpent += value['spent'] as double;
+    });
+    
+    final savingsRate = salary > 0 ? ((salary - totalSpent) / salary * 100).clamp(0, 100) : 0;
+    
+    String insightMessage;
+    if (savingsRate >= 30) {
+      insightMessage = 'Excellent! You\'re saving ${savingsRate.toStringAsFixed(0)}% of your income. Keep up the great work!';
+    } else if (savingsRate >= 15) {
+      insightMessage = 'Good progress! You\'re on track with ${savingsRate.toStringAsFixed(0)}% savings this month.';
+    } else if (savingsRate > 0) {
+      insightMessage = 'Consider reviewing your spending. Current savings rate: ${savingsRate.toStringAsFixed(0)}%';
+    } else {
+      insightMessage = 'You\'re spending more than your income. Review your budget allocations.';
+    }
+
+    return InsightCard(
+      title: 'Weekly Insights',
+      content: insightMessage,
+      actionLabel: 'View Full Stats',
+      onAction: () {
+        // Navigate to stats tab
+      },
+      gradientStart: AppDesign.primary(_isDark),
+      gradientEnd: AppDesign.accent(_isDark),
+    );
+  }
+
+  void _showSalaryEditDialog() {
+    final controller = TextEditingController(
+      text: budgetLogic.getSalary() > 0 ? budgetLogic.getSalary().toStringAsFixed(0) : '',
+    );
+    String selectedCurrency = budgetLogic.getCurrency();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Set Monthly Income',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: budgetLogic.getSalaryController(),
+              controller: controller,
               keyboardType: TextInputType.number,
-              style: Theme.of(context).textTheme.titleLarge,
               decoration: InputDecoration(
-                labelText: 'Votre salaire mensuel net',
-                prefixIcon: Icon(Icons.account_balance_wallet_outlined, color: Theme.of(context).colorScheme.primary),
+                labelText: 'Your monthly income',
+                prefixIcon: Icon(Icons.account_balance_wallet_outlined),
                 suffix: DropdownButton<String>(
-                  value: budgetLogic.getCurrency(),
-                  underline: Container(),
-                  items: ['XOF', 'USD', 'EUR', 'GBP', 'CAD', 'NGN', 'GHS', 'AUD', 'JPY', 'CNY'].map((String value) =>
-                      DropdownMenuItem<String>(value: value, child: Text(value))
-                  ).toList(),
-                  onChanged: (newValue) {
-                    budgetLogic.setCurrency(newValue!);
-                    budgetLogic.saveData();
-                    budgetLogic.updateState();
+                  value: selectedCurrency,
+                  underline: const SizedBox(),
+                  items: ['XOF', 'USD', 'EUR', 'GBP', 'CAD', 'NGN', 'GHS', 'AUD', 'JPY', 'CNY']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (value) {
+                    selectedCurrency = value!;
+                    (context as Element).markNeedsBuild();
                   },
                 ),
               ),
             ),
-            SizedBox(height: 16),
-            SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                    onPressed: budgetLogic.calculateBudget,
-                    child: Text('Calculer & Mettre à jour')
-                )
-            ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newSalary = double.tryParse(controller.text) ?? 0;
+              budgetLogic.setSalary(newSalary);
+              budgetLogic.setCurrency(selectedCurrency);
+              budgetLogic.calculateBudget();
+              Navigator.pop(context);
+            },
+            child: Text('Save'),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBudgetList() {
-    final salary = budgetLogic.getSalary();
-    final budget = budgetLogic.getBudget();
-    final currency = budgetLogic.getCurrency();
-
-    if (salary <= 0) {
-      return Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Center(
-          child: Text(
-              "Entrez votre salaire pour voir votre budget.",
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onBackground.withOpacity(0.6)
-              )
-          ),
-        ),
-      );
+  String _formatCurrency(double amount) {
+    if (amount >= 1000000) {
+      return '${(amount / 1000000).toStringAsFixed(1)}M';
+    } else if (amount >= 1000) {
+      return NumberFormat('#,###', 'en_US').format(amount.toInt());
     }
-
-    return Column(
-      children: budget.entries.map((entry) {
-        double spent = entry.value['spent'] as double;
-        double allocated = entry.value['amount'] as double;
-        double progress = allocated > 0 ? (spent / allocated) : 0.0;
-        double remaining = allocated - spent;
-        String recommendation = budgetLogic.getSpendingRecommendation(entry.key);
-
-        Color progressColor = entry.value['color'];
-        if(progress > 1) progressColor = Theme.of(context).colorScheme.error;
-        else if (progress > 0.9) progressColor = Colors.orangeAccent;
-
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: (entry.value['color'] as Color).withOpacity(0.15),
-                      child: Icon(entry.value['icon'], color: entry.value['color']),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(entry.key, style: Theme.of(context).textTheme.titleMedium),
-                          Text(
-                            'Alloué : ${allocated.toStringAsFixed(0)} $currency',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'edit') showEditCategoryDialog(entry.key);
-                        if (value == 'delete') budgetLogic.deleteCategory(entry.key);
-                      },
-                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                        PopupMenuItem<String>(
-                            value: 'edit',
-                            child: ListTile(
-                                leading: Icon(Icons.edit_outlined),
-                                title: Text('Modifier')
-                            )
-                        ),
-                        PopupMenuItem<String>(
-                            value: 'delete',
-                            child: ListTile(
-                                leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                                title: Text('Supprimer', style: TextStyle(color: Theme.of(context).colorScheme.error))
-                            )
-                        ),
-                      ],
-                      icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Dépensé : ${spent.toStringAsFixed(0)} $currency', style: Theme.of(context).textTheme.bodySmall),
-                    Text(
-                        'Restant : ${remaining.toStringAsFixed(0)} $currency',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: remaining < 0 ? Theme.of(context).colorScheme.error : Colors.green
-                        )
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: progress.clamp(0.0, 1.0),
-                    minHeight: 10,
-                    backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                    valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                  ),
-                ),
-                if (recommendation.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                        recommendation,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                            color: progressColor
-                        )
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
+    return amount.toStringAsFixed(0);
   }
 
   // ===================================================================
@@ -309,90 +478,495 @@ class BudgetWidgets {
   Widget buildStatsTab() {
     final filteredTransactions = budgetLogic.getFilteredTransactions();
     final budget = budgetLogic.getBudget();
-    double totalSpent = filteredTransactions.fold(0, (sum, item) => sum + item.amount);
+    final currency = budgetLogic.getCurrency();
+    final selectedMonth = budgetLogic.getSelectedMonth();
+    
+    double totalSpent = filteredTransactions.fold(0.0, (sum, item) => sum + item.amount);
+    
+    // Calculate daily average
+    final daysInMonth = DateTime(selectedMonth.year, selectedMonth.month + 1, 0).day;
+    final currentDay = selectedMonth.month == DateTime.now().month 
+        ? DateTime.now().day 
+        : daysInMonth;
+    final dailyAvg = currentDay > 0 ? totalSpent / currentDay : 0.0;
+    
+    // Find peak day
+    Map<int, double> dailySpending = {};
+    for (var t in filteredTransactions) {
+      final day = t.date.day;
+      dailySpending[day] = (dailySpending[day] ?? 0) + t.amount;
+    }
+    int peakDay = 1;
+    double peakAmount = 0;
+    dailySpending.forEach((day, amount) {
+      if (amount > peakAmount) {
+        peakDay = day;
+        peakAmount = amount;
+      }
+    });
+    
+    // Find top category
+    MapEntry<String, Map<String, dynamic>>? topCategory;
+    double maxSpent = 0;
+    budget.forEach((key, value) {
+      final spent = value['spent'] as double;
+      if (spent > maxSpent) {
+        maxSpent = spent;
+        topCategory = MapEntry(key, value);
+      }
+    });
 
-    return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            buildMonthSelectorHeader(),
-            SizedBox(height: 24),
-            filteredTransactions.isEmpty
-                ? Expanded(
-              child: Center(
-                  child: Text(
-                    "Aucune dépense pour ce mois.",
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  )
-              ),
-            )
-                : Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header avec titre
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Monthly',
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: AppDesign.textPrimary(_isDark),
+                    height: 1.1,
+                  ),
+                ),
+                RichText(
+                  text: TextSpan(
                     children: [
-                      SizedBox(
-                        height: 250,
-                        child: PieChart(
-                            PieChartData(
-                              sectionsSpace: 4,
-                              centerSpaceRadius: 60,
-                              startDegreeOffset: -90,
-                              pieTouchData: PieTouchData(touchCallback: (event, pieTouchResponse) {}),
-                              sections: budget.entries
-                                  .where((entry) => entry.value['spent'] > 0)
-                                  .map((entry) {
-                                final double value = entry.value['spent'];
-                                return PieChartSectionData(
-                                  color: entry.value['color'],
-                                  value: value,
-                                  title: '${(value / totalSpent * 100).toStringAsFixed(0)}%',
-                                  radius: 50,
-                                  titleStyle: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white
-                                  ),
-                                );
-                              }).toList(),
-                            )
+                      TextSpan(
+                        text: 'Intelligence ',
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: AppDesign.primary(_isDark),
+                          height: 1.1,
                         ),
                       ),
-                      SizedBox(height: 24),
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 8,
-                        alignment: WrapAlignment.center,
-                        children: budget.entries
-                            .where((entry) => entry.value['spent'] > 0)
-                            .map((entry) => _buildLegendItem(entry.value['color'], entry.key))
-                            .toList(),
+                      TextSpan(
+                        text: 'Breakdown',
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: AppDesign.textPrimary(_isDark),
+                          height: 1.1,
+                        ),
                       ),
                     ],
                   ),
-                )
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your spending DNA for the period of ${DateFormat('MMMM yyyy').format(selectedMonth)}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+              ],
             ),
-          ],
-        )
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Total Spending Circle
+          Center(
+            child: SmartCard(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  CircularProgressWidget(
+                    progress: budgetLogic.getSalary() > 0 
+                        ? totalSpent / budgetLogic.getSalary()
+                        : 0,
+                    value: _formatCurrency(totalSpent),
+                    subtitle: 'TOTAL SPENDING',
+                    currency: currency,
+                    size: 160,
+                    color: AppDesign.primary(_isDark),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildStatColumn('Daily Avg', '${dailyAvg.toStringAsFixed(0)}\n$currency'),
+                      Container(width: 1, height: 40, color: AppDesign.surfaceElevated(_isDark)),
+                      _buildStatColumn('Peak Day', '${_getDayName(peakDay)}'),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Top Category Card
+          if (topCategory != null && maxSpent > 0)
+            _buildTopCategoryCard(topCategory!, totalSpent, currency),
+          
+          const SizedBox(height: 16),
+          
+          // AI Insights Section
+          _buildAIInsightsSection(totalSpent, currency),
+          
+          const SizedBox(height: 24),
+          
+          // Category Breakdown
+          SectionHeader(
+            title: 'Category Breakdown',
+            actionLabel: 'VIEW ALL',
+            onAction: () {},
+          ),
+          
+          ...budget.entries
+              .where((e) => e.value['spent'] > 0)
+              .map((entry) => _buildCategoryBreakdownItem(
+                entry.key,
+                entry.value['spent'] as double,
+                entry.value['icon'] as IconData,
+                entry.value['color'] as Color,
+                filteredTransactions.where((t) => t.category == entry.key).length,
+                totalSpent,
+                currency,
+              ))
+              .toList(),
+          
+          const SizedBox(height: 100),
+        ],
+      ),
     );
   }
+  
+  Widget _buildStatColumn(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: AppDesign.primary(_isDark),
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppDesign.textPrimary(_isDark),
+          ),
+        ),
+      ],
+    );
+  }
+  
+  String _getDayName(int day) {
+    final date = DateTime(budgetLogic.getSelectedMonth().year, budgetLogic.getSelectedMonth().month, day);
+    return DateFormat('EEE, d').format(date);
+  }
+  
+  Widget _buildTopCategoryCard(MapEntry<String, Map<String, dynamic>> category, double totalSpent, String currency) {
+    final spent = category.value['spent'] as double;
+    final allocated = category.value['amount'] as double;
+    final icon = category.value['icon'] as IconData;
+    final color = category.value['color'] as Color;
+    final percentage = totalSpent > 0 ? (spent / totalSpent * 100).toInt() : 0;
+    final budgetUtilization = allocated > 0 ? (spent / allocated * 100).toInt() : 0;
 
-  Widget _buildLegendItem(Color color, String text) {
+    return SmartCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppDesign.primary(_isDark).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Top Category',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppDesign.primary(_isDark),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            category.key,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppDesign.textPrimary(_isDark),
+            ),
+          ),
+          Text(
+            '$spent $currency • $percentage% of wallet',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: AppDesign.textSecondary(_isDark),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Budget Utilization',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppDesign.textSecondary(_isDark),
+                ),
+              ),
+              Text(
+                '$budgetUtilization%',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: budgetUtilization > 90 ? AppDesign.warning : color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Stack(
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppDesign.surfaceElevated(_isDark),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              LayoutBuilder(
+                builder: (context, constraints) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  height: 8,
+                  width: constraints.maxWidth * (budgetUtilization / 100).clamp(0.0, 1.0),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, color.withOpacity(0.7)],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (budgetUtilization > 80)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppDesign.warning),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Nearing your limit for this category. ${(allocated - spent).toStringAsFixed(0)} $currency remaining.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppDesign.textSecondary(_isDark),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildAIInsightsSection(double totalSpent, String currency) {
+    final salary = budgetLogic.getSalary();
+    final savingsRate = salary > 0 ? ((salary - totalSpent) / salary * 100) : 0;
+    
+    return SmartCard(
+      elevated: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, color: AppDesign.primary(_isDark), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'AI INSIGHTS',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppDesign.textSecondary(_isDark),
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildInsightItem(
+            Icons.analytics_outlined,
+            'Spending Analysis',
+            savingsRate >= 20 
+                ? 'Great job! You\'re saving ${savingsRate.toStringAsFixed(0)}% of your income.'
+                : 'Consider reducing non-essential spending to increase savings.',
+          ),
+          const SizedBox(height: 12),
+          _buildInsightItem(
+            Icons.savings_outlined,
+            'Savings Goal',
+            'On track to save ${(salary - totalSpent).toStringAsFixed(0)} $currency by month end.',
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                showElegantFAQChatBot(context);
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppDesign.primary(_isDark),
+                side: BorderSide(color: AppDesign.primary(_isDark)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: Text(
+                'Review Full Report',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildInsightItem(IconData icon, String title, String description) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(3)
-            )
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppDesign.primary(_isDark).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppDesign.primary(_isDark), size: 18),
         ),
-        SizedBox(width: 8),
-        Text(text),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppDesign.textPrimary(_isDark),
+                ),
+              ),
+              Text(
+                description,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppDesign.textSecondary(_isDark),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+  
+  Widget _buildCategoryBreakdownItem(String name, double spent, IconData icon, Color color, int transactionCount, double totalSpent, String currency) {
+    final percentage = totalSpent > 0 ? (spent / totalSpent * 100).toInt() : 0;
+    
+    return SmartCard(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppDesign.textPrimary(_isDark),
+                  ),
+                ),
+                Text(
+                  '$transactionCount Transactions',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${spent.toStringAsFixed(0)} $currency',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppDesign.textPrimary(_isDark),
+                ),
+              ),
+              Text(
+                '$percentage%',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppDesign.textSecondary(_isDark),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -404,46 +978,404 @@ class BudgetWidgets {
     final filteredTransactions = budgetLogic.getFilteredTransactions();
     final budget = budgetLogic.getBudget();
     final currency = budgetLogic.getCurrency();
+    final selectedMonth = budgetLogic.getSelectedMonth();
+    
+    double totalSpent = filteredTransactions.fold(0.0, (sum, item) => sum + item.amount);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: buildMonthSelectorHeader(showExport: false),
-        ),
-        Expanded(
-          child: filteredTransactions.isEmpty ?
-          Center(child: Text('Aucune transaction pour ce mois')) :
-          ListView.builder(
-            padding: EdgeInsets.only(bottom: 80),
-            itemCount: filteredTransactions.length,
-            itemBuilder: (context, index) {
-              final transaction = filteredTransactions[index];
-              final categoryData = budget[transaction.category];
-              return Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: (categoryData?['color'] as Color?)?.withOpacity(0.15) ?? Colors.grey.withOpacity(0.1),
-                    child: Icon(
-                        categoryData?['icon'] ?? Icons.error_outline,
-                        color: categoryData?['color'] ?? Colors.grey
-                    ),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header avec mois
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CURRENT PERIOD',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppDesign.primary(_isDark),
+                    letterSpacing: 1.2,
                   ),
-                  title: Text(transaction.description, style: Theme.of(context).textTheme.titleMedium),
-                  subtitle: Text(DateFormat('d MMMM yyyy', 'fr_FR').format(transaction.date)),
-                  trailing: Text(
-                    '${transaction.amount.toStringAsFixed(0)} $currency',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: categoryData?['color'] ?? Theme.of(context).colorScheme.onSurface
-                    ),
-                  ),
-                  onTap: () => showTransactionOptionsDialog(transaction),
                 ),
-              );
-            },
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: budgetLogic.showMonthPicker,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('MMMM').format(selectedMonth),
+                            style: GoogleFonts.poppins(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w700,
+                              color: AppDesign.textPrimary(_isDark),
+                              height: 1,
+                            ),
+                          ),
+                          Text(
+                            selectedMonth.year.toString(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w700,
+                              color: AppDesign.textPrimary(_isDark),
+                              height: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Total Spent',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppDesign.textSecondary(_isDark),
+                          ),
+                        ),
+                        Text(
+                          '$currency${_formatCurrency(totalSpent)}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: AppDesign.primary(_isDark),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+          
+          const SizedBox(height: 24),
+          
+          // Spending Velocity Chart
+          _buildSpendingVelocityCard(filteredTransactions),
+          
+          const SizedBox(height: 16),
+          
+          // Goal Progress Card (si objectifs existent)
+          _buildGoalProgressHighlight(),
+          
+          const SizedBox(height: 24),
+          
+          // Recent Activity Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Activity',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppDesign.textPrimary(_isDark),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => budgetLogic.exportTransactions(),
+                  child: Text(
+                    'Export CSV',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppDesign.primary(_isDark),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Transaction List
+          if (filteredTransactions.isEmpty)
+            _buildEmptyTransactionsState()
+          else
+            ...filteredTransactions.take(20).map((transaction) {
+              final categoryData = budget[transaction.category];
+              return TransactionItem(
+                title: transaction.description,
+                subtitle: '${DateFormat('MMM dd, HH:mm').format(transaction.date)} • ${transaction.category}',
+                amount: transaction.amount,
+                currency: currency,
+                icon: categoryData?['icon'] ?? Icons.receipt_outlined,
+                color: categoryData?['color'] ?? AppDesign.primary(_isDark),
+                onTap: () => showTransactionOptionsDialog(transaction),
+              );
+            }).toList(),
+          
+          if (filteredTransactions.length > 20)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppDesign.textSecondary(_isDark),
+                    side: BorderSide(color: AppDesign.textMuted(_isDark)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: Text('Load Previous Transactions'),
+                ),
+              ),
+            ),
+          
+          const SizedBox(height: 100),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildSpendingVelocityCard(List<Transaction> transactions) {
+    // Group by week
+    Map<int, double> weeklySpending = {1: 0, 2: 0, 3: 0, 4: 0};
+    for (var t in transactions) {
+      final week = ((t.date.day - 1) ~/ 7) + 1;
+      if (week >= 1 && week <= 4) {
+        weeklySpending[week] = (weeklySpending[week] ?? 0) + t.amount;
+      }
+    }
+    
+    final maxSpending = weeklySpending.values.fold(0.0, (a, b) => a > b ? a : b);
+
+    return SmartCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Spending Velocity',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppDesign.textPrimary(_isDark),
+                ),
+              ),
+              Text(
+                'Daily outflow intensity',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppDesign.textSecondary(_isDark),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 120,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(4, (index) {
+                final week = index + 1;
+                final spending = weeklySpending[week] ?? 0;
+                final height = maxSpending > 0 ? (spending / maxSpending * 80) : 10;
+                
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 500),
+                      width: 40,
+                      height: height.clamp(10.0, 80.0).toDouble(),
+                      decoration: BoxDecoration(
+                        color: AppDesign.primary(_isDark).withOpacity(
+                          spending == maxSpending ? 1.0 : 0.5,
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'WEEK 0$week',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: AppDesign.textSecondary(_isDark),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildGoalProgressHighlight() {
+    return StreamBuilder<UserData?>(
+      stream: budgetLogic.getUserDataStream(),
+      builder: (context, snapshot) {
+        final goals = snapshot.data?.financialGoals ?? [];
+        final activeGoals = goals.where((g) => !g.isCompleted).toList();
+        
+        if (activeGoals.isEmpty) return const SizedBox();
+        
+        // Get the goal with highest progress
+        activeGoals.sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
+        final topGoal = activeGoals.first;
+        final progress = topGoal.progressPercentage / 100;
+        
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppDesign.primary(_isDark).withOpacity(0.2),
+                AppDesign.accent(_isDark).withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+            border: Border.all(
+              color: AppDesign.primary(_isDark).withOpacity(0.3),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        topGoal.icon,
+                        color: AppDesign.textPrimary(_isDark),
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  topGoal.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: AppDesign.textPrimary(_isDark),
+                  ),
+                ),
+                Text(
+                  'Almost there! ${topGoal.progressPercentage.toStringAsFixed(0)}% funded.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${budgetLogic.getCurrency()}${_formatCurrency(topGoal.currentAmount)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppDesign.primary(_isDark),
+                      ),
+                    ),
+                    Text(
+                      'TARGET ${budgetLogic.getCurrency()}${_formatCurrency(topGoal.targetAmount)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppDesign.textSecondary(_isDark),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Stack(
+                  children: [
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    LayoutBuilder(
+                      builder: (context, constraints) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 500),
+                        height: 8,
+                        width: constraints.maxWidth * progress.clamp(0.0, 1.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildEmptyTransactionsState() {
+    return SmartCard(
+      margin: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 64,
+            color: AppDesign.textSecondary(_isDark),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No transactions yet',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppDesign.textPrimary(_isDark),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add your first transaction to start tracking your spending.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppDesign.textSecondary(_isDark),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -456,17 +1388,20 @@ class BudgetWidgets {
     final filteredTransactions = budgetLogic.getFilteredTransactions();
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+        color: AppDesign.surface(_isDark),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           FilledButton.tonal(
             style: FilledButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -809,30 +1744,10 @@ class BudgetWidgets {
 
                       try {
                         final canUse = await _premiumService.canUseChatbot();
-                        final isPremium = await _premiumService.isPremiumUser();
 
                         if (canUse) {
-                          // Permettre l'utilisation
-                          if (!isPremium) {
-                            await _premiumService.incrementChatbotUses();
-                            final remaining = await _premiumService.getRemainingChatbotUses();
-
-                            if (remaining == 0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Plus d\'essais gratuits pour l\'assistant.'),
-                                  backgroundColor: Colors.orange,
-                                  action: SnackBarAction(
-                                    label: 'Premium',
-                                    textColor: Colors.white,
-                                    onPressed: () => _showUpgradeDialog('assistant financier'),
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-
-                          // Ouvrir l'assistant
+                          // Ouvrir l'assistant - le compteur sera incrémenté uniquement 
+                          // quand l'utilisateur posera vraiment une question
                           showElegantFAQChatBot(context);
 
                         } else {
@@ -1130,6 +2045,8 @@ class BudgetWidgets {
         }
 
         final userData = snapshot.data;
+        final currency = userData?.currency ?? budgetLogic.getCurrency();
+        
         if (userData == null || userData.financialGoals.isEmpty) {
           return _buildGoalsEmptyState();
         }
@@ -1137,339 +2054,511 @@ class BudgetWidgets {
         final goals = userData.financialGoals;
         final activeGoals = goals.where((g) => !g.isCompleted).toList();
         final completedGoals = goals.where((g) => g.isCompleted).toList();
+        
+        // Calculate overall progress
+        final totalTargetAmount = goals.fold(0.0, (sum, goal) => sum + goal.targetAmount);
+        final totalCurrentAmount = goals.fold(0.0, (sum, goal) => sum + goal.currentAmount);
+        final overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) : 0.0;
+        
+        // Find top performer
+        FinancialGoal? topPerformer;
+        if (activeGoals.isNotEmpty) {
+          activeGoals.sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
+          topPerformer = activeGoals.first;
+        }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Statistiques rapides
-              _buildGoalsOverviewCard(goals, userData.currency),
-
-              const SizedBox(height: 24),
-
-              // Objectifs actifs
-              if (activeGoals.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Objectifs en cours (${activeGoals.length})',
-                      style: Theme.of(context).textTheme.titleLarge,
+                      'Goals',
+                      style: GoogleFonts.poppins(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                        color: AppDesign.textPrimary(_isDark),
+                        height: 1.1,
+                      ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const FinancialGoalsScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text('Voir tout'),
+                    Text(
+                      'Architecting your financial future.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: AppDesign.textSecondary(_isDark),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                ...activeGoals.take(3).map((goal) => _buildGoalSummaryCard(goal, userData.currency)),
-              ],
-
-              // Objectifs terminés
-              if (completedGoals.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'Objectifs terminés (${completedGoals.length})',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.green,
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Global Milestone Card
+              _buildGlobalMilestoneCard(overallProgress, goals.length, completedGoals.length),
+              
+              const SizedBox(height: 16),
+              
+              // Stats Row
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildMiniStatCard(
+                        'Total Goals',
+                        '${goals.length}',
+                        Icons.flag_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildMiniStatCard(
+                        'Completed',
+                        '${completedGoals.length}',
+                        Icons.check_circle_outline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Create New Goal Button
+              CreateGoalButton(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const FinancialGoalsScreen(openAddDialog: true),
+                    ),
+                  );
+                },
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Top Performance
+              if (topPerformer != null)
+                _buildTopPerformanceCard(topPerformer),
+              
+              const SizedBox(height: 24),
+              
+              // Active Journeys Section
+              SectionHeader(
+                title: 'Active Journeys',
+                actionLabel: 'View All',
+                onAction: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const FinancialGoalsScreen(),
+                    ),
+                  );
+                },
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  '${activeGoals.length} goals currently in progress',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppDesign.textSecondary(_isDark),
                   ),
                 ),
-                const SizedBox(height: 12),
-                ...completedGoals.take(2).map((goal) => _buildGoalSummaryCard(goal, userData.currency)),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Goal Cards
+              ...activeGoals.take(5).map((goal) => _buildModernGoalCard(goal, currency)),
+              
+              // Completed Goals
+              if (completedGoals.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                SectionHeader(
+                  title: 'Completed',
+                  trailing: Icon(
+                    Icons.celebration,
+                    color: AppDesign.success,
+                    size: 20,
+                  ),
+                ),
+                ...completedGoals.take(2).map((goal) => _buildModernGoalCard(goal, currency)),
               ],
-
-              const SizedBox(height: 80), // Espace pour le FAB
+              
+              const SizedBox(height: 16),
+              
+              // Plan your next goal
+              _buildPlanNextGoalCard(),
+              
+              const SizedBox(height: 100),
             ],
           ),
         );
       },
     );
   }
-
-  Widget _buildGoalsEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.track_changes_outlined,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Aucun objectif défini',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Définissez vos objectifs financiers pour donner un sens à votre épargne !',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const FinancialGoalsScreen(),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Créer un objectif'),
-            ),
+  
+  Widget _buildGlobalMilestoneCard(double progress, int totalGoals, int completedGoals) {
+    final percentage = (progress * 100).toInt();
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppDesign.primary(_isDark),
+            AppDesign.accent(_isDark),
           ],
         ),
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        boxShadow: AppDesign.buttonShadow(_isDark),
       ),
-    );
-  }
-
-  Widget _buildGoalsOverviewCard(List<FinancialGoal> goals, String currency) {
-    if (goals.isEmpty) return const SizedBox();
-
-    final totalTargetAmount = goals.fold(0.0, (sum, goal) => sum + goal.targetAmount);
-    final totalCurrentAmount = goals.fold(0.0, (sum, goal) => sum + goal.currentAmount);
-    final completedGoalsCount = goals.where((g) => g.isCompleted).length;
-    final overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) : 0.0;
-
-    return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.trending_up,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Vue d\'ensemble',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    'Objectifs',
-                    '${goals.length}',
-                    Icons.flag_outlined,
-                    Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    'Terminés',
-                    '$completedGoalsCount',
-                    Icons.check_circle_outline,
-                    Colors.green,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    'Progression',
-                    '${(overallProgress * 100).toStringAsFixed(0)}%',
-                    Icons.percent,
-                    Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
             Text(
-              'Épargne totale: ${totalCurrentAmount.toStringAsFixed(0)} / ${totalTargetAmount.toStringAsFixed(0)} $currency',
-              style: Theme.of(context).textTheme.bodyMedium,
+              'GLOBAL MILESTONE',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withOpacity(0.8),
+                letterSpacing: 1.2,
+              ),
             ),
-
             const SizedBox(height: 8),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: overallProgress.clamp(0.0, 1.0),
-                minHeight: 8,
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  overallProgress >= 1.0 ? Colors.green : Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGoalSummaryCard(FinancialGoal goal, String currency) {
-    final progress = goal.progressPercentage / 100;
-    final isCompleted = goal.isCompleted;
-    final isOverdue = goal.isOverdue;
-    final isNearDeadline = goal.isNearDeadline;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: goal.color.withOpacity(0.15),
-                  child: Icon(goal.icon, color: goal.color, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                RichText(
+                  text: TextSpan(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              goal.name,
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                decoration: isCompleted ? TextDecoration.lineThrough : null,
-                              ),
-                            ),
-                          ),
-                          if (isCompleted)
-                            Icon(Icons.check_circle, color: Colors.green, size: 16),
-                          if (isOverdue && !isCompleted)
-                            Icon(Icons.warning, color: Colors.red, size: 16),
-                          if (isNearDeadline && !isCompleted)
-                            Icon(Icons.schedule, color: Colors.orange, size: 16),
-                        ],
+                      TextSpan(
+                        text: '$percentage%',
+                        style: GoogleFonts.poppins(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
-                      Text(
-                        '${goal.currentAmount.toStringAsFixed(0)} / ${goal.targetAmount.toStringAsFixed(0)} $currency',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      TextSpan(
+                        text: ' To Total Goal',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.8),
                         ),
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  '${goal.progressPercentage.toStringAsFixed(1)}%',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isCompleted ? Colors.green : goal.color,
-                  ),
+                Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 28,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-
-            // Barre de progression
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  isCompleted ? Colors.green : goal.color,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            const SizedBox(height: 16),
+            Stack(
               children: [
-                Text(
-                  'Échéance: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(goal.targetDate)}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-                Text(
-                  isCompleted
-                      ? 'Terminé ✓'
-                      : isOverdue
-                      ? 'En retard'
-                      : '${goal.daysRemaining} jours',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: isCompleted
-                        ? Colors.green
-                        : isOverdue
-                        ? Colors.red
-                        : isNearDeadline
-                        ? Colors.orange
-                        : null,
-                    fontWeight: FontWeight.w500,
+                LayoutBuilder(
+                  builder: (context, constraints) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 600),
+                    height: 8,
+                    width: constraints.maxWidth * progress.clamp(0.0, 1.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                 ),
               ],
             ),
-
-            // Suggestion d'épargne pour les objectifs actifs
-            if (!isCompleted && goal.remainingAmount > 0 && !isOverdue) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: goal.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'Épargner ${goal.monthlySavingsNeeded.toStringAsFixed(0)} $currency/mois pour atteindre votre objectif',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: goal.color,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
+      ),
+    );
+  }
+  
+  Widget _buildMiniStatCard(String label, String value, IconData icon) {
+    return SmartCard(
+      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.zero,
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: AppDesign.textPrimary(_isDark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppDesign.primary(_isDark).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppDesign.primary(_isDark), size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildTopPerformanceCard(FinancialGoal goal) {
+    return SmartCard(
+      elevated: true,
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: goal.color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(goal.icon, color: goal.color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Top Performance',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        goal.name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppDesign.textPrimary(_isDark),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '+${goal.progressPercentage.toStringAsFixed(0)}%',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppDesign.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildModernGoalCard(FinancialGoal goal, String currency) {
+    final isCompleted = goal.isCompleted;
+    
+    // Determine category label
+    String categoryLabel = 'GENERAL';
+    if (goal.name.toLowerCase().contains('vacation') || goal.name.toLowerCase().contains('trip')) {
+      categoryLabel = 'LEISURE';
+    } else if (goal.name.toLowerCase().contains('emergency') || goal.name.toLowerCase().contains('security')) {
+      categoryLabel = 'SECURITY';
+    } else if (goal.name.toLowerCase().contains('car') || goal.name.toLowerCase().contains('vehicle')) {
+      categoryLabel = 'VEHICLE';
+    } else if (goal.name.toLowerCase().contains('house') || goal.name.toLowerCase().contains('home')) {
+      categoryLabel = 'HOUSING';
+    }
+    
+    return GoalCard(
+      name: goal.name,
+      description: goal.description.isNotEmpty ? goal.description : null,
+      category: categoryLabel,
+      currentAmount: goal.currentAmount,
+      targetAmount: goal.targetAmount,
+      currency: currency,
+      icon: goal.icon,
+      color: isCompleted ? AppDesign.success : goal.color,
+      targetDate: goal.targetDate,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const FinancialGoalsScreen(),
+          ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildPlanNextGoalCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppDesign.surface(_isDark),
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        border: Border.all(
+          color: _isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+          width: 2,
+          strokeAlign: BorderSide.strokeAlignOutside,
+        ),
+        // Dashed border effect simulated with dotted pattern
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+        child: InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const FinancialGoalsScreen(openAddDialog: true),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppDesign.surfaceElevated(_isDark),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    color: AppDesign.textSecondary(_isDark),
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Plan your next goal',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoalsEmptyState() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Goals',
+                  style: GoogleFonts.poppins(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w700,
+                    color: AppDesign.textPrimary(_isDark),
+                  ),
+                ),
+                Text(
+                  'Architecting your financial future.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppDesign.textSecondary(_isDark),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 48),
+          
+          Icon(
+            Icons.flag_outlined,
+            size: 80,
+            color: AppDesign.textSecondary(_isDark),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'No goals yet',
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: AppDesign.textPrimary(_isDark),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Set your first financial goal and start\nbuilding towards your dreams.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: AppDesign.textSecondary(_isDark),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 32),
+          
+          CreateGoalButton(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const FinancialGoalsScreen(openAddDialog: true),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -1480,7 +2569,7 @@ class BudgetWidgets {
 
     if (salary <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Veuillez d\'abord définir votre salaire.'))
+          SnackBar(content: Text('Veuillez d\'abord définir vos revenus.'))
       );
       return;
     }

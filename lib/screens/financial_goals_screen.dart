@@ -6,7 +6,9 @@ import '../firestore_service.dart';
 import '../models/user_data.dart';
 
 class FinancialGoalsScreen extends StatefulWidget {
-  const FinancialGoalsScreen({super.key});
+  final bool openAddDialog;
+  
+  const FinancialGoalsScreen({super.key, this.openAddDialog = false});
 
   @override
   _FinancialGoalsScreenState createState() => _FinancialGoalsScreenState();
@@ -68,6 +70,12 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       _showSnackBar('Erreur lors du chargement des objectifs', Colors.red);
     } finally {
       setState(() => _isLoading = false);
+      // Ouvrir automatiquement le dialogue si demandé
+      if (widget.openAddDialog && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showAddGoalDialog();
+        });
+      }
     }
   }
 

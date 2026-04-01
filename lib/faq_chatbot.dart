@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:smartspend/services/auth_service.dart';
+import 'package:smartspend/services/premium_service.dart';
 import 'dart:convert';
 import 'theme.dart';
 
@@ -270,11 +271,13 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final PremiumService _premiumService = PremiumService();
 
   List<Map<String, dynamic>> messages = [];
   List<String> suggestions = [];
   bool isTyping = false;
   int selectedSuggestionTab = 0;
+  bool _hasCountedUsage = false; // Pour tracker si on a déjà compté l'utilisation
 
   late AnimationController _typingController;
   late AnimationController _botAvatarController;
@@ -370,6 +373,31 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
 
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
+
+    // Incrémenter le compteur uniquement lors du premier message envoyé
+    if (!_hasCountedUsage) {
+      try {
+        final isPremium = await _premiumService.isPremiumUser();
+        if (!isPremium) {
+          await _premiumService.incrementChatbotUses();
+          _hasCountedUsage = true;
+          
+          final remaining = await _premiumService.getRemainingChatbotUses();
+          if (remaining == 0 && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('C\'était votre dernière utilisation gratuite de l\'assistant.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        } else {
+          _hasCountedUsage = true; // Pas besoin de compter pour les utilisateurs premium
+        }
+      } catch (e) {
+        debugPrint('Erreur lors de l\'incrémentation du compteur: $e');
+      }
+    }
 
     final question = _controller.text.trim();
     _controller.clear();

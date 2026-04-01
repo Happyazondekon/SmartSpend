@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';  // Nouveau import
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'package:smartspend/services/premium_service.dart';
 import 'auth_wrapper.dart';
 import 'notification_service.dart';
@@ -77,42 +78,25 @@ Future<void> _ensureFirestoreIndexes() async {
   }
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  final ThemeProvider _themeProvider = ThemeProvider();
-
-  @override
-  void initState() {
-    super.initState();
-    // Écouter les changements de thème
-    _themeProvider.addListener(_onThemeChanged);
-  }
-
-  @override
-  void dispose() {
-    _themeProvider.removeListener(_onThemeChanged);
-    super.dispose();
-  }
-
-  void _onThemeChanged() {
-    setState(() {});
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'SmartSpend',
-      theme: AppTheme.getTheme(false),
-      darkTheme: AppTheme.getTheme(true),
-      themeMode: _themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: AuthWrapper(),
+    return ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'SmartSpend',
+            theme: AppTheme.getTheme(false),
+            darkTheme: AppTheme.getTheme(true),
+            themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            home: const AuthWrapper(),
+          );
+        },
+      ),
     );
   }
 }

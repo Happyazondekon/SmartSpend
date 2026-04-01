@@ -244,21 +244,114 @@ class FirestoreService {
     }
   }
 
-  // Mettre à jour les notifications
-  Future<void> updateNotificationSettings(bool enabled) async {
+  // ===================================================================
+  // =================== GESTION DE CLÔTURE DE MOIS ==================
+  // ===================================================================
+
+  /// Clôturer le mois actuel et passer au nouveau mois
+  /// Conserve les catégories personnalisées de l'utilisateur
+  Future<bool> closeCurrentMonth() async {
+    if (currentUserId == null) return false;
+
+    try {
+      final userData = await loadUserData();
+      if (userData == null) return false;
+
+      final now = DateTime.now();
+
+      // Créer les données du mois à archiver
+      final monthData = MonthlyData(
+        year: userData.activeYear,
+        month: userData.activeMonth,
+        salary: userData.salary,
+        budget: Map<String, Map<String, dynamic>>.from(
+          userData.budget.map((key, value) => MapEntry(key, Map<String, dynamic>.from(value)))
+        ),
+        transactions: List<Transaction>.from(userData.transactions),
+        closedAt: now,
+      );
+
+      // Ajouter à l'historique (garder les 12 derniers mois)
+      final updatedHistory = List<MonthlyData>.from(userData.monthlyHistory);
+      updatedHistory.add(monthData);
+      if (updatedHistory.length > 12) {
+        updatedHistory.removeAt(0); // Supprimer le plus ancien
+      }
+
+      // Réinitialiser les catégories avec les pourcentages conservés mais spent = 0
+      final resetBudget = <String, Map<String, dynamic>>{};
+      userData.budget.forEach((key, value) {
+        resetBudget[key] = {
+          'percent': value['percent'],
+          'amount': 0.0, // Sera recalculé avec le nouveau revenu
+          'icon': value['icon'],
+          'color': value['color'],
+          'spent': 0.0,
+        };
+      });
+
+      // Créer les nouvelles données pour le mois
+      final updatedUserData = userData.copyWith(
+        salary: 0.0, // L'utilisateur doit entrer son nouveau revenu
+        budget: resetBudget,
+        transactions: [], // Nouvelles transactions pour le nouveau mois
+        activeMonth: now.month,
+        activeYear: now.year,
+        monthlyHistory: updatedHistory,
+        lastUpdated: now,
+      );
+
+      await saveUserData(updatedUserData);
+      debugPrint('✅ Mois clôturé avec succès: ${userData.activeMonth}/${userData.activeYear}');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Erreur lors de la clôture du mois: $e');
+      return false;
+    }
+  }
+
+  /// Mettre à jour le mois actif (sans clôturer)
+  Future<void> updateActiveMonth(int month, int year) async {
     if (currentUserId == null) return;
 
     try {
       final userData = await loadUserData();
       if (userData == null) return;
 
-      final updatedUserData = userData.copyWith(notificationsEnabled: enabled);
+      final updatedUserData = userData.copyWith(
+        activeMonth: month,
+        activeYear: year,
+      );
       await saveUserData(updatedUserData);
 
-      debugPrint('Paramètres de notification mis à jour avec succès');
+      debugPrint('Mois actif mis à jour: $month/$year');
     } catch (e) {
-      debugPrint('Erreur lors de la mise à jour des notifications: $e');
-      throw 'Erreur lors de la mise à jour des notifications';
+      debugPrint('Erreur lors de la mise à jour du mois actif: $e');
+      throw 'Erreur lors de la mise à jour du mois actif';
+    }
+  }
+
+  /// Récupérer l'historique des mois
+  Future<List<MonthlyData>> getMonthlyHistory() async {
+    try {
+      final userData = await loadUserData();
+      return userData?.monthlyHistory ?? [];
+    } catch (e) {
+      debugPrint('Erreur récupération historique: $e');
+      return [];
+    }
+  }
+
+  /// Récupérer les données d'un mois spécifique de l'historique
+  Future<MonthlyData?> getMonthData(int month, int year) async {
+    try {
+      final history = await getMonthlyHistory();
+      return history.firstWhere(
+        (m) => m.month == month && m.year == year,
+        orElse: () => throw Exception('Mois non trouvé'),
+      );
+    } catch (e) {
+      return null;
     }
   }
 

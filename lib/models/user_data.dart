@@ -3,6 +3,89 @@ import 'package:flutter/material.dart';
 import 'transaction.dart';
 import 'financial_goal.dart';
 
+/// Données d'un mois clôturé (historique)
+class MonthlyData {
+  final int year;
+  final int month;
+  final double salary;
+  final Map<String, Map<String, dynamic>> budget;
+  final List<Transaction> transactions;
+  final DateTime closedAt;
+
+  MonthlyData({
+    required this.year,
+    required this.month,
+    required this.salary,
+    required this.budget,
+    required this.transactions,
+    required this.closedAt,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'year': year,
+      'month': month,
+      'salary': salary,
+      'budget': budget.map((key, value) => MapEntry(key, {
+        'percent': value['percent'],
+        'amount': value['amount'],
+        'icon': (value['icon'] as IconData).codePoint,
+        'color': (value['color'] as Color).value,
+        'spent': value['spent'],
+      })),
+      'transactions': transactions.map((t) => t.toJson()).toList(),
+      'closedAt': closedAt.toIso8601String(),
+    };
+  }
+
+  factory MonthlyData.fromJson(Map<String, dynamic> json) {
+    final Map<String, Map<String, dynamic>> budget = {};
+    if (json['budget'] != null) {
+      final budgetData = json['budget'] as Map<String, dynamic>;
+      budgetData.forEach((key, value) {
+        budget[key] = {
+          'percent': (value['percent'] as num).toDouble(),
+          'amount': (value['amount'] as num).toDouble(),
+          'icon': IconData(value['icon'] as int, fontFamily: 'MaterialIcons'),
+          'color': Color(value['color'] as int),
+          'spent': (value['spent'] as num?)?.toDouble() ?? 0.0,
+        };
+      });
+    }
+
+    final List<Transaction> transactions = [];
+    if (json['transactions'] != null) {
+      final transactionsList = json['transactions'] as List<dynamic>;
+      transactions.addAll(
+          transactionsList.map((t) => Transaction.fromJson(t as Map<String, dynamic>))
+      );
+    }
+
+    return MonthlyData(
+      year: json['year'] as int,
+      month: json['month'] as int,
+      salary: (json['salary'] as num).toDouble(),
+      budget: budget,
+      transactions: transactions,
+      closedAt: DateTime.parse(json['closedAt'] as String),
+    );
+  }
+
+  /// Calcul du total des dépenses du mois
+  double get totalSpent => transactions.fold(0.0, (sum, t) => sum + t.amount);
+
+  /// Calcul du reste (épargne réelle)
+  double get remaining => salary - totalSpent;
+
+  /// Nom du mois en français
+  String get monthName {
+    const months = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+    return months[month - 1];
+  }
+}
 
 class UserData {
   final String userId;
@@ -10,10 +93,15 @@ class UserData {
   final String currency;
   final Map<String, Map<String, dynamic>> budget;
   final List<Transaction> transactions;
-  final List<FinancialGoal> financialGoals; // NOUVEAU
-  final bool notificationsEnabled;
+  final List<FinancialGoal> financialGoals;
   final DateTime lastUpdated;
 
+  // Gestion des mois
+  final int activeMonth; // 1-12
+  final int activeYear;
+  final List<MonthlyData> monthlyHistory; // Historique des mois clôturés
+
+  // Premium
   final bool isPremium;
   final DateTime? premiumExpiryDate;
   final int pdfExportsUsed;
@@ -25,9 +113,11 @@ class UserData {
     required this.currency,
     required this.budget,
     required this.transactions,
-    required this.financialGoals, // NOUVEAU
-    required this.notificationsEnabled,
+    required this.financialGoals,
     required this.lastUpdated,
+    required this.activeMonth,
+    required this.activeYear,
+    this.monthlyHistory = const [],
     this.isPremium = false,
     this.premiumExpiryDate,
     this.pdfExportsUsed = 0,
@@ -48,10 +138,13 @@ class UserData {
         'spent': value['spent'],
       })),
       'transactions': transactions.map((t) => t.toJson()).toList(),
-      'notificationsEnabled': notificationsEnabled,
       'lastUpdated': Timestamp.fromDate(lastUpdated),
       'financialGoals': financialGoals.map((g) => g.toJson()).toList(),
-      // Nouvelles propriétés Premium
+      // Gestion des mois
+      'activeMonth': activeMonth,
+      'activeYear': activeYear,
+      'monthlyHistory': monthlyHistory.map((m) => m.toJson()).toList(),
+      // Propriétés Premium
       'isPremium': isPremium,
       'premiumExpiryDate': premiumExpiryDate != null ? Timestamp.fromDate(premiumExpiryDate!) : null,
       'pdfExportsUsed': pdfExportsUsed,
@@ -94,16 +187,30 @@ class UserData {
       );
     }
 
+    // Conversion de l'historique mensuel
+    final List<MonthlyData> monthlyHistory = [];
+    if (data['monthlyHistory'] != null) {
+      final historyList = data['monthlyHistory'] as List<dynamic>;
+      monthlyHistory.addAll(
+          historyList.map((h) => MonthlyData.fromJson(h as Map<String, dynamic>))
+      );
+    }
+
+    final now = DateTime.now();
+
     return UserData(
       userId: userId,
       salary: (data['salary'] as num?)?.toDouble() ?? 0.0,
       currency: data['currency'] as String? ?? 'XOF',
       budget: budget,
       transactions: transactions,
-      notificationsEnabled: data['notificationsEnabled'] as bool? ?? false,
       lastUpdated: (data['lastUpdated'] as Timestamp?)?.toDate() ?? DateTime.now(),
       financialGoals: financialGoals,
-      // Nouvelles propriétés Premium
+      // Gestion des mois (migration: utiliser le mois actuel si pas défini)
+      activeMonth: data['activeMonth'] as int? ?? now.month,
+      activeYear: data['activeYear'] as int? ?? now.year,
+      monthlyHistory: monthlyHistory,
+      // Propriétés Premium
       isPremium: data['isPremium'] as bool? ?? false,
       premiumExpiryDate: (data['premiumExpiryDate'] as Timestamp?)?.toDate(),
       pdfExportsUsed: data['pdfExportsUsed'] as int? ?? 0,
@@ -113,15 +220,18 @@ class UserData {
 
   // Créer une instance vide pour un nouvel utilisateur
   factory UserData.empty(String userId) {
+    final now = DateTime.now();
     return UserData(
       userId: userId,
       salary: 0.0,
       currency: 'XOF',
       budget: _getDefaultBudget(),
       transactions: [],
-      notificationsEnabled: false,
-      lastUpdated: DateTime.now(),
+      lastUpdated: now,
       financialGoals: [],
+      activeMonth: now.month,
+      activeYear: now.year,
+      monthlyHistory: [],
       isPremium: false,
       premiumExpiryDate: null,
       pdfExportsUsed: 0,
@@ -191,9 +301,11 @@ class UserData {
     String? currency,
     Map<String, Map<String, dynamic>>? budget,
     List<Transaction>? transactions,
-    bool? notificationsEnabled,
     DateTime? lastUpdated,
     List<FinancialGoal>? financialGoals,
+    int? activeMonth,
+    int? activeYear,
+    List<MonthlyData>? monthlyHistory,
     bool? isPremium,
     DateTime? premiumExpiryDate,
     int? pdfExportsUsed,
@@ -205,14 +317,31 @@ class UserData {
       currency: currency ?? this.currency,
       budget: budget ?? this.budget,
       transactions: transactions ?? this.transactions,
-      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       financialGoals: financialGoals ?? this.financialGoals,
+      activeMonth: activeMonth ?? this.activeMonth,
+      activeYear: activeYear ?? this.activeYear,
+      monthlyHistory: monthlyHistory ?? this.monthlyHistory,
       isPremium: isPremium ?? this.isPremium,
       premiumExpiryDate: premiumExpiryDate ?? this.premiumExpiryDate,
       pdfExportsUsed: pdfExportsUsed ?? this.pdfExportsUsed,
       chatbotUsesUsed: chatbotUsesUsed ?? this.chatbotUsesUsed,
     );
+  }
+
+  /// Vérifie si un nouveau mois a commencé (par rapport au mois actif)
+  bool get isNewMonthStarted {
+    final now = DateTime.now();
+    return now.year > activeYear || (now.year == activeYear && now.month > activeMonth);
+  }
+
+  /// Nom du mois actif (en français)
+  String get activeMonthName {
+    const months = [
+      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    ];
+    return '${months[activeMonth - 1]} $activeYear';
   }
   // Méthode pour vérifier si l'utilisateur est Premium actif
   bool get isPremiumActive {
