@@ -25,10 +25,11 @@ class NotificationService {
 
   // IDs des notifications
   static const int _morningReminderId = 1001;
-  static const int _eveningReminderId = 1002;
-  static const int _newMonthReminderId = 1003;
-  static const int _goalReminderId = 1004;
-  static const int _budgetWarningId = 1005;
+  static const int _noonReminderId = 1002;
+  static const int _eveningReminderId = 1003;
+  static const int _newMonthReminderId = 1004;
+  static const int _goalReminderId = 1005;
+  static const int _budgetWarningId = 1006;
   static const int _testNotificationId = 9999;
 
   // Messages motivationnels variés pour les rappels de transactions
@@ -38,6 +39,14 @@ class NotificationService {
     "Un petit check financier ce matin ? ☕",
     "Commencez bien la journée en gérant vos finances ! 📊",
     "Bonjour ! Vos objectifs financiers vous attendent 🎯",
+  ];
+
+  static const List<String> _noonMessages = [
+    "Pause déjeuner ! 🍽️ Avez-vous des dépenses à noter ?",
+    "Mi-journée ! Pensez à enregistrer vos achats du matin 📝",
+    "C'est l'heure de faire le point ! ☀️",
+    "Un petit check rapide de vos dépenses ? 💳",
+    "Midi pile ! Parfait pour noter vos transactions 🕛",
   ];
 
   static const List<String> _eveningMessages = [
@@ -71,6 +80,9 @@ class NotificationService {
 
     try {
       tz.initializeTimeZones();
+      
+      // Configurer le fuseau horaire local
+      _configureLocalTimeZone();
 
       const AndroidInitializationSettings initializationSettingsAndroid =
           AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -100,10 +112,44 @@ class NotificationService {
         // Auto-setup au premier lancement
         await _autoSetupOnFirstLaunch();
         
+        // Toujours reprogrammer si notifications activées
+        if (await areNotificationsEnabled()) {
+          debugPrint('🔄 Reprogrammation des notifications activées...');
+          await scheduleAllReminders();
+        }
+        
         debugPrint('✅ Service de notification initialisé avec succès');
       }
     } catch (e) {
       debugPrint('❌ Erreur initialisation notifications: $e');
+    }
+  }
+
+  /// Configure le fuseau horaire local pour les notifications
+  void _configureLocalTimeZone() {
+    try {
+      // Obtenir le décalage UTC du device
+      final now = DateTime.now();
+      final offset = now.timeZoneOffset;
+      
+      // Trouver un timezone correspondant (approximatif)
+      String timezoneName;
+      if (offset.inHours == 0) {
+        timezoneName = 'Africa/Abidjan'; // UTC+0
+      } else if (offset.inHours == 1) {
+        timezoneName = 'Africa/Lagos'; // UTC+1
+      } else if (offset.inHours == 2) {
+        timezoneName = 'Africa/Cairo'; // UTC+2
+      } else {
+        timezoneName = 'Africa/Lagos'; // Par défaut
+      }
+      
+      tz.setLocalLocation(tz.getLocation(timezoneName));
+      debugPrint('🕐 Timezone configuré: $timezoneName (offset: ${offset.inHours}h)');
+    } catch (e) {
+      debugPrint('⚠️ Erreur configuration timezone: $e, utilisation du défaut');
+      // En cas d'erreur, utiliser UTC
+      tz.setLocalLocation(tz.getLocation('Africa/Lagos'));
     }
   }
 
@@ -272,10 +318,13 @@ class NotificationService {
   /// Programmer tous les rappels automatiques
   Future<Map<String, bool>> scheduleAllReminders() async {
     if (!await areNotificationsEnabled() || !await hasRequiredPermissions()) {
-      return {'morning': false, 'evening': false};
+      debugPrint('❌ Notifications désactivées ou permissions manquantes');
+      return {'morning': false, 'noon': false, 'evening': false};
     }
 
     final results = <String, bool>{};
+    final now = tz.TZDateTime.now(tz.local);
+    debugPrint('🕐 Heure actuelle: ${now.hour}:${now.minute}:${now.second}');
 
     // Rappel du matin (8h30)
     results['morning'] = await _scheduleDailyReminder(
@@ -284,6 +333,15 @@ class NotificationService {
       minute: 30,
       messages: _morningMessages,
       title: '💰 SmartSpend - Bonjour !',
+    );
+
+    // Rappel du midi (12h30)
+    results['noon'] = await _scheduleDailyReminder(
+      id: _noonReminderId,
+      hour: 12,
+      minute: 30,
+      messages: _noonMessages,
+      title: '💰 SmartSpend - Pause déjeuner !',
     );
 
     // Rappel du soir (20h00)
@@ -312,6 +370,9 @@ class NotificationService {
       final scheduledTime = _nextInstanceOfTime(hour, minute);
       final message = messages[Random().nextInt(messages.length)];
 
+      debugPrint('⏰ Programmation notification ID $id pour: ${scheduledTime.day}/${scheduledTime.month} à ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}');
+      debugPrint('📝 Message: $message');
+
       await _notificationsPlugin.zonedSchedule(
         id,
         title,
@@ -324,9 +385,10 @@ class NotificationService {
             channelDescription: 'Rappels pour saisir vos transactions',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: const Color(0xFF00A9A9),
+            icon: '@drawable/ic_notif_wallet',
+            color: const Color(0xFF00BCD4),
             category: AndroidNotificationCategory.reminder,
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -340,6 +402,7 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.time,
       );
 
+      debugPrint('✅ Notification $id programmée avec succès !');
       return true;
     } catch (e) {
       debugPrint('❌ Erreur programmation rappel ($id): $e');
@@ -370,16 +433,17 @@ class NotificationService {
         '📅 Nouveau mois !',
         message,
         scheduledTime,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_monthly',
             'Rappels mensuels',
             channelDescription: 'Rappels pour entrer vos revenus mensuels',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: Color(0xFF4CAF50),
+            icon: '@drawable/ic_notif_calendar',
+            color: const Color(0xFF4CAF50),
             category: AndroidNotificationCategory.reminder,
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -421,14 +485,15 @@ class NotificationService {
         _newMonthReminderId + 100,
         '🎉 Nouveau mois !',
         _newMonthMessages[Random().nextInt(_newMonthMessages.length)],
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_monthly',
             'Rappels mensuels',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: Color(0xFF4CAF50),
+            icon: '@drawable/ic_notif_calendar',
+            color: const Color(0xFF4CAF50),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -463,14 +528,15 @@ class NotificationService {
         _budgetWarningId + category.hashCode % 1000,
         '💰 Alerte Budget',
         message,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_budget',
             'Alertes budget',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: Color(0xFFFF9800),
+            icon: '@drawable/ic_notif_warning',
+            color: percentUsed >= 100 ? const Color(0xFFE53935) : const Color(0xFFFF9800),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -479,6 +545,7 @@ class NotificationService {
           ),
         ),
       );
+      debugPrint('✅ Notification alerte budget envoyée: $category (${percentUsed.toStringAsFixed(0)}%)');
     } catch (e) {
       debugPrint('❌ Erreur notification budget: $e');
     }
@@ -493,22 +560,24 @@ class NotificationService {
         _goalReminderId,
         '🎉 Objectif atteint !',
         'Félicitations ! Vous avez atteint votre objectif "$goalName" 🏆',
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_goals',
             'Objectifs financiers',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: Color(0xFF4CAF50),
+            icon: '@drawable/ic_notif_goal',
+            color: const Color(0xFF4CAF50),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
           ),
         ),
       );
+      debugPrint('✅ Notification objectif atteint envoyée: $goalName');
     } catch (e) {
       debugPrint('❌ Erreur notification objectif: $e');
     }
@@ -523,16 +592,17 @@ class NotificationService {
         _goalReminderId + 1,
         '⏰ Objectif bientôt échéant',
         'Plus que $daysRemaining jours pour atteindre "$goalName"',
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_goals',
             'Objectifs financiers',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: Color(0xFFFF9800),
+            icon: '@drawable/ic_notif_warning',
+            color: const Color(0xFFFF9800),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -557,16 +627,17 @@ class NotificationService {
         _testNotificationId,
         '✅ Test SmartSpend',
         'Les notifications fonctionnent correctement ! 🎉',
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_daily',
             'Rappels quotidiens',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: Color(0xFF00A9A9),
+            icon: '@drawable/ic_notif_success',
+            color: const Color(0xFF00BCD4),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -590,16 +661,17 @@ class NotificationService {
         '⏰ Test programmé',
         'Cette notification était programmée pour dans $delaySeconds secondes !',
         scheduledTime,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_daily',
             'Rappels quotidiens',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-            color: Color(0xFF00A9A9),
+            icon: '@drawable/ic_notif_wallet',
+            color: const Color(0xFF00BCD4),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -681,5 +753,125 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     final timestamp = prefs.getInt(_lastNotificationTimeKey);
     return timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null;
+  }
+
+  /// Envoyer une notification de test immédiate
+  Future<bool> sendTestNotification() async {
+    try {
+      if (!_isInitialized) await initialize();
+
+      await _notificationsPlugin.show(
+        _testNotificationId,
+        '🧪 Test SmartSpend',
+        'Les notifications fonctionnent correctement ! ✅',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'smartspend_daily',
+            'Rappels quotidiens',
+            channelDescription: 'Rappels pour saisir vos transactions',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@drawable/ic_notif_success',
+            color: const Color(0xFF00BCD4),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+      );
+
+      debugPrint('✅ Notification de test envoyée');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Erreur envoi notification test: $e');
+      return false;
+    }
+  }
+
+  /// Envoyer une notification de test programmée dans 1 minute
+  Future<bool> sendScheduledTestNotification() async {
+    try {
+      if (!_isInitialized) await initialize();
+
+      final scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 1));
+      
+      await _notificationsPlugin.zonedSchedule(
+        _testNotificationId + 1,
+        '⏰ Test programmé SmartSpend',
+        'Cette notification était programmée pour dans 1 minute ! ✅',
+        scheduledTime,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'smartspend_daily',
+            'Rappels quotidiens',
+            channelDescription: 'Rappels pour saisir vos transactions',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@drawable/ic_notif_wallet',
+            color: const Color(0xFF00BCD4),
+            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          ),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+
+      debugPrint('✅ Notification de test programmée pour ${scheduledTime.hour}:${scheduledTime.minute}');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Erreur programmation notification test: $e');
+      return false;
+    }
+  }
+
+  /// Debug complet du système de notifications
+  Future<void> debugNotifications() async {
+    debugPrint('=== DEBUG NOTIFICATIONS ===');
+    
+    final stats = await getNotificationStats();
+    debugPrint('📊 Stats: $stats');
+    
+    final pending = await getPendingNotifications();
+    debugPrint('📅 Notifications en attente: ${pending.length}');
+    for (var notif in pending) {
+      debugPrint('  - ID: ${notif.id}, Title: ${notif.title}');
+    }
+    
+    final now = DateTime.now();
+    final tzNow = tz.TZDateTime.now(tz.local);
+    debugPrint('🕐 Heure locale: $now');
+    debugPrint('🕐 Heure TZ: $tzNow');
+    debugPrint('🕐 Timezone: ${tz.local.name}');
+    
+    final nextMorning = _nextInstanceOfTime(8, 30);
+    final nextEvening = _nextInstanceOfTime(20, 0);
+    debugPrint('📅 Prochain rappel matin (8h30): $nextMorning');
+    debugPrint('📅 Prochain rappel soir (20h00): $nextEvening');
+    
+    debugPrint('=== FIN DEBUG ===');
+  }
+
+  /// Reprogrammer toutes les notifications (utile après debug)
+  Future<void> rescheduleAllNotifications() async {
+    debugPrint('🔄 Reprogrammation de toutes les notifications...');
+    
+    // Annuler tout
+    await cancelAllNotifications();
+    
+    // Reprogrammer
+    await scheduleAllReminders();
+    await scheduleNewMonthReminder();
+    
+    // Afficher l'état
+    await debugNotifications();
   }
 }

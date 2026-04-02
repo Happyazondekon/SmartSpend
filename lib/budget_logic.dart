@@ -545,6 +545,9 @@ class BudgetLogic extends ChangeNotifier {
       // Sauvegarde dans Firestore
       await _firestoreService.addTransaction(transaction);
 
+      // Vérifier si le budget de la catégorie est dépassé
+      await _checkBudgetWarning(category);
+
       debugPrint('Transaction ajoutée avec succès');
     } catch (e) {
       debugPrint('Erreur lors de l\'ajout de la transaction: $e');
@@ -598,6 +601,32 @@ class BudgetLogic extends ChangeNotifier {
     } catch (e) {
       debugPrint('Erreur lors de la suppression de la transaction: $e');
       _showSnackBar('Erreur lors de la suppression de la transaction', Colors.red);
+    }
+  }
+
+  /// Vérifier si le budget d'une catégorie est dépassé et envoyer une notification
+  Future<void> _checkBudgetWarning(String category) async {
+    try {
+      final categoryData = _budget[category];
+      if (categoryData == null) return;
+
+      final budgetAmount = (categoryData['amount'] as num?)?.toDouble() ?? 0.0;
+      final spentAmount = (categoryData['spent'] as num?)?.toDouble() ?? 0.0;
+
+      // Ne pas envoyer si pas de budget défini
+      if (budgetAmount <= 0) return;
+
+      final percentUsed = (spentAmount / budgetAmount) * 100;
+      
+      debugPrint('📊 Budget "$category": ${spentAmount.toStringAsFixed(0)}/${budgetAmount.toStringAsFixed(0)} (${percentUsed.toStringAsFixed(0)}%)');
+
+      // Envoyer notification si >= 80%
+      if (percentUsed >= 80) {
+        await NotificationService().showBudgetWarningNotification(category, percentUsed);
+        debugPrint('⚠️ Notification budget envoyée pour "$category" (${percentUsed.toStringAsFixed(0)}%)');
+      }
+    } catch (e) {
+      debugPrint('Erreur vérification budget: $e');
     }
   }
 
@@ -1431,6 +1460,10 @@ class BudgetLogic extends ChangeNotifier {
 
         if (goal.currentAmount >= goal.targetAmount) {
           _showSnackBar('🎉 Félicitations ! Objectif "${goal.name}" atteint !', Colors.green);
+
+          // Envoyer une notification
+          await NotificationService().showGoalAchievedNotification(goal.name);
+          debugPrint('🎯 Notification objectif atteint envoyée: ${goal.name}');
 
           // Optionnel : marquer automatiquement comme terminé
           await _firestoreService.completeFinancialGoal(goalId);

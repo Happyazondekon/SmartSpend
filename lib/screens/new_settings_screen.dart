@@ -428,7 +428,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                 style: AppTextStyles.bodyMediumThemed(isDark),
               ),
               Text(
-                'Recevoir des rappels matin et soir',
+                'Recevoir des rappels matin, midi et soir',
                 style: AppTextStyles.bodySmallThemed(isDark).copyWith(
                   color: colors.textSecondary,
                 ),
