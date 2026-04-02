@@ -163,9 +163,9 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
     final currencySymbol = budgetLogic.getCurrencySymbol();
 
     final totalSpent =
-        budget.values.fold(0.0, (sum, v) => sum + (v['spent'] as num));
+        budget.values.fold(0.0, (sum, v) => sum + ((v['spent'] as num?)?.toDouble() ?? 0.0));
     final totalBudget =
-        budget.values.fold(0.0, (sum, v) => sum + (v['amount'] as num));
+        budget.values.fold(0.0, (sum, v) => sum + ((v['amount'] as num?)?.toDouble() ?? 0.0));
     final remaining = salary - totalSpent;
     final progress = salary > 0 ? totalSpent / salary : 0.0;
 
@@ -383,7 +383,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
   }) {
     final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
     final spent = (data['spent'] as num?)?.toDouble() ?? 0.0;
-    final percentage = (data['percentage'] as num?) ?? 0;
+    final percentage = ((data['percent'] as num?)?.toDouble() ?? 0.0) * 100;
     final color = data['color'] as Color? ?? colors.primary;
     final progress = amount > 0 ? spent / amount : 0.0;
     final isOverBudget = spent > amount;
@@ -893,7 +893,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
     final currencySymbol = budgetLogic.getCurrencySymbol();
     final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
     final spent = (data['spent'] as num?)?.toDouble() ?? 0.0;
-    final percentage = data['percentage'] as num;
+    final percentage = ((data['percent'] as num?)?.toDouble() ?? 0.0) * 100;
     final color = data['color'] as Color? ?? colors.primary;
     final remaining = amount - spent;
 
@@ -994,7 +994,13 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      // Éditer la catégorie
+                      _showEditCategoryDialog(
+                        budgetLogic,
+                        name,
+                        data,
+                        colors,
+                        isDark,
+                      );
                     },
                     icon: const Icon(Icons.edit_rounded),
                     label: const Text('Modifier'),
@@ -1031,6 +1037,231 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
             ),
             const SizedBox(height: AppSpacing.md),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditCategoryDialog(
+    BudgetLogic budgetLogic,
+    String categoryName,
+    Map<String, dynamic> data,
+    AppColorScheme colors,
+    bool isDark,
+  ) {
+    final nameController = TextEditingController(text: categoryName);
+    final currentPercent = ((data['percent'] as num?)?.toDouble() ?? 0.0) * 100;
+    final percentController = TextEditingController(text: currentPercent.toInt().toString());
+    IconData selectedIcon = data['icon'] as IconData? ?? Icons.category_rounded;
+    Color selectedColor = data['color'] as Color? ?? colors.primary;
+
+    final availableIcons = [
+      Icons.home_rounded,
+      Icons.directions_car_rounded,
+      Icons.restaurant_rounded,
+      Icons.shopping_bag_rounded,
+      Icons.medical_services_rounded,
+      Icons.school_rounded,
+      Icons.sports_esports_rounded,
+      Icons.flight_rounded,
+      Icons.pets_rounded,
+      Icons.checkroom_rounded,
+      Icons.fitness_center_rounded,
+      Icons.wifi_rounded,
+      Icons.lightbulb_rounded,
+      Icons.phone_android_rounded,
+      Icons.savings_rounded,
+      Icons.category_rounded,
+    ];
+
+    final availableColors = [
+      const Color(0xFF00A9A9),
+      const Color(0xFF4CAF50),
+      const Color(0xFFFFC107),
+      const Color(0xFFE91E63),
+      const Color(0xFF9C27B0),
+      const Color(0xFF2196F3),
+      const Color(0xFFFF5722),
+      const Color(0xFF795548),
+      const Color(0xFF607D8B),
+      const Color(0xFF673AB7),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl),
+              ),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Modifier la catégorie',
+                    style: AppTextStyles.titleLarge(isDark),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Nom
+                  TextField(
+                    controller: nameController,
+                    style: AppTextStyles.bodyMediumThemed(isDark),
+                    decoration: InputDecoration(
+                      labelText: 'Nom de la catégorie',
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Pourcentage
+                  TextField(
+                    controller: percentController,
+                    keyboardType: TextInputType.number,
+                    style: AppTextStyles.bodyMediumThemed(isDark),
+                    decoration: InputDecoration(
+                      labelText: 'Pourcentage du budget',
+                      suffixText: '%',
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Icônes
+                  Text('Icône', style: AppTextStyles.labelMedium(isDark)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: availableIcons.map((icon) {
+                      final isSelected = selectedIcon == icon;
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedIcon = icon),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? selectedColor.withOpacity(0.2)
+                                : colors.background,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: isSelected ? selectedColor : colors.border,
+                            ),
+                          ),
+                          child: Icon(icon,
+                              color: isSelected
+                                  ? selectedColor
+                                  : colors.textSecondary),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Couleurs
+                  Text('Couleur', style: AppTextStyles.labelMedium(isDark)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: availableColors.map((color) {
+                      final isSelected = selectedColor == color;
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedColor = color),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              width: 3,
+                            ),
+                          ),
+                          child: isSelected
+                              ? const Icon(Icons.check, color: Colors.white)
+                              : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Bouton
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final newName = nameController.text.trim();
+                        final percent =
+                            double.tryParse(percentController.text) ?? 0;
+
+                        if (newName.isNotEmpty && percent > 0) {
+                          budgetLogic.editCategory(
+                            categoryName,
+                            newName,
+                            percent,
+                            selectedIcon,
+                            selectedColor,
+                          );
+                          Navigator.pop(context);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.primary,
+                        foregroundColor: Colors.white,
+                        padding:
+                            const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                      ),
+                      child: const Text('Enregistrer les modifications'),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

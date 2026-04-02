@@ -25,11 +25,11 @@ class Transaction {
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
-      id: json['id'],
-      category: json['category'],
-      amount: json['amount'],
-      description: json['description'],
-      date: DateTime.parse(json['date']),
+      id: json['id'] as String? ?? '',
+      category: json['category'] as String? ?? 'Autres',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
+      description: json['description'] as String? ?? '',
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
     );
   }
 }

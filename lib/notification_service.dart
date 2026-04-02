@@ -96,6 +96,10 @@ class NotificationService {
       if (initialized == true) {
         _isInitialized = true;
         await _createNotificationChannels();
+        
+        // Auto-setup au premier lancement
+        await _autoSetupOnFirstLaunch();
+        
         debugPrint('✅ Service de notification initialisé avec succès');
       }
     } catch (e) {
@@ -106,6 +110,28 @@ class NotificationService {
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('Notification cliquée: ${response.payload}');
     // Navigation possible selon le payload
+  }
+
+  /// Configuration automatique au premier lancement
+  Future<void> _autoSetupOnFirstLaunch() async {
+    if (!await isFirstLaunch()) return;
+    
+    debugPrint('🆕 Premier lancement détecté - configuration des notifications');
+    
+    // Demander les permissions
+    final hasPermissions = await requestPermissions();
+    
+    if (hasPermissions) {
+      // Activer et programmer les notifications
+      await setNotificationsEnabled(true);
+      await scheduleAllReminders();
+      await scheduleNewMonthReminder();
+      debugPrint('✅ Notifications configurées automatiquement');
+    } else {
+      // Désactiver si permissions refusées
+      await setNotificationsEnabled(false);
+      debugPrint('⚠️ Permissions refusées - notifications désactivées');
+    }
   }
 
   Future<void> _createNotificationChannels() async {
@@ -211,9 +237,16 @@ class NotificationService {
   }
 
   /// Vérifier si les notifications sont activées (stocké en local)
+  /// Par défaut TRUE pour que les notifications fonctionnent dès le départ
   Future<bool> areNotificationsEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_notificationsEnabledKey) ?? false;
+    return prefs.getBool(_notificationsEnabledKey) ?? true;
+  }
+
+  /// Vérifier si c'est le premier lancement (pour l'initialisation automatique)
+  Future<bool> isFirstLaunch() async {
+    final prefs = await SharedPreferences.getInstance();
+    return !prefs.containsKey(_notificationsEnabledKey);
   }
 
   /// Vérifier si les notifications système sont activées

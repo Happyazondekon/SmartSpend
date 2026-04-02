@@ -471,33 +471,35 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
       onDismissed: (direction) {
         budgetLogic.deleteTransaction(transaction);
       },
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: colors.border),
-        ),
-        child: Row(
-          children: [
-            // Icône catégorie
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: categoryColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(AppRadius.md),
+      child: GestureDetector(
+        onTap: () => _showTransactionOptions(transaction, budgetLogic, currencySymbol),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: colors.border),
+          ),
+          child: Row(
+            children: [
+              // Icône catégorie
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: categoryColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(
+                  _getCategoryIcon(transaction.category),
+                  color: categoryColor,
+                  size: 24,
+                ),
               ),
-              child: Icon(
-                _getCategoryIcon(transaction.category),
-                color: categoryColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
 
-            // Détails
-            Expanded(
+              // Détails
+              Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -530,6 +532,348 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
             ),
           ],
         ),
+        ),
+      ),
+    );
+  }
+
+  void _showTransactionOptions(
+    models.Transaction transaction,
+    BudgetLogic budgetLogic,
+    String currencySymbol,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
+    final categoryColor = _getCategoryColor(transaction.category);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Détails de la transaction
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: colors.background,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: categoryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(
+                      _getCategoryIcon(transaction.category),
+                      color: categoryColor,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          transaction.description.isNotEmpty
+                              ? transaction.description
+                              : transaction.category,
+                          style: AppTextStyles.titleMedium(isDark),
+                        ),
+                        Text(
+                          '${transaction.category} • ${_formatDateDisplay(_formatDateKey(transaction.date))}',
+                          style: AppTextStyles.bodySmallThemed(isDark).copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '-$currencySymbol${_formatNumber(transaction.amount)}',
+                    style: AppTextStyles.titleLarge(isDark).copyWith(
+                      color: colors.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            // Actions
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showEditTransactionDialog(transaction, budgetLogic, currencySymbol);
+                    },
+                    icon: const Icon(Icons.edit_rounded),
+                    label: const Text('Modifier'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _confirmDeleteTransaction(transaction, budgetLogic);
+                    },
+                    icon: Icon(Icons.delete_rounded, color: colors.error),
+                    label: Text('Supprimer', style: TextStyle(color: colors.error)),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: colors.error),
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditTransactionDialog(
+    models.Transaction transaction,
+    BudgetLogic budgetLogic,
+    String currencySymbol,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
+
+    final amountController = TextEditingController(text: transaction.amount.toStringAsFixed(0));
+    final descriptionController = TextEditingController(text: transaction.description);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Modifier la transaction',
+                style: AppTextStyles.titleLarge(isDark),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                transaction.category,
+                style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Montant
+              Text(
+                'Montant',
+                style: AppTextStyles.labelMedium(isDark).copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                style: AppTextStyles.headlineMedium(isDark),
+                decoration: InputDecoration(
+                  prefixText: '$currencySymbol ',
+                  prefixStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                    color: colors.primary,
+                  ),
+                  filled: true,
+                  fillColor: colors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Description
+              Text(
+                'Description',
+                style: AppTextStyles.labelMedium(isDark).copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: descriptionController,
+                style: AppTextStyles.bodyMediumThemed(isDark),
+                decoration: InputDecoration(
+                  hintText: 'Ex: Courses du weekend',
+                  hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
+                    color: colors.textSecondary.withOpacity(0.5),
+                  ),
+                  filled: true,
+                  fillColor: colors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Bouton
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final newAmount = double.tryParse(amountController.text);
+                    if (newAmount != null && newAmount > 0) {
+                      budgetLogic.editTransaction(
+                        transaction,
+                        newAmount,
+                        descriptionController.text,
+                      );
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Transaction modifiée'),
+                          backgroundColor: colors.success,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                  ),
+                  child: const Text('Enregistrer'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteTransaction(
+    models.Transaction transaction,
+    BudgetLogic budgetLogic,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(
+          'Supprimer la transaction ?',
+          style: AppTextStyles.titleLarge(isDark),
+        ),
+        content: Text(
+          'Cette action est irréversible.',
+          style: AppTextStyles.bodyMediumThemed(isDark),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Annuler',
+              style: TextStyle(color: colors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              budgetLogic.deleteTransaction(transaction);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Transaction supprimée'),
+                  backgroundColor: colors.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.error,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
       ),
     );
   }

@@ -251,7 +251,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const FinancialGoalsScreen(openAddDialog: true),
+                                const FinancialGoalsScreen(),
                           ),
                         );
                       },
@@ -326,6 +326,9 @@ class _NewMainScreenState extends State<NewMainScreen>
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: colors.surface,
@@ -333,10 +336,11 @@ class _NewMainScreenState extends State<NewMainScreen>
                 top: Radius.circular(AppRadius.xl),
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 Center(
                   child: Container(
                     width: 40,
@@ -489,6 +493,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
+            ),
             ),
           ),
         ),

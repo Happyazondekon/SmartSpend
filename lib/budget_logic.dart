@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:smartspend/services/auth_service.dart';
+import 'package:smartspend/utils/icon_utils.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'models/transaction.dart';
@@ -420,7 +421,7 @@ class BudgetLogic extends ChangeNotifier {
     for (var transaction in filtered) {
       if (budget.containsKey(transaction.category)) {
         budget[transaction.category]!['spent'] =
-            (budget[transaction.category]!['spent'] as double) + transaction.amount;
+            ((budget[transaction.category]!['spent'] as num?)?.toDouble() ?? 0.0) + transaction.amount;
       }
     }
 
@@ -476,7 +477,8 @@ class BudgetLogic extends ChangeNotifier {
     final budget = getBudget();
 
     budget.forEach((key, value) {
-      budget[key]!['amount'] = inputSalary * value['percent'];
+      final percent = (value['percent'] as num?)?.toDouble() ?? 0.0;
+      budget[key]!['amount'] = inputSalary * percent;
     });
 
     setBudget(budget);
@@ -495,13 +497,14 @@ class BudgetLogic extends ChangeNotifier {
 
   double getTotalBudgetPercentage() {
     final budget = getBudget();
-    return budget.values.fold(0.0, (sum, item) => sum + (item['percent'] as double));
+    return budget.values.fold(0.0, (sum, item) => sum + ((item['percent'] as num?)?.toDouble() ?? 0.0));
   }
 
   String getSpendingRecommendation(String category) {
     final budget = getBudget();
-    double spent = budget[category]!['spent'] as double;
-    double allocated = budget[category]!['amount'] as double;
+    if (!budget.containsKey(category)) return "";
+    double spent = (budget[category]!['spent'] as num?)?.toDouble() ?? 0.0;
+    double allocated = (budget[category]!['amount'] as num?)?.toDouble() ?? 0.0;
 
     if (allocated <= 0) return "";
     double percentage = (spent / allocated) * 100;
@@ -617,7 +620,7 @@ class BudgetLogic extends ChangeNotifier {
         newBudget[key] = {
           'percent': value['percent'],
           'amount': value['amount'],
-          'icon': IconData(value['icon'], fontFamily: 'MaterialIcons'),
+          'icon': IconUtils.getIconFromCode(value['icon']),
           'color': Color(value['color']),
           'spent': value['spent'] ?? 0.0,
         };
@@ -768,7 +771,7 @@ class BudgetLogic extends ChangeNotifier {
       return;
     }
 
-    double currentTotal = getTotalBudgetPercentage() - (budget[oldName]!['percent'] as double);
+    double currentTotal = getTotalBudgetPercentage() - ((budget[oldName]!['percent'] as num?)?.toDouble() ?? 0.0);
     if (currentTotal + percent / 100 > 1.0) {
       _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Après modification: ${((currentTotal + percent / 100) * 100).toStringAsFixed(0)}%', Colors.red);
       return;

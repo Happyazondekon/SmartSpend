@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:flutter/material.dart';
+import 'package:smartspend/utils/icon_utils.dart';
 import 'transaction.dart';
 import 'financial_goal.dart';
 
@@ -44,10 +45,10 @@ class MonthlyData {
       final budgetData = json['budget'] as Map<String, dynamic>;
       budgetData.forEach((key, value) {
         budget[key] = {
-          'percent': (value['percent'] as num).toDouble(),
-          'amount': (value['amount'] as num).toDouble(),
-          'icon': IconData(value['icon'] as int, fontFamily: 'MaterialIcons'),
-          'color': Color(value['color'] as int),
+          'percent': (value['percent'] as num?)?.toDouble() ?? 0.0,
+          'amount': (value['amount'] as num?)?.toDouble() ?? 0.0,
+          'icon': IconUtils.getIconFromCode(value['icon'] as int? ?? 0xe88a),
+          'color': Color(value['color'] as int? ?? 0xFF00A9A9),
           'spent': (value['spent'] as num?)?.toDouble() ?? 0.0,
         };
       });
@@ -160,10 +161,10 @@ class UserData {
       final budgetData = data['budget'] as Map<String, dynamic>;
       budgetData.forEach((key, value) {
         budget[key] = {
-          'percent': (value['percent'] as num).toDouble(),
-          'amount': (value['amount'] as num).toDouble(),
-          'icon': IconData(value['icon'] as int, fontFamily: 'MaterialIcons'),
-          'color': Color(value['color'] as int),
+          'percent': (value['percent'] as num?)?.toDouble() ?? 0.0,
+          'amount': (value['amount'] as num?)?.toDouble() ?? 0.0,
+          'icon': IconUtils.getIconFromCode(value['icon'] as int? ?? 0xe88a),
+          'color': Color(value['color'] as int? ?? 0xFF00A9A9),
           'spent': (value['spent'] as num?)?.toDouble() ?? 0.0,
         };
       });
@@ -245,49 +246,49 @@ class UserData {
       'Loyer': {
         'percent': 0.30,
         'amount': 0.0,
-        'icon': Icons.home_work_outlined,
+        'icon': Icons.home_rounded,
         'color': const Color(0xFF00A9A9),
         'spent': 0.0,
       },
       'Transport': {
         'percent': 0.10,
         'amount': 0.0,
-        'icon': Icons.directions_bus_filled_outlined,
+        'icon': Icons.directions_car_rounded,
         'color': const Color(0xFF4CAF50),
         'spent': 0.0,
       },
       'Électricité/Eau': {
         'percent': 0.07,
         'amount': 0.0,
-        'icon': Icons.lightbulb_outline,
+        'icon': Icons.lightbulb_rounded,
         'color': const Color(0xFFFFC107),
         'spent': 0.0,
       },
       'Internet': {
         'percent': 0.05,
         'amount': 0.0,
-        'icon': Icons.wifi,
+        'icon': Icons.wifi_rounded,
         'color': const Color(0xFF673AB7),
         'spent': 0.0,
       },
       'Nourriture': {
         'percent': 0.15,
         'amount': 0.0,
-        'icon': Icons.restaurant_menu_outlined,
+        'icon': Icons.restaurant_rounded,
         'color': const Color(0xFFE91E63),
         'spent': 0.0,
       },
       'Loisirs': {
         'percent': 0.08,
         'amount': 0.0,
-        'icon': Icons.sports_esports_outlined,
+        'icon': Icons.sports_esports_rounded,
         'color': const Color(0xFF9C27B0),
         'spent': 0.0,
       },
       'Épargne': {
         'percent': 0.25,
         'amount': 0.0,
-        'icon': Icons.savings_outlined,
+        'icon': Icons.savings_rounded,
         'color': const Color(0xFF00796B),
         'spent': 0.0,
       },

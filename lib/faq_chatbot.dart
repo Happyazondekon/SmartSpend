@@ -97,7 +97,7 @@ class AIService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'model': 'llama3-8b-8192',
+          'model': 'llama-3.1-8b-instant',
           'messages': [
             {
               'role': 'system',
@@ -130,58 +130,35 @@ DOMAINES D'EXPERTISE:
               'content': prompt
             }
           ],
-          'max_tokens': 200,
-          'temperature': 0.8,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['choices'][0]['message']['content'].trim();
-      }
-    } catch (e) {
-      print('Erreur Groq: $e');
-    }
-    return '';
-  }
-
-  static Future<String> getCohereResponse(String prompt) async {
-    try {
-      final response = await http.post(
-        Uri.parse('https://api.cohere.ai/v1/generate'),
-        headers: {
-          'Authorization': 'Bearer $_cohereApiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': 'command-light',
-          'prompt': """Tu es SmartBot, assistant IA expert en finances personnelles de l'app SmartSpend. Tu donnes des conseils financiers pratiques, aides à comprendre l'application, et motives les utilisateurs vers leurs objectifs financiers. 
-
-Question: $prompt
-
-Réponse professionnelle et bienveillante en français:""",
-          'max_tokens': 150,
+          'max_tokens': 300,
           'temperature': 0.7,
         }),
       );
 
+      print('Groq Status: ${response.statusCode}');
+      print('Groq Response: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['generations'] != null && data['generations'].isNotEmpty) {
-          return data['generations'][0]['text'].trim();
-        }
+        return data['choices'][0]['message']['content'].trim();
+      } else {
+        print('Groq Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('Erreur Cohere: $e');
+      print('Erreur Groq Exception: $e');
     }
     return '';
   }
 
   static Future<String> getAIResponse(String prompt) async {
+    // D'abord essayer la FAQ locale
+    String localAnswer = FAQChatBot.getLocalAnswer(prompt);
+    if (localAnswer.isNotEmpty) {
+      return localAnswer;
+    }
+    
+    // Sinon appeler l'API
     String response = await getGroqResponse(prompt);
-    if (response.isNotEmpty) return response;
-
-    response = await getCohereResponse(prompt);
     if (response.isNotEmpty) return response;
 
     return "⚠️ Connexion temporairement indisponible. Essayez une question des suggestions ci-dessous.";

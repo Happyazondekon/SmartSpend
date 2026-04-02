@@ -1,5 +1,6 @@
 // models/financial_goal.dart
 import 'package:flutter/material.dart';
+import 'package:smartspend/utils/icon_utils.dart';
 
 class FinancialGoal {
   final String id;
@@ -86,16 +87,16 @@ class FinancialGoal {
   // Créer depuis JSON
   factory FinancialGoal.fromJson(Map<String, dynamic> json) {
     return FinancialGoal(
-      id: json['id'],
-      name: json['name'],
-      targetAmount: (json['targetAmount'] as num).toDouble(),
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      targetAmount: (json['targetAmount'] as num?)?.toDouble() ?? 0.0,
       currentAmount: (json['currentAmount'] as num?)?.toDouble() ?? 0.0,
-      targetDate: DateTime.parse(json['targetDate']),
-      createdDate: DateTime.parse(json['createdDate']),
-      description: json['description'] ?? '',
-      icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
-      color: Color(json['color']),
-      isCompleted: json['isCompleted'] ?? false,
+      targetDate: json['targetDate'] != null ? DateTime.parse(json['targetDate']) : DateTime.now().add(const Duration(days: 30)),
+      createdDate: json['createdDate'] != null ? DateTime.parse(json['createdDate']) : DateTime.now(),
+      description: json['description'] as String? ?? '',
+      icon: IconUtils.getIconFromCode(json['icon'] as int? ?? 0xe88a),
+      color: Color(json['color'] as int? ?? 0xFF4CAF50),
+      isCompleted: json['isCompleted'] as bool? ?? false,
     );
   }
 
