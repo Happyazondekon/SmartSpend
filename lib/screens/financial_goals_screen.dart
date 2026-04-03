@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/financial_goal.dart';
 import '../firestore_service.dart';
 import '../models/user_data.dart';
+import '../new_design_system.dart';
 
 class FinancialGoalsScreen extends StatefulWidget {
   final bool openAddDialog;
@@ -374,9 +375,9 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
   }
 
   void _showAddGoalDialog() {
-    String name = '';
-    String description = '';
-    double targetAmount = 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
+    
     DateTime targetDate = DateTime.now().add(const Duration(days: 365));
     int selectedIconIndex = 0;
     int selectedColorIndex = 0;
@@ -385,391 +386,784 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Nouvel Objectif Financier'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nom de l\'objectif',
-                        hintText: 'ex: Visiter le Bénin',
-                      ),
-                      onChanged: (value) => name = value,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description (optionnel)',
-                        hintText: 'Plus de détails sur votre objectif...',
-                      ),
-                      maxLines: 2,
-                      onChanged: (value) => description = value,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: amountController,
-                      decoration: InputDecoration(
-                        labelText: 'Montant cible ($_currency)',
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) => targetAmount = double.tryParse(value) ?? 0,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Sélecteur de date
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_today),
-                      title: const Text('Date limite'),
-                      subtitle: Text(DateFormat('dd/MM/yyyy').format(targetDate)),
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: targetDate,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 3650)), // 10 ans
-                        );
-                        if (date != null) {
-                          setState(() => targetDate = date);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Sélecteur d'icône
-                    Text('Icône', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: List.generate(_availableIcons.length, (index) {
-                        return InkWell(
-                          onTap: () => setState(() => selectedIconIndex = index),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: selectedIconIndex == index
-                                  ? Theme.of(context).colorScheme.primaryContainer
-                                  : Theme.of(context).colorScheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color: selectedIconIndex == index
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Colors.transparent,
-                                  width: 2
-                              ),
-                            ),
-                            child: Icon(
-                              _availableIcons[index],
-                              color: selectedIconIndex == index
-                                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                                  : Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Sélecteur de couleur
-                    Text('Couleur', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: List.generate(_availableColors.length, (index) {
-                        return InkWell(
-                          onTap: () => setState(() => selectedColorIndex = index),
-                          borderRadius: BorderRadius.circular(24),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: _availableColors[index],
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.onBackground,
-                                width: selectedColorIndex == index ? 3 : 0,
-                              ),
-                            ),
-                            child: selectedColorIndex == index
-                                ? const Icon(Icons.check, color: Colors.white)
-                                : null,
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Annuler'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (name.trim().isEmpty || targetAmount <= 0) {
-                      _showSnackBar('Veuillez remplir tous les champs obligatoires', Colors.red);
-                      return;
-                    }
-                    Navigator.of(context).pop();
-                    _addGoal(name, description, targetAmount, targetDate,
-                        _availableIcons[selectedIconIndex], _availableColors[selectedColorIndex]);
-                  },
-                  child: const Text('Créer'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Indicateur de drag
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  
+                  // Titre
+                  Text(
+                    'Nouvel objectif financier',
+                    style: AppTextStyles.titleLarge(isDark),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Nom de l'objectif
+                  Text(
+                    'Nom de l\'objectif',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: nameController,
+                    style: AppTextStyles.bodyMediumThemed(isDark),
+                    decoration: InputDecoration(
+                      hintText: 'Ex: Voyage au Bénin',
+                      hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
+                        color: colors.textSecondary.withOpacity(0.5),
+                      ),
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Montant cible
+                  Text(
+                    'Montant cible',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    style: AppTextStyles.headlineMedium(isDark),
+                    decoration: InputDecoration(
+                      prefixText: '$_currency ',
+                      prefixStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                        color: colors.primary,
+                      ),
+                      hintText: '0',
+                      hintStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                        color: colors.textSecondary.withOpacity(0.5),
+                      ),
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Description (optionnel)
+                  Text(
+                    'Description (optionnel)',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: descriptionController,
+                    style: AppTextStyles.bodyMediumThemed(isDark),
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: 'Plus de détails sur votre objectif...',
+                      hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
+                        color: colors.textSecondary.withOpacity(0.5),
+                      ),
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Date limite
+                  Text(
+                    'Date limite',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: targetDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 3650)),
+                      );
+                      if (picked != null) {
+                        setModalState(() => targetDate = picked);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: colors.background,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded, color: colors.primary, size: 20),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            DateFormat('dd/MM/yyyy').format(targetDate),
+                            style: AppTextStyles.bodyMediumThemed(isDark),
+                          ),
+                          const Spacer(),
+                          Icon(Icons.arrow_drop_down, color: colors.textSecondary),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Icônes
+                  Text('Icône', style: AppTextStyles.labelMedium(isDark)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: List.generate(_availableIcons.length, (index) {
+                      final isSelected = selectedIconIndex == index;
+                      final selectedColor = _availableColors[selectedColorIndex];
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedIconIndex = index),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? selectedColor.withOpacity(0.2)
+                                : colors.background,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: isSelected ? selectedColor : colors.border,
+                            ),
+                          ),
+                          child: Icon(
+                            _availableIcons[index],
+                            color: isSelected ? selectedColor : colors.textSecondary,
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Couleurs
+                  Text('Couleur', style: AppTextStyles.labelMedium(isDark)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: List.generate(_availableColors.length, (index) {
+                      final isSelected = selectedColorIndex == index;
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedColorIndex = index),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: _availableColors[index],
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              width: 3,
+                            ),
+                          ),
+                          child: isSelected
+                              ? const Icon(Icons.check, color: Colors.white)
+                              : null,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Bouton Créer
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final name = nameController.text.trim();
+                        final targetAmount = double.tryParse(amountController.text) ?? 0;
+                        
+                        if (name.isEmpty || targetAmount <= 0) {
+                          _showSnackBar('Veuillez remplir le nom et le montant', Colors.red);
+                          return;
+                        }
+                        Navigator.pop(context);
+                        _addGoal(
+                          name,
+                          descriptionController.text,
+                          targetAmount,
+                          targetDate,
+                          _availableIcons[selectedIconIndex],
+                          _availableColors[selectedColorIndex],
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                      ),
+                      child: const Text('Créer l\'objectif'),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   void _showAddMoneyDialog(FinancialGoal goal) {
-    double amount = 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
     final amountController = TextEditingController();
+    final remaining = goal.targetAmount - goal.currentAmount;
+    final progress = goal.progressPercentage;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Ajouter à "${goal.name}"'),
-          content: Column(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl),
+            ),
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Montant actuel: ${goal.currentAmount.toStringAsFixed(0)} $_currency',
-                style: Theme.of(context).textTheme.bodyMedium,
+              // Indicateur de drag
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-              Text(
-                'Objectif: ${goal.targetAmount.toStringAsFixed(0)} $_currency',
-                style: Theme.of(context).textTheme.bodyMedium,
+              const SizedBox(height: AppSpacing.lg),
+              
+              // Titre avec icône
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: goal.color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Icon(goal.icon, color: goal.color, size: 24),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          goal.name,
+                          style: AppTextStyles.titleMedium(isDark),
+                        ),
+                        Text(
+                          '${progress.toStringAsFixed(0)}% atteint',
+                          style: AppTextStyles.labelSmall(isDark).copyWith(
+                            color: goal.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Progress bar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                child: LinearProgressIndicator(
+                  value: progress / 100,
+                  backgroundColor: colors.background,
+                  valueColor: AlwaysStoppedAnimation<Color>(goal.color),
+                  minHeight: 8,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              
+              // Montants
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${goal.currentAmount.toStringAsFixed(0)} $_currency',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(color: colors.textSecondary),
+                  ),
+                  Text(
+                    '${goal.targetAmount.toStringAsFixed(0)} $_currency',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(color: colors.textSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Champ montant
+              Text(
+                'Montant à ajouter',
+                style: AppTextStyles.labelMedium(isDark).copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: amountController,
-                decoration: InputDecoration(
-                  labelText: 'Montant à ajouter ($_currency)',
-                ),
                 keyboardType: TextInputType.number,
-                onChanged: (value) => amount = double.tryParse(value) ?? 0,
                 autofocus: true,
+                style: AppTextStyles.headlineMedium(isDark),
+                decoration: InputDecoration(
+                  prefixText: '$_currency ',
+                  prefixStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                    color: goal.color,
+                  ),
+                  hintText: '0',
+                  hintStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                    color: colors.textSecondary.withOpacity(0.5),
+                  ),
+                  filled: true,
+                  fillColor: colors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
+              
+              // Info restant
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Text(
+                  'Il reste ${remaining.toStringAsFixed(0)} $_currency pour atteindre l\'objectif',
+                  style: AppTextStyles.labelSmall(isDark).copyWith(color: colors.textSecondary),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Bouton Ajouter
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final amount = double.tryParse(amountController.text) ?? 0;
+                    if (amount <= 0) {
+                      _showSnackBar('Veuillez entrer un montant valide', Colors.red);
+                      return;
+                    }
+                    Navigator.pop(context);
+                    _addMoneyToGoal(goal.id, amount);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: goal.color,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                  ),
+                  child: const Text('Ajouter'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (amount <= 0) {
-                  _showSnackBar('Veuillez entrer un montant valide', Colors.red);
-                  return;
-                }
-                Navigator.of(context).pop();
-                _addMoneyToGoal(goal.id, amount);
-              },
-              child: const Text('Ajouter'),
-            ),
-          ],
-        );
-      },
+        ),
+      ),
     );
   }
 
   void _showEditGoalDialog(FinancialGoal goal) {
-    String name = goal.name;
-    String description = goal.description;
-    double targetAmount = goal.targetAmount;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
+    
     DateTime targetDate = goal.targetDate;
 
     int selectedIconIndex = _availableIcons.indexWhere((icon) =>
-    icon.codePoint == goal.icon.codePoint);
+        icon.codePoint == goal.icon.codePoint);
     if (selectedIconIndex == -1) selectedIconIndex = 0;
 
     int selectedColorIndex = _availableColors.indexWhere((color) =>
-    color.value == goal.color.value);
+        color.value == goal.color.value);
     if (selectedColorIndex == -1) selectedColorIndex = 0;
 
-    final nameController = TextEditingController(text: name);
-    final descriptionController = TextEditingController(text: description);
-    final amountController = TextEditingController(text: targetAmount.toString());
+    final nameController = TextEditingController(text: goal.name);
+    final descriptionController = TextEditingController(text: goal.description);
+    final amountController = TextEditingController(text: goal.targetAmount.toStringAsFixed(0));
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Modifier l\'Objectif'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Nom de l\'objectif'),
-                      onChanged: (value) => name = value,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(labelText: 'Description'),
-                      maxLines: 2,
-                      onChanged: (value) => description = value,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: amountController,
-                      decoration: InputDecoration(labelText: 'Montant cible ($_currency)'),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) => targetAmount = double.tryParse(value) ?? 0,
-                    ),
-                    const SizedBox(height: 16),
-
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.calendar_today),
-                      title: const Text('Date limite'),
-                      subtitle: Text(DateFormat('dd/MM/yyyy').format(targetDate)),
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: targetDate,
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 3650)),
-                        );
-                        if (date != null) {
-                          setState(() => targetDate = date);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Sélecteur d'icône et couleur (même code que pour l'ajout)
-                    Text('Icône', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: List.generate(_availableIcons.length, (index) {
-                        return InkWell(
-                          onTap: () => setState(() => selectedIconIndex = index),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: selectedIconIndex == index
-                                  ? Theme.of(context).colorScheme.primaryContainer
-                                  : Theme.of(context).colorScheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color: selectedIconIndex == index
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Colors.transparent,
-                                  width: 2
-                              ),
-                            ),
-                            child: Icon(_availableIcons[index]),
-                          ),
-                        );
-                      }),
-                    ),
-                    const SizedBox(height: 24),
-
-                    Text('Couleur', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: List.generate(_availableColors.length, (index) {
-                        return InkWell(
-                          onTap: () => setState(() => selectedColorIndex = index),
-                          borderRadius: BorderRadius.circular(24),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: _availableColors[index],
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.onBackground,
-                                width: selectedColorIndex == index ? 3 : 0,
-                              ),
-                            ),
-                            child: selectedColorIndex == index
-                                ? const Icon(Icons.check, color: Colors.white)
-                                : null,
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Annuler'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (name.trim().isEmpty || targetAmount <= 0) {
-                      _showSnackBar('Veuillez remplir tous les champs obligatoires', Colors.red);
-                      return;
-                    }
-                    Navigator.of(context).pop();
-                    _updateGoal(goal.copyWith(
-                      name: name,
-                      description: description,
-                      targetAmount: targetAmount,
-                      targetDate: targetDate,
-                      icon: _availableIcons[selectedIconIndex],
-                      color: _availableColors[selectedColorIndex],
-                    ));
-                  },
-                  child: const Text('Modifier'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Indicateur de drag
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  
+                  // Titre
+                  Text(
+                    'Modifier l\'objectif',
+                    style: AppTextStyles.titleLarge(isDark),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Nom de l'objectif
+                  Text(
+                    'Nom de l\'objectif',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: nameController,
+                    style: AppTextStyles.bodyMediumThemed(isDark),
+                    decoration: InputDecoration(
+                      hintText: 'Ex: Voyage au Bénin',
+                      hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
+                        color: colors.textSecondary.withOpacity(0.5),
+                      ),
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Montant cible
+                  Text(
+                    'Montant cible',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    style: AppTextStyles.headlineMedium(isDark),
+                    decoration: InputDecoration(
+                      prefixText: '$_currency ',
+                      prefixStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                        color: colors.primary,
+                      ),
+                      hintText: '0',
+                      hintStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                        color: colors.textSecondary.withOpacity(0.5),
+                      ),
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Description
+                  Text(
+                    'Description (optionnel)',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: descriptionController,
+                    style: AppTextStyles.bodyMediumThemed(isDark),
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: 'Plus de détails sur votre objectif...',
+                      hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
+                        color: colors.textSecondary.withOpacity(0.5),
+                      ),
+                      filled: true,
+                      fillColor: colors.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Date limite
+                  Text(
+                    'Date limite',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: targetDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 3650)),
+                      );
+                      if (picked != null) {
+                        setModalState(() => targetDate = picked);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: colors.background,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded, color: colors.primary, size: 20),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            DateFormat('dd/MM/yyyy').format(targetDate),
+                            style: AppTextStyles.bodyMediumThemed(isDark),
+                          ),
+                          const Spacer(),
+                          Icon(Icons.arrow_drop_down, color: colors.textSecondary),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Icônes
+                  Text('Icône', style: AppTextStyles.labelMedium(isDark)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: List.generate(_availableIcons.length, (index) {
+                      final isSelected = selectedIconIndex == index;
+                      final selectedColor = _availableColors[selectedColorIndex];
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedIconIndex = index),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? selectedColor.withOpacity(0.2)
+                                : colors.background,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: isSelected ? selectedColor : colors.border,
+                            ),
+                          ),
+                          child: Icon(
+                            _availableIcons[index],
+                            color: isSelected ? selectedColor : colors.textSecondary,
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Couleurs
+                  Text('Couleur', style: AppTextStyles.labelMedium(isDark)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: List.generate(_availableColors.length, (index) {
+                      final isSelected = selectedColorIndex == index;
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedColorIndex = index),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: _availableColors[index],
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              width: 3,
+                            ),
+                          ),
+                          child: isSelected
+                              ? const Icon(Icons.check, color: Colors.white)
+                              : null,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // Bouton Enregistrer
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final name = nameController.text.trim();
+                        final targetAmount = double.tryParse(amountController.text) ?? 0;
+                        
+                        if (name.isEmpty || targetAmount <= 0) {
+                          _showSnackBar('Veuillez remplir le nom et le montant', Colors.red);
+                          return;
+                        }
+                        Navigator.pop(context);
+                        _updateGoal(goal.copyWith(
+                          name: name,
+                          description: descriptionController.text,
+                          targetAmount: targetAmount,
+                          targetDate: targetDate,
+                          icon: _availableIcons[selectedIconIndex],
+                          color: _availableColors[selectedColorIndex],
+                        ));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                      ),
+                      child: const Text('Enregistrer les modifications'),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   void _showDeleteConfirmation(FinancialGoal goal) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
+    
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Supprimer l\'objectif'),
-          content: Text('Êtes-vous sûr de vouloir supprimer "${goal.name}" ?'),
+          backgroundColor: colors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          title: Text(
+            'Supprimer l\'objectif',
+            style: AppTextStyles.titleLarge(isDark),
+          ),
+          content: Text(
+            'Êtes-vous sûr de vouloir supprimer "${goal.name}" ?',
+            style: AppTextStyles.bodyMediumThemed(isDark),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
+              child: Text(
+                'Annuler',
+                style: TextStyle(color: colors.textSecondary),
+              ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Theme.of(context).colorScheme.onError,
+                backgroundColor: colors.error,
+                foregroundColor: Colors.white,
               ),
               onPressed: () {
                 Navigator.of(context).pop();

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io' show Platform;
 import '../../new_design_system.dart';
 import '../../theme_provider.dart';
 
@@ -56,33 +58,110 @@ class _PinLockScreenState extends State<PinLockScreen>
   }
 
   Future<void> _checkBiometrics() async {
+    // Ne pas utiliser la biométrie sur les plateformes non supportées
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return;
+    }
+    
     try {
-      final canCheck = await _localAuth.canCheckBiometrics;
-      final isSupported = await _localAuth.isDeviceSupported();
+      // Sur Android, vérifier la version du SDK
+      // Désactiver complètement la biométrie sur Android < 9 (API 28)
+      // car ces versions ont des problèmes de compatibilité qui causent des crashs
+      if (Platform.isAndroid) {
+        try {
+          final deviceInfo = DeviceInfoPlugin();
+          final androidInfo = await deviceInfo.androidInfo;
+          final sdkInt = androidInfo.version.sdkInt;
+          
+          debugPrint('Android SDK version: $sdkInt');
+          
+          if (sdkInt < 28) {
+            debugPrint('Biométrie désactivée: Android $sdkInt < 28 (Android 9)');
+            // Ne pas activer la biométrie sur les anciennes versions
+            return;
+          }
+        } catch (e) {
+          // Si on ne peut pas obtenir la version SDK, continuer avec la biométrie
+          debugPrint('Impossible de vérifier la version SDK: $e');
+        }
+      }
       
-      if (canCheck && isSupported) {
-        final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      // Vérifier si le device supporte la biométrie
+      final isSupported = await _localAuth.isDeviceSupported();
+      if (!isSupported) {
+        debugPrint('Biométrie: Device non supporté');
+        return;
+      }
+      
+      // Vérifier si on peut vérifier la biométrie
+      final canCheck = await _localAuth.canCheckBiometrics;
+      if (!canCheck) {
+        debugPrint('Biométrie: Vérification non disponible');
+        return;
+      }
+      
+      // Vérifier quels types de biométrie sont disponibles
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      debugPrint('Biométries disponibles: $availableBiometrics');
+      
+      if (availableBiometrics.isEmpty) {
+        debugPrint('Biométrie: Aucune biométrie configurée');
+        return;
+      }
+      
+      // Vérifier si on a au moins une biométrie utilisable
+      final hasUsableBiometric = availableBiometrics.any((bio) =>
+          bio == BiometricType.fingerprint ||
+          bio == BiometricType.face ||
+          bio == BiometricType.strong ||
+          bio == BiometricType.weak);
+      
+      if (!hasUsableBiometric) {
+        debugPrint('Biométrie: Pas de biométrie utilisable');
+        return;
+      }
+      
+      if (mounted) {
         setState(() {
-          _canUseBiometrics = availableBiometrics.isNotEmpty;
+          _canUseBiometrics = true;
         });
         
-        // Tenter l'authentification biométrique automatiquement
-        if (_canUseBiometrics) {
+        // Délai avant l'authentification automatique
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (mounted && _canUseBiometrics) {
           _authenticateWithBiometrics();
         }
       }
+    } on PlatformException catch (e) {
+      debugPrint('Biométrie PlatformException: ${e.code} - ${e.message}');
+      // Ne pas afficher d'erreur, juste désactiver silencieusement
+      if (mounted) {
+        setState(() {
+          _canUseBiometrics = false;
+        });
+      }
     } catch (e) {
-      debugPrint('Erreur biométrie: $e');
+      debugPrint('Biométrie erreur générale: $e');
+      if (mounted) {
+        setState(() {
+          _canUseBiometrics = false;
+        });
+      }
     }
   }
 
   Future<void> _authenticateWithBiometrics() async {
+    if (!_canUseBiometrics) return;
+    
     try {
       final authenticated = await _localAuth.authenticate(
         localizedReason: 'Déverrouillez SmartSpend avec votre empreinte',
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: true,
+          biometricOnly: false, // Permettre PIN/Pattern sur anciennes versions
+          useErrorDialogs: true,
+          sensitiveTransaction: false,
         ),
       );
       
@@ -90,8 +169,25 @@ class _PinLockScreenState extends State<PinLockScreen>
         HapticFeedback.lightImpact();
         widget.onUnlocked();
       }
+    } on PlatformException catch (e) {
+      // Erreurs spécifiques à la plateforme (Android ancien, pas de capteur, etc.)
+      debugPrint('Auth biométrique PlatformException: ${e.code} - ${e.message}');
+      
+      // Désactiver silencieusement la biométrie si erreur critique
+      if (e.code == 'NotAvailable' || 
+          e.code == 'NotEnrolled' || 
+          e.code == 'PasscodeNotSet' ||
+          e.code == 'LockedOut' ||
+          e.code == 'PermanentlyLockedOut') {
+        if (mounted) {
+          setState(() {
+            _canUseBiometrics = false;
+          });
+        }
+      }
     } catch (e) {
-      debugPrint('Erreur auth biométrique: $e');
+      debugPrint('Auth biométrique erreur: $e');
+      // Ne pas crasher, juste ignorer l'erreur
     }
   }
 

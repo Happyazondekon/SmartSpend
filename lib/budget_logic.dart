@@ -333,54 +333,113 @@ class BudgetLogic extends ChangeNotifier {
       'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
     ];
     
+    // Calculer le budget restant
+    final salary = getSalary();
+    double totalSpent = 0.0;
+    final budget = getBudget();
+    budget.forEach((key, value) {
+      totalSpent += (value['spent'] as num?)?.toDouble() ?? 0.0;
+    });
+    final remaining = salary - totalSpent;
+    bool carryOver = remaining > 0; // Coché par défaut si positif
+    
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('🎉 Nouveau mois !'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bienvenue en ${months[now.month - 1]} ${now.year} !',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('🎉 Nouveau mois !'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bienvenue en ${months[now.month - 1]} ${now.year} !',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Voulez-vous clôturer ${months[userData.activeMonth - 1]} ${userData.activeYear} et commencer le nouveau mois ?',
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '• Vos catégories seront conservées\n• Les dépenses seront archivées\n• Vous pourrez entrer vos nouveaux revenus',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              if (remaining > 0) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00A9A9).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF00A9A9).withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.savings_outlined, color: Color(0xFF00A9A9), size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Budget restant: ${formatCurrency(remaining)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A9A9)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: carryOver,
+                              onChanged: (value) => setDialogState(() => carryOver = value ?? false),
+                              activeColor: const Color(0xFF00A9A9),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Reporter ce montant au mois suivant',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Plus tard'),
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Voulez-vous clôturer ${months[userData.activeMonth - 1]} ${userData.activeYear} et commencer le nouveau mois ?',
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '• Vos catégories seront conservées\n• Les dépenses seront archivées\n• Vous pourrez entrer vos nouveaux revenus',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await closeCurrentMonth(carryOverAmount: carryOver && remaining > 0 ? remaining : 0.0);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00A9A9),
+              ),
+              child: const Text('Clôturer le mois', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Plus tard'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await closeCurrentMonth();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00A9A9),
-            ),
-            child: const Text('Clôturer le mois', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
 
   /// Clôturer le mois actuel et passer au nouveau mois
-  Future<void> closeCurrentMonth() async {
+  Future<void> closeCurrentMonth({double carryOverAmount = 0.0}) async {
     try {
-      final success = await _firestoreService.closeCurrentMonth();
+      final success = await _firestoreService.closeCurrentMonth(carryOverAmount: carryOverAmount);
       
       if (success) {
         // Recharger les données
@@ -390,7 +449,10 @@ class BudgetLogic extends ChangeNotifier {
         final notificationService = NotificationService();
         await notificationService.showNewMonthNotification();
         
-        _showSnackBar('✅ Mois clôturé ! Entrez vos revenus pour ce mois.', Colors.green);
+        final message = carryOverAmount > 0
+            ? '✅ Mois clôturé ! ${formatCurrency(carryOverAmount)} reporté. Ajoutez vos revenus.'
+            : '✅ Mois clôturé ! Entrez vos revenus pour ce mois.';
+        _showSnackBar(message, Colors.green);
       } else {
         _showSnackBar('Erreur lors de la clôture du mois', Colors.red);
       }
@@ -525,13 +587,14 @@ class BudgetLogic extends ChangeNotifier {
   // =================== GESTION DES TRANSACTIONS ====================
   // ===================================================================
 
-  void addTransaction(String category, double amount, String description) async {
+  void addTransaction(String category, double amount, String description, {DateTime? date}) async {
+    final transactionDate = date ?? DateTime.now();
     final transaction = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       category: category,
       amount: amount,
       description: description,
-      date: DateTime.now(),
+      date: transactionDate,
     );
 
     try {
@@ -555,7 +618,7 @@ class BudgetLogic extends ChangeNotifier {
     }
   }
 
-  void editTransaction(Transaction transaction, double newAmount, String newDescription) async {
+  void editTransaction(Transaction transaction, double newAmount, String newDescription, {DateTime? newDate}) async {
     try {
       // Mise à jour locale immédiate
       final transactions = getTransactions();
@@ -567,7 +630,7 @@ class BudgetLogic extends ChangeNotifier {
           category: transaction.category,
           amount: newAmount,
           description: newDescription,
-          date: transaction.date,
+          date: newDate ?? transaction.date,
         );
       }
 
@@ -576,7 +639,7 @@ class BudgetLogic extends ChangeNotifier {
       updateState();
 
       // Sauvegarde dans Firestore
-      await _firestoreService.updateTransaction(transaction.id, newAmount, newDescription);
+      await _firestoreService.updateTransaction(transaction.id, newAmount, newDescription, newDate: newDate);
 
       debugPrint('Transaction modifiée avec succès');
     } catch (e) {
@@ -1630,6 +1693,16 @@ class BudgetLogic extends ChangeNotifier {
       'CNY': '¥',
     };
     return symbols[_currency] ?? _currency;
+  }
+
+  /// Formate un montant avec le symbole de la devise
+  String formatCurrency(double amount) {
+    final symbol = getCurrencySymbol();
+    final formattedAmount = amount.toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => ' ',
+    );
+    return '$formattedAmount $symbol';
   }
 
   /// Incrémente le compteur d'utilisations du chatbot

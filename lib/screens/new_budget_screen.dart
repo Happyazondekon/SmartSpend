@@ -1051,9 +1051,13 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
   ) {
     final nameController = TextEditingController(text: categoryName);
     final currentPercent = ((data['percent'] as num?)?.toDouble() ?? 0.0) * 100;
+    final currentAmount = (data['amount'] as num?)?.toDouble() ?? 0.0;
     final percentController = TextEditingController(text: currentPercent.toInt().toString());
+    final amountController = TextEditingController(text: currentAmount.toInt().toString());
     IconData selectedIcon = data['icon'] as IconData? ?? Icons.category_rounded;
     Color selectedColor = data['color'] as Color? ?? colors.primary;
+    bool usePercentMode = true; // true = pourcentage, false = montant
+    final salary = budgetLogic.getSalary();
 
     final availableIcons = [
       Icons.home_rounded,
@@ -1145,20 +1149,123 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   ),
                   const SizedBox(height: AppSpacing.md),
 
-                  // Pourcentage
-                  TextField(
-                    controller: percentController,
-                    keyboardType: TextInputType.number,
-                    style: AppTextStyles.bodyMediumThemed(isDark),
-                    decoration: InputDecoration(
-                      labelText: 'Pourcentage du budget',
-                      suffixText: '%',
-                      filled: true,
-                      fillColor: colors.background,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide.none,
+                  // Toggle Pourcentage / Montant
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (!usePercentMode) {
+                              // Convertir montant en pourcentage
+                              final amount = double.tryParse(amountController.text) ?? 0;
+                              if (salary > 0) {
+                                percentController.text = ((amount / salary) * 100).toInt().toString();
+                              }
+                            }
+                            setModalState(() => usePercentMode = true);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: usePercentMode ? colors.primary : colors.background,
+                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.lg)),
+                              border: Border.all(color: usePercentMode ? colors.primary : colors.border),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Pourcentage',
+                                style: AppTextStyles.labelMedium(isDark).copyWith(
+                                  color: usePercentMode ? Colors.white : colors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (usePercentMode) {
+                              // Convertir pourcentage en montant
+                              final percent = double.tryParse(percentController.text) ?? 0;
+                              amountController.text = (salary * percent / 100).toInt().toString();
+                            }
+                            setModalState(() => usePercentMode = false);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: !usePercentMode ? colors.primary : colors.background,
+                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(AppRadius.lg)),
+                              border: Border.all(color: !usePercentMode ? colors.primary : colors.border),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Montant',
+                                style: AppTextStyles.labelMedium(isDark).copyWith(
+                                  color: !usePercentMode ? Colors.white : colors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Champ Pourcentage ou Montant selon le mode
+                  if (usePercentMode)
+                    TextField(
+                      controller: percentController,
+                      keyboardType: TextInputType.number,
+                      style: AppTextStyles.bodyMediumThemed(isDark),
+                      decoration: InputDecoration(
+                        labelText: 'Pourcentage du budget',
+                        suffixText: '%',
+                        filled: true,
+                        fillColor: colors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        final percent = double.tryParse(value) ?? 0;
+                        amountController.text = (salary * percent / 100).toInt().toString();
+                      },
+                    )
+                  else
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      style: AppTextStyles.bodyMediumThemed(isDark),
+                      decoration: InputDecoration(
+                        labelText: 'Montant alloué',
+                        suffixText: budgetLogic.getCurrencySymbol(),
+                        filled: true,
+                        fillColor: colors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        final amount = double.tryParse(value) ?? 0;
+                        if (salary > 0) {
+                          percentController.text = ((amount / salary) * 100).toInt().toString();
+                        }
+                      },
+                    ),
+                  
+                  // Afficher l'équivalent
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    child: Text(
+                      usePercentMode
+                          ? 'Équivalent: ${budgetLogic.formatCurrency((salary * (double.tryParse(percentController.text) ?? 0) / 100))}'
+                          : 'Équivalent: ${((double.tryParse(amountController.text) ?? 0) / (salary > 0 ? salary : 1) * 100).toStringAsFixed(1)}%',
+                      style: AppTextStyles.labelSmall(isDark).copyWith(color: colors.textSecondary),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),

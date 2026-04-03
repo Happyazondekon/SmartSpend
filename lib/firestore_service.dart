@@ -128,7 +128,7 @@ class FirestoreService {
   }
 
   // Modifier une transaction
-  Future<void> updateTransaction(String transactionId, double newAmount, String newDescription) async {
+  Future<void> updateTransaction(String transactionId, double newAmount, String newDescription, {DateTime? newDate}) async {
     if (currentUserId == null) return;
 
     try {
@@ -144,7 +144,7 @@ class FirestoreService {
             category: t.category,
             amount: newAmount,
             description: newDescription,
-            date: t.date,
+            date: newDate ?? t.date,
           );
         }
         return t;
@@ -250,7 +250,8 @@ class FirestoreService {
 
   /// Clôturer le mois actuel et passer au nouveau mois
   /// Conserve les catégories personnalisées de l'utilisateur
-  Future<bool> closeCurrentMonth() async {
+  /// Si carryOverAmount > 0, le montant sera ajouté au nouveau salaire
+  Future<bool> closeCurrentMonth({double carryOverAmount = 0.0}) async {
     if (currentUserId == null) return false;
 
     try {
@@ -291,8 +292,9 @@ class FirestoreService {
       });
 
       // Créer les nouvelles données pour le mois
+      // Si carry-over, on initialise le salaire avec le montant reporté
       final updatedUserData = userData.copyWith(
-        salary: 0.0, // L'utilisateur doit entrer son nouveau revenu
+        salary: carryOverAmount > 0 ? carryOverAmount : 0.0,
         budget: resetBudget,
         transactions: [], // Nouvelles transactions pour le nouveau mois
         activeMonth: now.month,
@@ -302,7 +304,7 @@ class FirestoreService {
       );
 
       await saveUserData(updatedUserData);
-      debugPrint('✅ Mois clôturé avec succès: ${userData.activeMonth}/${userData.activeYear}');
+      debugPrint('✅ Mois clôturé avec succès: ${userData.activeMonth}/${userData.activeYear} - Report: $carryOverAmount');
       return true;
     } catch (e) {
       debugPrint('❌ Erreur lors de la clôture du mois: $e');

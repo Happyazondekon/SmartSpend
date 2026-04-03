@@ -34,6 +34,20 @@ class IconUtils {
     Icons.restaurant_menu_rounded,
     Icons.more_horiz_rounded,
     
+    // Icônes _outlined utilisées pour les objectifs financiers
+    Icons.flight_takeoff_outlined,
+    Icons.home_outlined,
+    Icons.directions_car_outlined,
+    Icons.school_outlined,
+    Icons.medical_services_outlined,
+    Icons.celebration_outlined,
+    Icons.laptop_outlined,
+    Icons.fitness_center_outlined,
+    Icons.pets_outlined,
+    Icons.savings_outlined,
+    Icons.business_outlined,
+    Icons.favorite_outlined,
+    
     // Icônes standard (backup)
     Icons.home,
     Icons.restaurant,

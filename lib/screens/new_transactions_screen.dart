@@ -681,23 +681,25 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
 
     final amountController = TextEditingController(text: transaction.amount.toStringAsFixed(0));
     final descriptionController = TextEditingController(text: transaction.description);
+    DateTime selectedDate = transaction.date;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl),
-            ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl),
+              ),
+            ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -777,6 +779,55 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                   ),
                 ),
               ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Date de la transaction
+              Text(
+                'Date',
+                style: AppTextStyles.labelMedium(isDark).copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              GestureDetector(
+                onTap: () async {
+                  final now = DateTime.now();
+                  // Limiter au mois de la transaction originale (pas de dates futures)
+                  final firstDay = DateTime(transaction.date.year, transaction.date.month, 1);
+                  final lastDay = now.isBefore(DateTime(transaction.date.year, transaction.date.month + 1, 0))
+                      ? now
+                      : DateTime(transaction.date.year, transaction.date.month + 1, 0);
+                  
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate.isAfter(lastDay) ? lastDay : selectedDate,
+                    firstDate: firstDay,
+                    lastDate: lastDay,
+                  );
+                  if (picked != null) {
+                    setModalState(() => selectedDate = picked);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.background,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_rounded, color: colors.primary, size: 20),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}',
+                        style: AppTextStyles.bodyMediumThemed(isDark),
+                      ),
+                      const Spacer(),
+                      Icon(Icons.arrow_drop_down, color: colors.textSecondary),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: AppSpacing.xl),
 
               // Bouton
@@ -790,6 +841,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                         transaction,
                         newAmount,
                         descriptionController.text,
+                        newDate: selectedDate,
                       );
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -820,6 +872,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
           ),
         ),
       ),
+    ),
     );
   }
 

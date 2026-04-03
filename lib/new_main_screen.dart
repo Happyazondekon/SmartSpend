@@ -315,6 +315,7 @@ class _NewMainScreenState extends State<NewMainScreen>
     String selectedCategory = categories.isNotEmpty ? categories.first : '';
     final amountController = TextEditingController();
     final descriptionController = TextEditingController();
+    DateTime selectedDate = DateTime.now();
 
     showModalBottomSheet(
       context: context,
@@ -453,6 +454,53 @@ class _NewMainScreenState extends State<NewMainScreen>
                     ),
                   ),
                 ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Date de la transaction
+                Text(
+                  'Date',
+                  style: AppTextStyles.labelMedium(isDark).copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                GestureDetector(
+                  onTap: () async {
+                    final now = DateTime.now();
+                    // Limiter au mois actif (pas de dates futures)
+                    final firstDay = DateTime(now.year, now.month, 1);
+                    final lastDay = now; // Aujourd'hui max
+                    
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate.isAfter(now) ? now : selectedDate,
+                      firstDate: firstDay,
+                      lastDate: lastDay,
+                    );
+                    if (picked != null) {
+                      setModalState(() => selectedDate = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: colors.background,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today_rounded, color: colors.primary, size: 20),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}',
+                          style: AppTextStyles.bodyMediumThemed(isDark),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.arrow_drop_down, color: colors.textSecondary),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xl),
 
                 // Bouton
@@ -466,6 +514,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                           selectedCategory,
                           amount,
                           descriptionController.text,
+                          date: selectedDate,
                         );
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
