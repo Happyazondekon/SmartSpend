@@ -536,30 +536,37 @@ class _NewReportsScreenState extends State<NewReportsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: _getCategoryColor(index),
-                              shape: BoxShape.circle,
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _getCategoryColor(index),
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            e.key,
-                            style: AppTextStyles.bodyMediumThemed(isDark),
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(
-                            '(${percentage.toInt()}%)',
-                            style: AppTextStyles.labelSmall(isDark).copyWith(
-                              color: colors.textSecondary,
+                            const SizedBox(width: AppSpacing.sm),
+                            Flexible(
+                              child: Text(
+                                e.key,
+                                style: AppTextStyles.bodyMediumThemed(isDark),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              '(${percentage.toInt()}%)',
+                              style: AppTextStyles.labelSmall(isDark).copyWith(
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
                         '$currencySymbol${_formatNumber(spent)} / $currencySymbol${_formatNumber(amount)}',
                         style: AppTextStyles.labelMedium(isDark).copyWith(

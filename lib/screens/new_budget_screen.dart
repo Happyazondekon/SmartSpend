@@ -98,6 +98,9 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
       BudgetLogic budgetLogic, AppColorScheme colors, bool isDark) {
     final currencySymbol = budgetLogic.getCurrencySymbol();
     final salary = budgetLogic.getSalary();
+    final budget = budgetLogic.getBudget();
+    final totalSpent = budget.values.fold(0.0, (sum, v) => sum + ((v['spent'] as num?)?.toDouble() ?? 0.0));
+    final remaining = salary - totalSpent;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -118,9 +121,9 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
             ),
           ],
         ),
-        // Badge revenus
+        // Badge restant (au lieu de salaire)
         GestureDetector(
-          onTap: () => _showSalaryDialog(budgetLogic, colors, isDark),
+          onTap: () => _showBudgetOptionsDialog(budgetLogic, colors, isDark),
           child: Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
@@ -128,7 +131,9 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
             ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [colors.primary, colors.secondary],
+                colors: remaining >= 0 
+                    ? [colors.primary, colors.secondary]
+                    : [colors.error, colors.error.withOpacity(0.7)],
               ),
               borderRadius: BorderRadius.circular(AppRadius.full),
             ),
@@ -140,7 +145,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   salary > 0
-                      ? '$currencySymbol${_formatNumber(salary)}'
+                      ? '$currencySymbol${_formatNumber(remaining)}'
                       : 'Définir',
                   style: const TextStyle(
                     color: Colors.white,
@@ -164,8 +169,6 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
 
     final totalSpent =
         budget.values.fold(0.0, (sum, v) => sum + ((v['spent'] as num?)?.toDouble() ?? 0.0));
-    final totalBudget =
-        budget.values.fold(0.0, (sum, v) => sum + ((v['amount'] as num?)?.toDouble() ?? 0.0));
     final remaining = salary - totalSpent;
     final progress = salary > 0 ? totalSpent / salary : 0.0;
 
@@ -219,22 +222,22 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
               ),
               const SizedBox(width: AppSpacing.lg),
 
-              // Statistiques
+              // Statistiques (ordre: Budget, Dépensé, Restant)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStatRow(
-                      label: 'Dépensé',
-                      value: '$currencySymbol${_formatNumber(totalSpent)}',
-                      color: colors.error,
+                      label: 'Budget',
+                      value: '$currencySymbol${_formatNumber(salary)}',
+                      color: colors.primary,
                       isDark: isDark,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _buildStatRow(
-                      label: 'Budget',
-                      value: '$currencySymbol${_formatNumber(totalBudget)}',
-                      color: colors.primary,
+                      label: 'Dépensé',
+                      value: '$currencySymbol${_formatNumber(totalSpent)}',
+                      color: colors.error,
                       isDark: isDark,
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -426,7 +429,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 ),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               name,
               style: AppTextStyles.titleSmall(isDark),
@@ -439,8 +442,10 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
               style: AppTextStyles.labelSmall(isDark).copyWith(
                 color: isOverBudget ? colors.error : colors.textSecondary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.xs),
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadius.full),
               child: LinearProgressIndicator(
@@ -586,6 +591,224 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
   }
 
   // Dialogues
+  void _showBudgetOptionsDialog(
+      BudgetLogic budgetLogic, AppColorScheme colors, bool isDark) {
+    final currentSalary = budgetLogic.getSalary();
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Gérer le budget',
+              style: AppTextStyles.titleLarge(isDark),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            
+            // Option 1: Définir le budget
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: colors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Icon(Icons.edit_rounded, color: colors.primary),
+              ),
+              title: Text('Définir le budget', style: AppTextStyles.bodyLargeThemed(isDark)),
+              subtitle: Text(
+                currentSalary > 0 
+                    ? 'Actuel: ${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary)}'
+                    : 'Aucun budget défini',
+                style: AppTextStyles.bodySmallThemed(isDark),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _showSalaryDialog(budgetLogic, colors, isDark);
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            
+            // Option 2: Ajouter au budget (seulement si budget > 0)
+            if (currentSalary > 0)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: colors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(Icons.add_rounded, color: colors.success),
+                ),
+                title: Text('Ajouter au budget', style: AppTextStyles.bodyLargeThemed(isDark)),
+                subtitle: Text(
+                  'Pour les revenus supplémentaires',
+                  style: AppTextStyles.bodySmallThemed(isDark),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAddToBudgetDialog(budgetLogic, colors, isDark);
+                },
+              ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddToBudgetDialog(
+      BudgetLogic budgetLogic, AppColorScheme colors, bool isDark) {
+    final controller = TextEditingController();
+    final currentSalary = budgetLogic.getSalary();
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.xl),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Ajouter au budget',
+                  style: AppTextStyles.titleLarge(isDark),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Ajoutez un revenu supplémentaire à votre budget actuel',
+                  style: AppTextStyles.bodySmallThemed(isDark),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                
+                // Afficher le budget actuel
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Budget actuel', style: AppTextStyles.labelMedium(isDark)),
+                      Text(
+                        '${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary)}',
+                        style: AppTextStyles.titleSmall(isDark).copyWith(color: colors.primary),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  style: AppTextStyles.headlineMedium(isDark),
+                  decoration: InputDecoration(
+                    labelText: 'Montant à ajouter',
+                    prefixText: '${budgetLogic.getCurrencySymbol()} ',
+                    prefixStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                      color: colors.success,
+                    ),
+                    hintText: '0',
+                    hintStyle: AppTextStyles.headlineMedium(isDark).copyWith(
+                      color: colors.textSecondary.withOpacity(0.5),
+                    ),
+                    filled: true,
+                    fillColor: colors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onChanged: (_) => setModalState(() {}),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                
+                // Aperçu du nouveau total
+                if (controller.text.isNotEmpty)
+                  Text(
+                    'Nouveau budget: ${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary + (double.tryParse(controller.text) ?? 0))}',
+                    style: AppTextStyles.labelMedium(isDark).copyWith(color: colors.success),
+                  ),
+                const SizedBox(height: AppSpacing.lg),
+                
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final amount = double.tryParse(controller.text) ?? 0;
+                      if (amount > 0) {
+                        budgetLogic.addToBudget(amount);
+                        Navigator.pop(context);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                    ),
+                    child: const Text('Ajouter au budget'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showSalaryDialog(
       BudgetLogic budgetLogic, AppColorScheme colors, bool isDark) {
     final controller = budgetLogic.getSalaryController();
@@ -683,8 +906,16 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
       BudgetLogic budgetLogic, AppColorScheme colors, bool isDark) {
     final nameController = TextEditingController();
     final percentController = TextEditingController();
+    final amountController = TextEditingController();
     Color selectedColor = colors.primary;
     IconData selectedIcon = Icons.category_rounded;
+    bool usePercentMode = true; // true = pourcentage, false = montant
+    final salary = budgetLogic.getSalary();
+    
+    // Calculer le pourcentage/montant restant disponible
+    final totalUsedPercent = budgetLogic.getTotalBudgetPercentage() * 100;
+    final remainingPercent = (100 - totalUsedPercent).clamp(0, 100);
+    final remainingAmount = salary * (remainingPercent / 100);
 
     final availableIcons = [
       Icons.home_rounded,
@@ -722,6 +953,9 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: colors.surface,
@@ -749,6 +983,36 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                     'Nouvelle catégorie',
                     style: AppTextStyles.titleLarge(isDark),
                   ),
+                  const SizedBox(height: AppSpacing.sm),
+                  
+                  // Info sur le restant disponible
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: remainingPercent > 0 
+                          ? colors.success.withOpacity(0.1)
+                          : colors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          remainingPercent > 0 ? Icons.info_outline : Icons.warning_amber_rounded,
+                          size: 16,
+                          color: remainingPercent > 0 ? colors.success : colors.error,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            'Disponible: ${remainingPercent.toStringAsFixed(0)}% (${budgetLogic.formatCurrency(remainingAmount)})',
+                            style: AppTextStyles.labelSmall(isDark).copyWith(
+                              color: remainingPercent > 0 ? colors.success : colors.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Nom
@@ -767,20 +1031,127 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   ),
                   const SizedBox(height: AppSpacing.md),
 
-                  // Pourcentage
-                  TextField(
-                    controller: percentController,
-                    keyboardType: TextInputType.number,
-                    style: AppTextStyles.bodyMediumThemed(isDark),
-                    decoration: InputDecoration(
-                      labelText: 'Pourcentage du budget',
-                      suffixText: '%',
-                      filled: true,
-                      fillColor: colors.background,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        borderSide: BorderSide.none,
+                  // Toggle Pourcentage / Montant
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (!usePercentMode) {
+                              // Convertir montant en pourcentage
+                              final amount = double.tryParse(amountController.text) ?? 0;
+                              if (salary > 0) {
+                                percentController.text = ((amount / salary) * 100).toInt().toString();
+                              }
+                            }
+                            setModalState(() => usePercentMode = true);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: usePercentMode ? colors.primary : colors.background,
+                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.lg)),
+                              border: Border.all(color: usePercentMode ? colors.primary : colors.border),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Pourcentage',
+                                style: AppTextStyles.labelMedium(isDark).copyWith(
+                                  color: usePercentMode ? Colors.white : colors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (usePercentMode) {
+                              // Convertir pourcentage en montant
+                              final percent = double.tryParse(percentController.text) ?? 0;
+                              amountController.text = (salary * percent / 100).toInt().toString();
+                            }
+                            setModalState(() => usePercentMode = false);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: !usePercentMode ? colors.primary : colors.background,
+                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(AppRadius.lg)),
+                              border: Border.all(color: !usePercentMode ? colors.primary : colors.border),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Montant',
+                                style: AppTextStyles.labelMedium(isDark).copyWith(
+                                  color: !usePercentMode ? Colors.white : colors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Champ Pourcentage ou Montant selon le mode
+                  if (usePercentMode)
+                    TextField(
+                      controller: percentController,
+                      keyboardType: TextInputType.number,
+                      style: AppTextStyles.bodyMediumThemed(isDark),
+                      decoration: InputDecoration(
+                        labelText: 'Pourcentage du budget',
+                        suffixText: '%',
+                        helperText: 'Max: ${remainingPercent.toStringAsFixed(0)}%',
+                        filled: true,
+                        fillColor: colors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        final percent = double.tryParse(value) ?? 0;
+                        amountController.text = (salary * percent / 100).toInt().toString();
+                        setModalState(() {});
+                      },
+                    )
+                  else
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      style: AppTextStyles.bodyMediumThemed(isDark),
+                      decoration: InputDecoration(
+                        labelText: 'Montant alloué',
+                        suffixText: budgetLogic.getCurrencySymbol(),
+                        helperText: 'Max: ${budgetLogic.formatCurrency(remainingAmount)}',
+                        filled: true,
+                        fillColor: colors.background,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: (value) {
+                        final amount = double.tryParse(value) ?? 0;
+                        if (salary > 0) {
+                          percentController.text = ((amount / salary) * 100).toInt().toString();
+                        }
+                        setModalState(() {});
+                      },
+                    ),
+                  
+                  // Afficher l'équivalent
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    child: Text(
+                      usePercentMode
+                          ? 'Équivalent: ${budgetLogic.formatCurrency((salary * (double.tryParse(percentController.text) ?? 0) / 100))}'
+                          : 'Équivalent: ${((double.tryParse(amountController.text) ?? 0) / (salary > 0 ? salary : 1) * 100).toStringAsFixed(1)}%',
+                      style: AppTextStyles.labelSmall(isDark).copyWith(color: colors.textSecondary),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -854,12 +1225,12 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       onPressed: () {
                         final name = nameController.text.trim();
                         final percent =
-                            int.tryParse(percentController.text) ?? 0;
+                            double.tryParse(percentController.text) ?? 0;
 
                         if (name.isNotEmpty && percent > 0) {
                           budgetLogic.addCategory(
                             name,
-                            percent / 100,
+                            percent,
                             selectedIcon,
                             selectedColor,
                           );
@@ -1058,6 +1429,11 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
     Color selectedColor = data['color'] as Color? ?? colors.primary;
     bool usePercentMode = true; // true = pourcentage, false = montant
     final salary = budgetLogic.getSalary();
+    
+    // Calculer le pourcentage/montant restant disponible (incluant la catégorie actuelle)
+    final totalUsedPercent = budgetLogic.getTotalBudgetPercentage() * 100;
+    final remainingPercent = (100 - totalUsedPercent + currentPercent).clamp(0, 100);
+    final remainingAmount = salary * (remainingPercent / 100);
 
     final availableIcons = [
       Icons.home_rounded,
@@ -1130,6 +1506,34 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   Text(
                     'Modifier la catégorie',
                     style: AppTextStyles.titleLarge(isDark),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  
+                  // Info sur le restant disponible
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: colors.success.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: colors.success,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            'Disponible: ${remainingPercent.toStringAsFixed(0)}% (${budgetLogic.formatCurrency(remainingAmount)})',
+                            style: AppTextStyles.labelSmall(isDark).copyWith(
+                              color: colors.success,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
@@ -1223,6 +1627,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       decoration: InputDecoration(
                         labelText: 'Pourcentage du budget',
                         suffixText: '%',
+                        helperText: 'Max: ${remainingPercent.toStringAsFixed(0)}%',
                         filled: true,
                         fillColor: colors.background,
                         border: OutlineInputBorder(
@@ -1243,6 +1648,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       decoration: InputDecoration(
                         labelText: 'Montant alloué',
                         suffixText: budgetLogic.getCurrencySymbol(),
+                        helperText: 'Max: ${budgetLogic.formatCurrency(remainingAmount)}',
                         filled: true,
                         fillColor: colors.background,
                         border: OutlineInputBorder(

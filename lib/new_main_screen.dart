@@ -91,11 +91,11 @@ class _NewMainScreenState extends State<NewMainScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.pie_chart_rounded, 'Budget', colors, isDark),
-              _buildNavItem(1, Icons.receipt_long_rounded, 'Transactions', colors, isDark),
-              const SizedBox(width: 60), // Espace pour le FAB
-              _buildNavItem(2, Icons.bar_chart_rounded, 'Rapports', colors, isDark),
-              _buildNavItem(3, Icons.settings_rounded, 'Paramètres', colors, isDark),
+              Flexible(child: _buildNavItem(0, Icons.pie_chart_rounded, 'Budget', colors, isDark)),
+              Flexible(child: _buildNavItem(1, Icons.receipt_long_rounded, 'Transactions', colors, isDark)),
+              const SizedBox(width: 56), // Espace pour le FAB
+              Flexible(child: _buildNavItem(2, Icons.bar_chart_rounded, 'Rapports', colors, isDark)),
+              Flexible(child: _buildNavItem(3, Icons.settings_rounded, 'Paramètres', colors, isDark)),
             ],
           ),
         ),

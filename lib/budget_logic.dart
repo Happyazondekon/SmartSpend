@@ -557,6 +557,42 @@ class BudgetLogic extends ChangeNotifier {
     FocusScope.of(context).unfocus();
   }
 
+  // Ajouter un montant au budget existant (pour revenus variables)
+  void addToBudget(double amount) async {
+    if (amount <= 0) {
+      _showSnackBar('Veuillez entrer un montant valide', Colors.red);
+      return;
+    }
+
+    final currentSalary = getSalary();
+    final newSalary = currentSalary + amount;
+    
+    setSalary(newSalary);
+    
+    // Mettre à jour le controller aussi
+    final salaryController = getSalaryController();
+    salaryController.text = newSalary.toStringAsFixed(0);
+    
+    // Recalculer les montants des catégories
+    final budget = getBudget();
+    budget.forEach((key, value) {
+      final percent = (value['percent'] as num?)?.toDouble() ?? 0.0;
+      budget[key]!['amount'] = newSalary * percent;
+    });
+
+    setBudget(budget);
+    updateState();
+
+    // Sauvegarde dans Firestore
+    try {
+      await _firestoreService.updateSalary(newSalary);
+      await _firestoreService.updateBudget(budget);
+      _showSnackBar('${formatCurrency(amount)} ajouté au budget', Colors.green);
+    } catch (e) {
+      debugPrint('Erreur lors de la sauvegarde du budget: $e');
+    }
+  }
+
   double getTotalBudgetPercentage() {
     final budget = getBudget();
     return budget.values.fold(0.0, (sum, item) => sum + ((item['percent'] as num?)?.toDouble() ?? 0.0));
@@ -825,8 +861,10 @@ class BudgetLogic extends ChangeNotifier {
     }
 
     double currentTotal = getTotalBudgetPercentage();
-    if (currentTotal + (percent / 100) > 1.001) {
-      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%.', Colors.red);
+    // Tolérance de 0.5% pour les erreurs d'arrondi
+    if (currentTotal + (percent / 100) > 1.005) {
+      final availablePercent = ((1.0 - currentTotal) * 100).toStringAsFixed(0);
+      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Disponible: $availablePercent%', Colors.red);
       return;
     }
 
@@ -864,8 +902,10 @@ class BudgetLogic extends ChangeNotifier {
     }
 
     double currentTotal = getTotalBudgetPercentage() - ((budget[oldName]!['percent'] as num?)?.toDouble() ?? 0.0);
-    if (currentTotal + percent / 100 > 1.0) {
-      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Après modification: ${((currentTotal + percent / 100) * 100).toStringAsFixed(0)}%', Colors.red);
+    // Tolérance de 0.5% pour les erreurs d'arrondi
+    if (currentTotal + percent / 100 > 1.005) {
+      final availablePercent = ((1.0 - currentTotal) * 100).toStringAsFixed(0);
+      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Disponible: $availablePercent%', Colors.red);
       return;
     }
 

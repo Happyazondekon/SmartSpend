@@ -420,21 +420,26 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Rappels de transactions',
-                style: AppTextStyles.bodyMediumThemed(isDark),
-              ),
-              Text(
-                'Recevoir des rappels matin, midi et soir',
-                style: AppTextStyles.bodySmallThemed(isDark).copyWith(
-                  color: colors.textSecondary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rappels de transactions',
+                  style: AppTextStyles.bodyMediumThemed(isDark),
                 ),
-              ),
-            ],
+                Text(
+                  'Recevoir des rappels matin, midi et soir',
+                  style: AppTextStyles.bodySmallThemed(isDark).copyWith(
+                    color: colors.textSecondary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: AppSpacing.sm),
           Switch(
             value: _notificationsEnabled,
             onChanged: (value) async {

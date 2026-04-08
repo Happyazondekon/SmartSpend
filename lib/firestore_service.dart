@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show IconData, Color;
 import 'models/user_data.dart';
 import 'models/transaction.dart';
 import 'models/financial_goal.dart';
@@ -226,16 +227,26 @@ class FirestoreService {
     }
   }
 
-  // Mettre à jour le budget complet
+  // Mettre à jour le budget complet (écrase complètement l'ancien budget)
   Future<void> updateBudget(Map<String, Map<String, dynamic>> budget) async {
     if (currentUserId == null) return;
 
     try {
-      final userData = await loadUserData();
-      if (userData == null) return;
-
-      final updatedUserData = userData.copyWith(budget: budget);
-      await saveUserData(updatedUserData);
+      // Convertir le budget pour Firestore
+      final budgetForFirestore = budget.map((key, value) => MapEntry(key, {
+        'percent': value['percent'],
+        'amount': value['amount'],
+        'icon': (value['icon'] as IconData).codePoint,
+        'color': (value['color'] as Color).value,
+        'spent': value['spent'],
+      }));
+      
+      // Mise à jour directe du champ budget (écrase complètement)
+      // Important: Ne pas utiliser merge pour permettre la suppression de catégories
+      await _userDocument!.update({
+        'budget': budgetForFirestore,
+        'lastUpdated': Timestamp.now(),
+      });
 
       debugPrint('Budget mis à jour avec succès');
     } catch (e) {
