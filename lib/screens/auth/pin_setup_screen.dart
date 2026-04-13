@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import '../../generated/gen_l10n/app_localizations.dart';
 import '../../new_design_system.dart';
 import '../../theme_provider.dart';
 
@@ -108,7 +109,7 @@ class _PinSetupScreenState extends State<PinSetupScreen>
       HapticFeedback.heavyImpact();
       
       setState(() {
-        _error = 'Les codes ne correspondent pas';
+        _error = AppLocalizations.of(context)!.pinSetupErrorMismatch;
         _confirmPin = '';
       });
     }
@@ -185,7 +186,7 @@ class _PinSetupScreenState extends State<PinSetupScreen>
                   
                   // Titre
                   Text(
-                    _isConfirming ? 'Confirmez votre code' : 'Créez votre code PIN',
+                    _isConfirming ? AppLocalizations.of(context)!.pinSetupConfirmTitle : AppLocalizations.of(context)!.pinSetupTitle,
                     style: AppTextStyles.h2.copyWith(
                       color: colors.textPrimary,
                       fontWeight: FontWeight.bold,
@@ -197,8 +198,8 @@ class _PinSetupScreenState extends State<PinSetupScreen>
                   // Sous-titre
                   Text(
                     _isConfirming
-                        ? 'Entrez à nouveau votre code à 4 chiffres'
-                        : 'Ce code protégera l\'accès à vos données',
+                        ? AppLocalizations.of(context)!.pinSetupConfirmDescription
+                        : AppLocalizations.of(context)!.pinSetupDescription,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: colors.textSecondary,
                     ),
@@ -266,7 +267,7 @@ class _PinSetupScreenState extends State<PinSetupScreen>
                     TextButton(
                       onPressed: _resetPin,
                       child: Text(
-                        'Recommencer',
+                        AppLocalizations.of(context)!.pinSetupRestart,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: colors.primary,
                         ),

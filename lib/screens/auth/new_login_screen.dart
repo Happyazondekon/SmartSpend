@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../generated/gen_l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../../new_design_system.dart';
 import '../../theme_provider.dart';
@@ -73,7 +74,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = _getErrorMessage(e.toString());
+          _errorMessage = _getErrorMessage(e.toString(), context);
         });
       }
     } finally {
@@ -97,7 +98,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = _getErrorMessage(e.toString());
+          _errorMessage = _getErrorMessage(e.toString(), context);
         });
       }
     } finally {
@@ -107,17 +108,18 @@ class _NewLoginScreenState extends State<NewLoginScreen>
     }
   }
 
-  String _getErrorMessage(String error) {
+  String _getErrorMessage(String error, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (error.contains('user-not-found')) {
-      return 'Aucun compte trouvé avec cet email';
+      return l10n.loginErrorUserNotFound;
     } else if (error.contains('wrong-password')) {
-      return 'Mot de passe incorrect';
+      return l10n.loginErrorWrongPassword;
     } else if (error.contains('invalid-email')) {
-      return 'Format d\'email invalide';
+      return l10n.loginErrorInvalidEmail;
     } else if (error.contains('too-many-requests')) {
-      return 'Trop de tentatives. Réessayez plus tard';
+      return l10n.loginErrorTooManyAttempts;
     }
-    return 'Une erreur est survenue. Réessayez';
+    return l10n.loginErrorGeneral;
   }
 
   @override
@@ -152,7 +154,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.md),
 
                   // Header avec toggle thème
                   Row(
@@ -163,8 +165,8 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                       Column(
                         children: [
                           Container(
-                            width: 80,
-                            height: 80,
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
@@ -174,29 +176,29 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                                   colors.primary.withOpacity(0.7),
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
                                   color: colors.primary.withOpacity(0.3),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                               child: Image.asset(
                                 'assets/smartlogo.webp',
-                                width: 60,
-                                height: 60,
+                                width: 44,
+                                height: 44,
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.md),
+                          const SizedBox(height: AppSpacing.sm),
                           Text(
                             'SmartSpend',
-                            style: AppTextStyles.h2.copyWith(
+                            style: AppTextStyles.h3.copyWith(
                               color: colors.primary,
                               fontWeight: FontWeight.w800,
                             ),
@@ -208,26 +210,26 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                     ],
                   ),
 
-                  const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Titre
                   Text(
-                    'Bon retour ! 👋',
-                    style: AppTextStyles.h1.copyWith(
+                    AppLocalizations.of(context)!.loginWelcomeTitle,
+                    style: AppTextStyles.h2.copyWith(
                       color: colors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Connectez-vous pour gérer vos finances',
+                    AppLocalizations.of(context)!.loginSubtitle,
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Erreur
                   if (_errorMessage != null) _buildErrorCard(colors),
@@ -239,17 +241,17 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                       children: [
                         _buildTextField(
                           controller: _emailController,
-                          label: 'Email',
-                          hint: 'votre@email.com',
+                          label: AppLocalizations.of(context)!.registerFieldEmail,
+                          hint: AppLocalizations.of(context)!.registerFieldEmailHint,
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           colors: colors,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer votre email';
+                              return AppLocalizations.of(context)!.loginValidationEmailRequired;
                             }
                             if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                              return 'Format d\'email invalide';
+                              return AppLocalizations.of(context)!.loginErrorInvalidEmail;
                             }
                             return null;
                           },
@@ -257,7 +259,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                         const SizedBox(height: AppSpacing.lg),
                         _buildTextField(
                           controller: _passwordController,
-                          label: 'Mot de passe',
+                          label: AppLocalizations.of(context)!.registerFieldPassword,
                           hint: '••••••••',
                           icon: Icons.lock_outline_rounded,
                           obscure: _obscurePassword,
@@ -275,7 +277,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer votre mot de passe';
+                              return AppLocalizations.of(context)!.loginValidationPasswordRequired;
                             }
                             return null;
                           },
@@ -297,7 +299,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                         );
                       },
                       child: Text(
-                        'Mot de passe oublié ?',
+                        AppLocalizations.of(context)!.loginForgotPassword,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: colors.primary,
                           fontWeight: FontWeight.w600,
@@ -306,17 +308,17 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                     ),
                   ),
 
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.md),
 
                   // Bouton connexion
                   _buildPrimaryButton(
-                    text: 'Se connecter',
+                    text: AppLocalizations.of(context)!.loginButton,
                     onPressed: _signInWithEmail,
                     isLoading: _isLoading,
                     colors: colors,
                   ),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Divider
                   Row(
@@ -330,7 +332,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                         child: Text(
-                          'ou',
+                          AppLocalizations.of(context)!.loginOrDivider,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: colors.textSecondary,
                           ),
@@ -345,26 +347,26 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                     ],
                   ),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Bouton Google
                   _buildGoogleButton(colors),
 
-                  const SizedBox(height: AppSpacing.xxl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Lien inscription
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Pas encore de compte ? ',
+                        AppLocalizations.of(context)!.loginNoAccount,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: colors.textSecondary,
                         ),
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.pushReplacement(
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const NewRegisterScreen(),
@@ -372,7 +374,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
                           );
                         },
                         child: Text(
-                          'S\'inscrire',
+                          AppLocalizations.of(context)!.loginCreateAccount,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: colors.primary,
                             fontWeight: FontWeight.w700,
@@ -575,7 +577,7 @@ class _NewLoginScreenState extends State<NewLoginScreen>
             ),
             const SizedBox(width: AppSpacing.md),
             Text(
-              'Continuer avec Google',
+              AppLocalizations.of(context)!.loginWithGoogle,
               style: AppTextStyles.buttonLarge.copyWith(
                 color: colors.textPrimary,
               ),

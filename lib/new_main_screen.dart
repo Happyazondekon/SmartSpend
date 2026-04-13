@@ -5,6 +5,8 @@ import 'new_design_system.dart';
 import 'theme_provider.dart';
 import 'services/auth_service.dart';
 import 'services/premium_service.dart';
+import 'services/localization_service.dart';
+import 'generated/gen_l10n/app_localizations.dart';
 import 'faq_chatbot.dart' show ElegantFAQChatBot;
 import 'screens/new_budget_screen.dart';
 import 'screens/new_transactions_screen.dart';
@@ -72,6 +74,7 @@ class _NewMainScreenState extends State<NewMainScreen>
   }
 
   Widget _buildBottomNav(AppColorScheme colors, bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -92,11 +95,11 @@ class _NewMainScreenState extends State<NewMainScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Flexible(child: _buildNavItem(0, Icons.pie_chart_rounded, 'Budget', colors, isDark)),
-              Flexible(child: _buildNavItem(1, Icons.receipt_long_rounded, 'Transactions', colors, isDark)),
+              Flexible(child: _buildNavItem(0, Icons.pie_chart_rounded, l10n.navBudget, colors, isDark)),
+              Flexible(child: _buildNavItem(1, Icons.receipt_long_rounded, l10n.navTransactions, colors, isDark)),
               const SizedBox(width: 56), // Espace pour le FAB
-              Flexible(child: _buildNavItem(2, Icons.bar_chart_rounded, 'Rapports', colors, isDark)),
-              Flexible(child: _buildNavItem(3, Icons.settings_rounded, 'Paramètres', colors, isDark)),
+              Flexible(child: _buildNavItem(2, Icons.bar_chart_rounded, l10n.navReports, colors, isDark)),
+              Flexible(child: _buildNavItem(3, Icons.settings_rounded, l10n.navSettings, colors, isDark)),
             ],
           ),
         ),
@@ -198,6 +201,7 @@ class _NewMainScreenState extends State<NewMainScreen>
       BuildContext context, AppColorScheme colors, bool isDark) {
     // Capturer le BudgetLogic AVANT d'ouvrir le bottom sheet
     final budgetLogic = Provider.of<BudgetLogic>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
     
     showModalBottomSheet(
       context: context,
@@ -224,7 +228,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Actions rapides',
+                  l10n.quickActionsTitle,
                   style: AppTextStyles.titleLarge(isDark),
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -233,7 +237,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                   children: [
                     _buildQuickAction(
                       icon: Icons.add_card_rounded,
-                      label: 'Transaction',
+                      label: l10n.quickActionTransaction,
                       color: colors.primary,
                       colors: colors,
                       isDark: isDark,
@@ -244,7 +248,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                     ),
                     _buildQuickAction(
                       icon: Icons.flag_rounded,
-                      label: 'Objectif',
+                      label: l10n.quickActionGoal,
                       color: colors.secondary,
                       colors: colors,
                       isDark: isDark,
@@ -261,7 +265,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                     ),
                     _buildQuickAction(
                       icon: Icons.smart_toy_rounded,
-                      label: 'Assistant',
+                      label: l10n.quickActionAssistant,
                       color: colors.warning,
                       colors: colors,
                       isDark: isDark,
@@ -314,6 +318,7 @@ class _NewMainScreenState extends State<NewMainScreen>
   void _showAddTransactionDialog(BuildContext context, BudgetLogic budgetLogic) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = isDark ? AppColors.dark : AppColors.light;
+    final l10n = AppLocalizations.of(context)!;
     final categories = budgetLogic.getBudget().keys.toList();
     String selectedCategory = categories.isNotEmpty ? categories.first : '';
     final amountController = TextEditingController();
@@ -357,14 +362,14 @@ class _NewMainScreenState extends State<NewMainScreen>
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Nouvelle transaction',
+                  l10n.transactionNewTitle,
                   style: AppTextStyles.titleLarge(isDark),
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Catégorie
                 Text(
-                  'Catégorie',
+                  l10n.transactionFieldCategory,
                   style: AppTextStyles.labelMedium(isDark).copyWith(
                     color: colors.textSecondary,
                   ),
@@ -404,7 +409,7 @@ class _NewMainScreenState extends State<NewMainScreen>
 
                 // Montant
                 Text(
-                  'Montant',
+                  l10n.transactionFieldAmount,
                   style: AppTextStyles.labelMedium(isDark).copyWith(
                     color: colors.textSecondary,
                   ),
@@ -435,7 +440,7 @@ class _NewMainScreenState extends State<NewMainScreen>
 
                 // Description
                 Text(
-                  'Description (optionnel)',
+                  l10n.transactionFieldDescriptionOptional,
                   style: AppTextStyles.labelMedium(isDark).copyWith(
                     color: colors.textSecondary,
                   ),
@@ -445,7 +450,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                   controller: descriptionController,
                   style: AppTextStyles.bodyMediumThemed(isDark),
                   decoration: InputDecoration(
-                    hintText: 'Ex: Courses du weekend',
+                    hintText: l10n.transactionFieldDescriptionHint,
                     hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                       color: colors.textSecondary.withOpacity(0.5),
                     ),
@@ -461,7 +466,7 @@ class _NewMainScreenState extends State<NewMainScreen>
 
                 // Date de la transaction
                 Text(
-                  'Date',
+                  l10n.transactionFieldDate,
                   style: AppTextStyles.labelMedium(isDark).copyWith(
                     color: colors.textSecondary,
                   ),
@@ -520,7 +525,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                           date: selectedDate,
                         );
                         Navigator.pop(context);
-                        _showSuccessDialog(context, 'Transaction ajoutée !');
+                        _showSuccessDialog(context, l10n.transactionAddedSuccess);
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -531,7 +536,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
                     ),
-                    child: const Text('Ajouter'),
+                    child: Text(l10n.addButton),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -601,6 +606,7 @@ class _NewMainScreenState extends State<NewMainScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = isDark ? AppColors.dark : AppColors.light;
     final premiumService = PremiumService();
+    final l10n = AppLocalizations.of(context)!;
 
     final canUse = await premiumService.canUseChatbot();
 
@@ -627,7 +633,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Text('Limite atteinte'),
+              Text(l10n.premiumLimitReached),
             ],
           ),
           content: Column(
@@ -646,7 +652,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Vous avez utilisé vos 3 sessions gratuites de l\'assistant IA.',
+                        l10n.premiumChatbotLimitReached,
                         style: TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -654,15 +660,13 @@ class _NewMainScreenState extends State<NewMainScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Passez à Premium pour un accès illimité à l\'assistant financier et à l\'export PDF.',
-              ),
+              Text(l10n.premiumUpgradePrompt),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Fermer'),
+              child: Text(l10n.closeButton),
             ),
             ElevatedButton(
               onPressed: () {
@@ -673,7 +677,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                 backgroundColor: const Color(0xFFFFD700),
                 foregroundColor: Colors.black,
               ),
-              child: const Text('Voir Premium'),
+              child: Text(l10n.premiumViewButton),
             ),
           ],
         ),

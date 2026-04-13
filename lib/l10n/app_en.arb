@@ -1,0 +1,1064 @@
+{
+  "@@locale": "en",
+  "appTitle": "SmartSpend",
+  "filterAll": "All",
+
+  "loginWelcomeTitle": "Welcome back! 👋",
+  "loginSubtitle": "Sign in to manage your finances",
+  "loginErrorUserNotFound": "No account found with this email",
+  "loginErrorWrongPassword": "Incorrect password",
+  "loginErrorInvalidEmail": "Invalid email format",
+  "loginErrorTooManyAttempts": "Too many attempts. Try again later",
+  "loginErrorGeneral": "An error occurred. Try again",
+  "loginValidationEmailRequired": "Please enter your email",
+  "loginValidationPasswordRequired": "Please enter your password",
+  "loginForgotPassword": "Forgot password?",
+  "loginButton": "Sign in",
+  "loginOrDivider": "or",
+  "loginWithGoogle": "Continue with Google",
+  "loginNoAccount": "Don't have an account?",
+  "loginCreateAccount": "Create account",
+
+  "registerTitle": "Create account",
+  "registerSubtitle": "Join SmartSpend and take control of your finances",
+  "registerFieldFullName": "Full name",
+  "registerFieldFullNameHint": "John Doe",
+  "registerFieldEmail": "Email",
+  "registerFieldEmailHint": "your@email.com",
+  "registerFieldPassword": "Password",
+  "registerFieldPasswordHint": "••••••••",
+  "registerFieldConfirmPassword": "Confirm password",
+  "registerValidationPasswordMinLength": "Minimum 6 characters",
+  "registerValidationNameRequired": "Please enter your name",
+  "registerValidationNameTooShort": "Name too short",
+  "registerValidationPasswordRequired": "Please enter a password",
+  "registerValidationPasswordMismatch": "Passwords do not match",
+  "registerValidationTermsRequired": "Please accept the terms of use",
+  "registerValidationTerms": "Please accept the terms of use",
+  "termsPrefix": "I accept the ",
+  "termsOfUse": "terms of use",
+  "termsMiddle": " and the ",
+  "privacyPolicy": "privacy policy",
+  "registerValidationEmailRequired": "Please enter your email",
+  "registerValidationInvalidEmail": "Invalid email format",
+  "registerValidationPasswordTooShort": "Minimum 6 characters",
+  "registerErrorGeneral": "An error occurred. Please try again.",
+  "registerErrorGoogle": "Google sign-in error",
+  "registerButtonSubmit": "Create my account",
+  "registerExistingAccount": "Already have an account?",
+  "registerErrorEmailInUse": "This email address is already in use",
+  "registerErrorGoogleSignIn": "Google sign-in error",
+  "registerPrivacyPolicy": "privacy policy",
+  "registerTermsOfUse": "terms of use",
+  "registerAgreeTerms": "I agree to the",
+  "registerAndThe": "and the",
+
+  "emailVerificationTitle": "Verify your email",
+  "emailVerificationSuccess": "Email verified! 🎉",
+  "emailVerificationSuccessMessage": "Your account is now activated. Redirecting...",
+  "emailVerificationSentMessage": "We sent a verification email to:",
+  "emailVerificationErrorSending": "Error sending verification email",
+  "emailVerificationSendError": "Error sending verification email",
+  "emailVerificationInstructions": "Click the verification link",
+  "emailVerificationResend": "Resend email",
+  "emailVerificationResendIn": "Resend in {seconds}s",
+  "@emailVerificationResendIn": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "emailVerificationCheckSpam": "Also check your spam folder",
+  "emailVerificationChangeEmail": "Change email",
+  "emailVerificationStep1": "1. Open your email",
+  "emailVerificationStep3": "3. Come back to the app",
+
+  "forgotPasswordTitle": "Forgot password?",
+  "forgotPasswordEmailSent": "Email sent!",
+  "forgotPasswordDescription": "Enter your email address and we'll send you a link to reset your password.",
+  "forgotPasswordSuccessDescription": "Check your inbox and follow the instructions to reset your password.",
+  "forgotPasswordCheckInbox": "Check your inbox and follow the instructions to reset your password.",
+  "forgotPasswordError": "An error occurred. Check your email address.",
+  "forgotPasswordSendButton": "Send link",
+  "forgotPasswordBackToLogin": "Back to login",
+  "forgotPasswordResendEmail": "Resend email",
+  "forgotPasswordResend": "Resend",
+  "forgotPasswordEmailRequired": "Please enter your email",
+  "forgotPasswordInvalidEmail": "Invalid email format",
+  "forgotPasswordRemember": "Remember?",
+  "forgotPasswordSignIn": "Sign in",
+
+  "pinSetupTitle": "Create your PIN code",
+  "pinSetupConfirmTitle": "Confirm your code",
+  "pinSetupDescription": "This code will protect access to your data",
+  "pinSetupConfirmDescription": "Enter your 4-digit code again",
+  "pinSetupErrorMismatch": "Codes do not match",
+  "pinSetupRestart": "Restart",
+
+  "pinLockBiometricPrompt": "Unlock SmartSpend with your fingerprint",
+  "pinLockErrorIncorrect": "Incorrect code ({attemptsRemaining} attempts remaining)",
+  "@pinLockErrorIncorrect": {
+    "placeholders": {
+      "attemptsRemaining": {"type": "int"}
+    }
+  },
+  "pinLockErrorLocked": "Try again in {seconds} seconds",
+  "@pinLockErrorLocked": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "pinLockBiometricButton": "Biometrics",
+  "pinLockLogoutButton": "Logout",
+  "pinLockTooManyAttempts": "Too many attempts",
+  "pinLockEnterCode": "Enter your PIN code",
+
+  "navBudget": "Budget",
+  "navTransactions": "Transactions",
+  "navReports": "Reports",
+  "navSettings": "Settings",
+  "quickActionsTitle": "Quick Actions",
+  "quickActionTransaction": "Transaction",
+  "quickActionGoal": "Goal",
+  "quickActionAssistant": "Assistant",
+
+  "budgetHeaderTitle": "Overview",
+  "budgetSetButtonLabel": "Set",
+  "budgetUsedLabel": "used",
+  "budgetSpentLabel": "Spent",
+  "budgetCategoriesSection": "Categories",
+  "budgetRecentTransactions": "Recent Transactions",
+  "greetingMorning": "Good morning ☀️",
+  "greetingAfternoon": "Good afternoon ☀️",
+  "greetingEvening": "Good evening 🌙",
+  "budgetManageTitle": "Manage Budget",
+  "budgetSetTitle": "Set Budget",
+  "budgetNotSet": "No budget set",
+  "budgetSupplementaryIncome": "For supplementary income",
+  "budgetSupplementaryIncomeDescription": "Add supplementary income to your current budget",
+  "budgetSupplementaryAmountLabel": "Amount to add",
+  "budgetNewCategoryTitle": "New Category",
+  "budgetCategoryNameLabel": "Category name",
+  "budgetAllocatedAmountLabel": "Allocated amount",
+  "budgetEquivalentLabel": "Equivalent: {amount}",
+  "@budgetEquivalentLabel": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "budgetIconLabel": "Icon",
+  "budgetAddCategoryButton": "Add category",
+  "budgetEditCategoryTitle": "Edit category",
+  "budgetRemainingLabel": "Remaining",
+  "budgetAvailableLabel": "Available",
+  "budgetOf": "of",
+
+  "transactionsTitle": "Transactions",
+  "transactionsSearchHint": "Search for a transaction...",
+  "transactionsSummaryThisMonth": "This month",
+  "transactionsSummaryCount": "Transactions",
+  "transactionsSummaryAveragePerDay": "Average/day",
+  "transactionsEmptyState": "Your transactions will appear here",
+  "transactionsEmptyDescription": "Add your first transaction to start tracking your expenses",
+  "transactionNewTitle": "New transaction",
+  "transactionFieldCategory": "Category",
+  "transactionFieldDescription": "Description",
+  "transactionFieldDescriptionOptional": "Description (optional)",
+  "transactionFieldDescriptionHint": "E.g: Weekend groceries",  "transactionEditTitle": "Edit transaction",
+  "transactionFieldDate": "Date",
+  "transactionModified": "Transaction modified",
+  "saveButton": "Save",  "transactionFieldAmount": "Amount",
+  "transactionFieldDate": "Date",
+  "addButton": "Add",
+  "transactionWarningIrreversible": "This action is irreversible.",
+  "transactionModifiedSuccess": "Transaction modified",
+  "transactionDeletedSuccess": "Transaction deleted",
+  "transactionAddedSuccess": "Transaction added successfully",
+  "transactionEditTitle": "Edit transaction",
+  "transactionDeleteConfirm": "Delete this transaction?",
+
+  "categoryHealth": "Health",
+  "categoryEducation": "Education",
+  "categorySavings": "Savings",
+  "categoryRent": "Rent",
+  "categoryTransport": "Transport",
+  "categoryUtilities": "Electricity/Water",
+  "categoryInternet": "Internet",
+  "categoryFood": "Food",
+  "categoryEntertainment": "Entertainment",
+  "categoryOther": "Other",
+
+  "monthJan": "Jan",
+  "monthFeb": "Feb",
+  "monthMar": "Mar",
+  "monthApr": "Apr",
+  "monthMay": "May",
+  "monthJun": "Jun",
+  "monthJul": "Jul",
+  "monthAug": "Aug",
+  "monthSep": "Sep",
+  "monthOct": "Oct",
+  "monthNov": "Nov",
+  "monthDec": "Dec",
+
+  "reportsTitle": "Reports",
+  "reportsSubtitle": "Analyze your spending",
+  "reportsPeriodThisMonth": "This month",
+  "reportsPeriod3Months": "3 months",
+  "reportsPeriod6Months": "6 months",
+  "reportsPeriod1Year": "1 year",
+  "reportsSpendingDistribution": "Spending Distribution",
+  "reportsTotalSpent": "Total Spent",
+  "reportsNoData": "No data",
+  "reportsNoDataDescription": "Add transactions to see your reports",
+  "reportsSpent": "Spent",
+  "reportsSavings": "Savings",
+  "reportsBudgetVsSpending": "Budget vs Spending",
+  "reportsCategoryDetails": "Category Details",
+  "reportsExportPDF": "Export to PDF",
+
+  "settingsTitle": "Settings",
+  "settingsSubtitle": "Customize your experience",
+  "settingsSecurity": "Security",
+  "settingsChangePINTitle": "Change PIN code",
+  "settingsChangePINSubtitle": "Change your security code",
+  "settingsData": "Data",
+  "settingsExportData": "Export data",
+  "settingsExportDataSubtitle": "Download your data as PDF",
+  "settingsMonthlyHistory": "Monthly history",
+  "settingsMonthlyHistorySubtitle": "View your closed months history",
+  "settingsResetData": "Reset data",
+  "settingsResetDataSubtitle": "Delete all your data",
+  "settingsPinProtection": "Protect app access",
+  "settingsPinEnabledSuccess": "PIN code enabled successfully",
+  "settingsDisablePinConfirm": "Disable PIN code?",
+  "settingsDisablePinWarning": "Your app will no longer be protected by a security code.",
+  "settingsPinDisabledSuccess": "PIN disabled",
+  "settingsDisableButton": "Disable",
+  "settingsPinChangedSuccess": "PIN changed successfully",
+  "settingsPremium": "Upgrade to Premium",
+  "settingsPremiumDescription": "Unlock all features: unlimited PDF exports, unlimited AI assistant, and more.",
+  "settingsLogout": "Logout",
+  "settingsNoClosedMonths": "No closed months",
+  "settingsResetConfirm": "Reset data?",
+  "settingsResetWarning": "All your data will be deleted. This action is irreversible.",
+  "settingsResetSuccess": "Data reset",
+  "settingsResetButton": "Reset",
+  "settingsLogoutConfirm": "Logout?",
+  "settingsLogoutWarning": "Your data is backed up in the cloud.",
+  "settingsLogoutButton": "Logout",
+  "settingsAppearance": "Appearance",
+  "settingsDarkMode": "Dark mode",
+  "settingsLightMode": "Light",
+  "settingsLanguage": "Language",
+  "currency": "Currency",
+  "language": "Language",
+  "settingsNotifications": "Notifications",
+  "settingsNotificationsSubtitle": "Manage reminders and alerts",
+  "settingsAbout": "About",
+  "settingsVersion": "Version",
+  "settingsProfile": "Profile",
+  "user": "User",
+  "freeVersion": "Free",
+  "transactionRemindersTitle": "Transaction reminders",
+  "transactionRemindersSubtitle": "Receive reminders morning, noon and evening",
+  "pinCode": "PIN Code",
+  "cancel": "Cancel",
+  "deleteButton": "Delete",
+  "transactionDeleted": "Transaction deleted",
+  "seeOffers": "See offers",
+  "incomes": "Income",
+  "transactions": "transactions",
+
+  "goalsScreenTitle": "Financial Goals",
+  "goalsEmptyTitle": "No goals defined",
+  "goalsEmptyDescription": "Create your first financial goal to start saving with a clear target!",
+  "goalsCreateButton": "Create goal",
+  "goalsAddMoney": "Add money",
+  "goalsMarkComplete": "Mark as complete",
+  "goalsEditButton": "Edit",
+  "goalsDeleteButton": "Delete",
+  "goalsProgressLabel": "Progress",
+  "goalsDeadlineLabel": "Deadline",
+  "goalsTargetLabel": "Target",
+  "goalsCurrentLabel": "Current",
+  "goalsNewTitle": "New goal",
+  "goalsEditTitle": "Edit goal",
+  "goalsNameLabel": "Goal name",
+  "goalsAmountLabel": "Target amount",
+  "goalsDescriptionLabel": "Description (optional)",
+  "goalsDeadlineDateLabel": "Deadline",
+  "goalsIconLabel": "Icon",
+  "goalsColorLabel": "Color",
+  "goalsCreateButtonLabel": "Create",
+  "goalsSaveButtonLabel": "Save",
+  "goalsDeleteConfirm": "Delete this goal?",
+  "goalsAchieved": "Goal achieved! 🎉",
+
+  "notificationPermissionDenied": "Notification permission denied. Enable it in settings.",
+  "notificationDisabledAndroid": "Notifications are disabled in Android settings",
+  "notificationBatteryOptimization": "For reliable reminders, disable battery optimization for SmartSpend",
+  "notificationReminderDisabled": "Reminders disabled",
+  "notificationDisableError": "Error disabling reminders: {error}",
+  "@notificationDisableError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "notificationSystemDisabled": "Notifications are not enabled at system level",
+  "notificationTestStarted": "Tests started: • Immediate notification • Notification in 3 seconds",
+
+  "newMonthTitle": "🎉 New month!",
+  "newMonthWelcome": "Welcome to {month} {year}!",
+  "@newMonthWelcome": {
+    "placeholders": {
+      "month": {"type": "String"},
+      "year": {"type": "String"}
+    }
+  },
+  "newMonthCloseQuestion": "Do you want to close {prevMonth} {year} and start the new month?",
+  "@newMonthCloseQuestion": {
+    "placeholders": {
+      "prevMonth": {"type": "String"},
+      "year": {"type": "String"}
+    }
+  },
+  "newMonthInfo": "• Your categories will be kept\n• Expenses will be archived\n• You can enter your new income",
+  "newMonthRemainingBudget": "Remaining budget: {amount}",
+  "@newMonthRemainingBudget": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "newMonthCarryOver": "Carry over this amount to next month",
+  "newMonthLater": "Later",
+  "newMonthCloseButton": "Close month",
+  "newMonthClosedSuccess": "Month closed! {amount} carried over. Add your income.",
+  "@newMonthClosedSuccess": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "newMonthClosedNoCarryOver": "Month closed! Enter your income for this month.",
+  "newMonthCloseError": "Error closing month",
+
+  "chatbotGreeting": "👋 Hello and welcome, {userName}!",
+  "@chatbotGreeting": {
+    "placeholders": {
+      "userName": {"type": "String"}
+    }
+  },
+  "chatbotThinking": "SmartBot is thinking...",
+  "chatbotInputHint": "Ask your financial question...",
+  "chatbotConnectionError": "⚠️ Connection temporarily unavailable. Try a question from the suggestions below.",
+  "chatbotLastFreeUse": "This was your last free assistant use.",
+  "chatbotFreeUsesRemaining": "{count} free uses remaining",
+  "@chatbotFreeUsesRemaining": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "chatbotSuggestions": "💡 Suggestions",
+
+  "faqAddTransaction": "📱 How to add a transaction?",
+  "faqCreateBudget": "🎯 How to create a budget?",
+  "faqViewStats": "📊 How to view my statistics?",
+  "faqSaveEffectively": "💰 How to save effectively?",
+  "faqReduceSpending": "✂️ How to reduce spending?",
+  "faqBeginnerInvesting": "📊 Beginner investing tips?",
+  "faqManageDebt": "💳 How to manage my debt?",
+  "faqCreateGoal": "🎯 How to create a goal?",
+
+  "faqAddTransactionAnswer": "📝 Add a transaction:\n\n1. Open the 'Transactions' tab\n2. Tap the '+' button\n3. Enter the amount, choose the category and add a description\n4. Confirm to save\n\n💡 Tip: Add your transactions immediately for accurate tracking!",
+  "faqCreateBudgetAnswer": "🎯 Create an effective budget:\n\n1. Go to the 'Budget' tab\n2. Click '+' to add a new budget\n3. Set the maximum amount per category\n4. Enable alerts to stay within limits\n\n💰 Tip: Follow the 50/30/20 rule (needs/wants/savings)",
+  "faqViewStatsAnswer": "📊 Analyze your finances:\n\nThe 'Statistics' tab offers:\n• Spending charts by category\n• Monthly evolution of your finances\n• Periodic comparisons\n• Consumption trends\n\n🔍 Use this data to identify your habits and optimize your budget!",
+  "faqSaveEffectivelyAnswer": "💰 Proven saving strategies:\n\n🎯 52-week method: Save $1 week 1, $2 week 2...\n🏦 Automatic savings: 10-20% of each income\n📱 Use SmartSpend to track your progress\n⚡ Reduce non-essential subscriptions\n\nGoal: First build an emergency fund (3-6 months of expenses)!",
+  "faqReduceSpendingAnswer": "✂️ Spending optimization:\n\n🔍 Analyze your SmartSpend statistics:\n• Identify the most expensive categories\n• Spot recurring expenses\n• Find budget 'leaks'\n\n💡 Concrete actions:\n• Compare prices before buying\n• Cook more at home\n• Renegotiate contracts (insurance, phone)\n• Choose second-hand when possible",
+  "faqBeginnerInvestingAnswer": "🚀 Getting started with investing:\n\n⚠️ Essential prerequisites:\n✓ Emergency fund saved (3-6 months)\n✓ Debts paid off (except mortgage)\n✓ Budget managed with SmartSpend\n\n📈 First steps:\n• Start small ($50-100/month)\n• Diversify your investments\n• Focus on long-term\n• Learn before investing\n\n🏦 Options: Savings accounts, index funds, retirement accounts",
+  "faqManageDebtAnswer": "💳 Repayment strategy:\n\n🎯 'Snowball' method:\n1. List all your debts\n2. Pay minimums everywhere\n3. Attack the smallest debt first\n4. Once paid, move to the next\n\n📊 Use SmartSpend to track your repayments and celebrate your progress!\n\n⚡ Negotiate with your creditors if necessary.",
+  "faqCreateGoalAnswer": "🎯 Create a financial goal:\n\n1. Go to the 'Goals' tab\n2. Tap '+' to add a new goal\n3. Enter the name, description (optional), target amount and deadline\n4. Choose an icon and color to personalize your goal\n5. Confirm by tapping 'Create'",
+
+  "budgetExceededWarning": "Budget exceeded. Try reducing your expenses.",
+  "syncCompleted": "Sync completed",
+  "dataInitError": "Error initializing data",
+  "allDataDeleted": "All data deleted",
+  "dataDeleteError": "Error deleting data: {error}",
+  "@dataDeleteError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "categoryAlreadyExists": "This category already exists",
+  "budgetPercentageError": "Total percentages cannot exceed 100%. Available: {percent}%",
+  "@budgetPercentageError": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "budgetValidationError": "Please enter a valid name and percentage greater than 0",
+  "cannotDeleteCategoryWithTransactions": "Cannot delete a category with transactions",
+  "noTransactionsToExport": "No transactions to export",
+  "csvHeaders": "Date,Category,Description,Amount",
+
+  "pdfTitle": "Financial Statement for: {name}",
+  "@pdfTitle": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pdfGeneratedDate": "Generated on {date}",
+  "@pdfGeneratedDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "pdfSituation": "FINANCIAL SITUATION",
+  "pdfTotalSpent": "Total Spent:",
+  "pdfTransactionDetails": "TRANSACTION DETAILS",
+  "pdfCategoryAnalysis": "CATEGORY ANALYSIS",
+  "pdfFooter": "SmartSpend - Smart Financial Management",
+  "pdfCategoryHeader": "Category",
+  "pdfAmountHeader": "Amount",
+  "pdfBudgetHeader": "Budget",
+  "pdfVarianceHeader": "Variance",
+
+  "goalCreatedSuccess": "Financial goal created successfully!",
+  "goalCreationError": "Error creating goal",
+  "goalModifiedSuccess": "Goal modified successfully!",
+  "goalDeletedSuccess": "Goal deleted",
+  "goalAmountAddedSuccess": "Amount added successfully!",
+  "savingSuggestionTitle": "Saving Suggestion",
+  "goalDeadlineApproaching": "Your goal \"{goalName}\" is coming due soon!",
+  "@goalDeadlineApproaching": {
+    "placeholders": {
+      "goalName": {"type": "String"}
+    }
+  },
+  "goalDeadlineDate": "Due date: {date}",
+  "@goalDeadlineDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "goalSavingSuggestion": "Would you like to save {amount} for this goal?",
+  "@goalSavingSuggestion": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "goalSaveButton": "Save",
+  "goalEncouragement": "Keep it up to reach all your financial goals!",
+
+  "premiumUnlockFeatures": "Unlock all features:",
+  "premiumUnlimitedPDF": "Unlimited PDF exports",
+  "premiumUnlimitedAI": "Unlimited AI assistant",
+  "premiumAdvancedAnalytics": "Advanced analytics",
+  "premiumNoAds": "No ads",
+  "premiumPurchaseError": "Error with purchase. Try again.",
+  "premiumProductNotAvailable": "Product not available. Try again later.",
+  "premiumPDFLimitReached": "You've used your 3 free PDF exports.",
+  "premiumUpgradePrompt": "Upgrade to Premium for unlimited exports and full financial assistant access.",
+  "premiumChatbotLimitReached": "You've used your 3 free AI assistant sessions.",
+  "premiumLimitReached": "Limit reached",
+  "premiumViewButton": "View Premium",
+  "closeButton": "Close",
+  "premiumLastFreeExport": "This was your last free PDF export.",
+  "premiumYearly": "Yearly",
+  "premiumMonthly": "Monthly",
+  "premiumPerYear": "/ year",
+  "premiumPerMonth": "/ month",
+  "premiumBestValue": "Best value",
+  "premiumUpgradeTitle": "Upgrade to Premium 💎",
+  "premiumRestorePurchases": "Restore my purchases",
+
+  "authVerifying": "Verifying...",
+  "authInitializingData": "Initializing your data...",
+  "authVerifyingSecurity": "Verifying security...",
+  "authPreparingExperience": "Preparing your experience...",
+  "loadingError": "Loading error",
+  "dataLoadingError": "Unable to load your data",
+  "retryButton": "Retry",
+  "updateRequired": "Update required",
+  "updateAvailableMessage": "A new version of SmartSpend is available with important improvements and bug fixes.",
+  "updateMandatoryMessage": "Please update the app to continue using it.",
+  "updateNowButton": "Update now",
+  "updateDataSafeMessage": "💡 Your data is backed up and will be restored after the update.",
+
+  "onboardingBudgetTitle": "Manage your budget",
+  "onboardingBudgetDescription": "Set your salary or income and distribute it intelligently among your different spending categories.",
+  "onboardingTrackingTitle": "Track your spending",
+  "onboardingTrackingDescription": "Record each transaction and visualize in real-time where your money goes with clear charts.",
+  "onboardingGoalsTitle": "Achieve your goals",
+  "onboardingGoalsDescription": "Create personalized savings goals and track your progress to achieve them.",
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingStart": "Start",
+
+  "syncSuccess": "Sync successful",
+  "offlineMode": "Offline mode - Data not synced",
+  "syncRetry": "Retry",
+
+  "cancel": "Cancel",
+  "cancelButton": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "add": "Add",
+  "close": "Close",
+  "ok": "OK",
+  "yes": "Yes",
+  "no": "No",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "warning": "Warning",
+
+  "editButton": "Edit",
+  "monthProgress": "Monthly progress",
+  "daysRemaining": "{count} days remaining",
+  "@daysRemaining": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "noTransaction": "No transaction",
+  "budgetLabel": "Budget",
+  "calculateBudgetButton": "Calculate budget",
+  "budgetAddToBudgetTitle": "Add to budget",
+  "budgetAddToBudgetButton": "Add to budget",
+  "budgetMonthlyIncomeTitle": "Your monthly income",
+  "budgetEnterMonthlyIncome": "Enter your net monthly salary or income",
+  "budgetCurrentLabel": "Current budget",
+  "budgetNewLabel": "New budget: {amount}",
+  "@budgetNewLabel": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "budgetPercentageLabel": "Percentage",
+  "budgetAmountLabel": "Amount",
+  "budgetBudgetPercentageLabel": "Percentage of budget",
+  "budgetMaxLabel": "Max: {value}",
+  "@budgetMaxLabel": {
+    "placeholders": {
+      "value": {"type": "String"}
+    }
+  },
+  "budgetSaveChanges": "Save changes",
+  "budgetOfBudget": "of budget",
+
+  "language": "Language",
+  "languageFrench": "Français",
+  "languageEnglish": "English",
+  "languageCode": "en",
+
+  "chatbotSystemPrompt": "You are SmartBot, SmartSpend's premium AI assistant, a personal finance expert and caring financial advisor.",
+
+  "chatbotSubtitle": "Financial advisor",
+  "chatbotIntro": "🤖 I'm SmartBot, your intelligent financial advisor and personal assistant for SmartSpend.",
+  "chatbotCapabilities": "💡 I can help you with:\n• 📊 Personalized financial advice\n• 📱 SmartSpend usage guide\n• 💰 Savings and investment strategies\n• 📈 Analysis of your financial habits",
+  "chatbotPrompt": "🎯 Let's start! Choose a topic below or ask me your question directly.",
+  "chatbotError": "⚠️ An error occurred. Please try again or choose a suggestion.",
+  "chatbotTabPopular": "🎯 Popular",
+  "chatbotTabFinance": "💰 Finance",
+  "chatbotTabApp": "📱 App",
+  "chatbotDefaultUser": "User",
+
+  "goalsCompleted": "Completed ✓",
+  "goalsOverdue": "Overdue",
+  "goalsDaysRemaining": "{count} days remaining",
+  "@goalsDaysRemaining": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "goalsToReachObjective": "To reach your goal:",
+  "goalsDailyAmount": "• {amount} {currency} per day",
+  "@goalsDailyAmount": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "goalsMonthlyAmount": "• {amount} {currency} per month",
+  "@goalsMonthlyAmount": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "goalsNameHint": "E.g: Trip to Benin",
+  "goalsDescriptionHint": "More details about your goal...",
+  "goalsValidationError": "Please fill in the name and amount",
+  "goalsPercentReached": "{percent}% reached",
+  "@goalsPercentReached": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "goalsAmountToAdd": "Amount to add",
+  "goalsRemainingToReach": "{amount} {currency} remaining to reach the goal",
+  "@goalsRemainingToReach": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "goalsInvalidAmount": "Please enter a valid amount",
+  "goalsCreateSuccess": "Goal created successfully!",
+  "goalsCreateError": "Error creating goal",
+  "goalsEditSuccess": "Goal modified successfully!",
+  "goalsEditError": "Error modifying goal",
+  "goalsDeleteSuccess": "Goal deleted",
+  "goalsDeleteError": "Error deleting goal",
+  "goalsAmountExceedsRemaining": "The amount added exceeds the remaining amount.\n{amount} left to complete.",
+  "@goalsAmountExceedsRemaining": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "goalsAmountAdded": "Amount added!",
+  "goalsAddError": "Error adding amount",
+  "goalsCongratulations": "🎉 Congratulations!",
+  "goalsAchievedMessage": "Goal \"{name}\" achieved!",
+  "@goalsAchievedMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "goalsGreatButton": "Great!",
+  "goalsFinalizeError": "Error finalizing",
+  "goalsDeleteConfirmMessage": "Are you sure you want to delete \"{name}\"?",
+  "@goalsDeleteConfirmMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "goalsLoadError": "Error loading goals",
+  "goalsMarkedComplete": "🎉 Goal marked as complete!",
+
+  "notifActivationError": "Error activating reminders: {error}",
+  "@notifActivationError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "notifDeactivationError": "Error deactivating: {error}",
+  "@notifDeactivationError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "notifRemindersDisabled": "Reminders disabled",
+
+  "invalidIncomeError": "Please enter valid income",
+  "invalidAmountError": "Please enter a valid amount",
+  "budgetAmountAdded": "{amount} added to budget",
+  "@budgetAmountAdded": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "budgetExceeded": "Budget exceeded. Try reducing your expenses.",
+  "budgetLimitReached": "Warning, you've reached the limit of your budget.",
+  "budgetNearLimit": "Warning, you're approaching the limit of your budget.",
+
+  "categoryInvalidNamePercent": "Invalid name or percentage",
+  "categoryInvalidInput": "Please enter a valid name and percentage greater than 0",
+  "categoryDeleteHasTransactions": "Cannot delete a category with transactions",
+
+  "pdfMonthlyIncome": "Monthly income:",
+  "pdfRemainingBalance": "Remaining balance:",
+  "pdfTotalExpenses": "Total expenses:",
+  "pdfIncomeSpentPercent": "{percent}% of your income spent",
+  "@pdfIncomeSpentPercent": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "pdfAdviceTitle": "SMARTSPEND ADVICE",
+  "pdfPersonalReport": "Personal financial report of {name}",
+  "@pdfPersonalReport": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pdfShareText": "SmartSpend financial report of {name} - {month}",
+  "@pdfShareText": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "month": {"type": "String"}
+    }
+  },
+  "pdfForUser": "For {name}",
+  "@pdfForUser": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pdfAdviceOverBudget": "{name}, warning! You exceeded your budget this month. Try to reduce your spending next month.",
+  "@pdfAdviceOverBudget": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pdfAdviceGreatSaving": "Excellent work, {name}! You saved more than 30% of your income this month.",
+  "@pdfAdviceGreatSaving": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pdfAdviceOnTrack": "{name}, you're on track with {amount} {currency} remaining this month.",
+  "@pdfAdviceOnTrack": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "pdfAdviceCategoryHigh": "{name}, the category \"{category}\" represents a significant share ({percent}%) of your spending. Consider diversifying.",
+  "@pdfAdviceCategoryHigh": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "category": {"type": "String"},
+      "percent": {"type": "String"}
+    }
+  },
+  "pdfAdviceSavingsLow": "{name}, your savings are below 10% of your income. Try to gradually increase this share.",
+  "@pdfAdviceSavingsLow": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "pdfAdviceBalanced": "{name}, your financial management is balanced this month. Keep it up!",
+  "@pdfAdviceBalanced": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "csvHeaderFull": "Date,Category,Description,Amount ({currency})",
+  "@csvHeaderFull": {
+    "placeholders": {
+      "currency": {"type": "String"}
+    }
+  },
+
+  "premiumPurchasing": "Launching purchase...",
+  "premiumRestoring": "Restoring purchases...",
+  "premiumRestoreButton": "Restore",
+  "premiumBestBadge": "BEST",
+  "laterButton": "Later",
+  "premiumWelcome": "Welcome Premium!",
+  "premiumCongratulationsMessage": "Congratulations! You now have access to all SmartSpend Premium features.",
+  "premiumEnjoyFeatures": "Enjoy all features without limits!",
+
+  "goalsSavingSuggestion": "Saving suggestion",
+  "goalsSavingSuggestionDesc": "Your goal \"{name}\" is coming due soon!",
+  "@goalsSavingSuggestionDesc": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "goalsProgressLabel2": "Progress: {percent}%",
+  "@goalsProgressLabel2": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "goalsRemainingLabel": "Remaining: {amount} {currency}",
+  "@goalsRemainingLabel": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "goalsDeadlineDate": "Due date: {date}",
+  "@goalsDeadlineDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "goalsSavingPrompt": "Would you like to save {amount} {currency} for this goal?",
+  "@goalsSavingPrompt": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "goalsSaveNowButton": "Save now",
+
+  "createCategoryFirst": "Please create a category first.",
+  "transactionAddTitle": "Add transaction",
+  "defineIncomeFirst": "Please set your income first.",
+  "categoryBudgetExceeded": "Amount exceeds remaining available budget!",
+  "categoryNewTitle": "New Category",
+  "categoryEditTitle": "Edit Category",
+  "categoryNameLabel": "Category name",
+  "settingsDailyReminders": "Daily reminders",
+  "settingsDailyRemindersSubtitle": "Evening reminder for your transactions",
+  "settingsGoals": "Financial goals",
+  "settingsGoalsSubtitle": "Set and track your savings goals",
+  "chatbotAccessError": "Error accessing the assistant",
+  "pdfExportError": "Error exporting PDF",
+  "premiumUpgradeError": "Error upgrading",
+  "budgetRemainingBudget": "Remaining:",
+
+  "monthFullJan": "January",
+  "monthFullFeb": "February",
+  "monthFullMar": "March",
+  "monthFullApr": "April",
+  "monthFullMay": "May",
+  "monthFullJun": "June",
+  "monthFullJul": "July",
+  "monthFullAug": "August",
+  "monthFullSep": "September",
+  "monthFullOct": "October",
+  "monthFullNov": "November",
+  "monthFullDec": "December",
+
+  "notifPermissionDenied": "Notification permission denied. Enable it in settings.",
+  "notifSystemDisabled": "Notifications are disabled in Android settings",
+  "notifBatteryOptimization": "For reliable reminders, disable battery optimization for SmartSpend",
+  "notifActivated": "✅ Reminders activated!\nMorning (8:30 AM) and Evening (8:00 PM)",
+  "notifTestLaunched": "Tests launched:\n• Immediate notification\n• Notification in 3 seconds",
+  "notifSystemNotEnabled": "Notifications are not enabled at system level",
+  "notifTestError": "Notification test error: {error}",
+  "@notifTestError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+
+  "newMonthTitle": "🎉 New month!",
+  "newMonthWelcome": "Welcome to {month} {year}!",
+  "@newMonthWelcome": {
+    "placeholders": {
+      "month": {"type": "String"},
+      "year": {"type": "String"}
+    }
+  },
+  "newMonthCloseQuestion": "Would you like to close {month} and start the new month?",
+  "@newMonthCloseQuestion": {
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "newMonthDetails": "• Your categories will be kept\n• Expenses will be archived\n• You can enter your new income",
+  "newMonthCarryOver": "Carry over this amount to next month",
+  "closeMonthButton": "Close the month",
+
+  "monthClosedWithCarryOver": "✅ Month closed! {amount} carried over. Enter your income.",
+  "@monthClosedWithCarryOver": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "monthClosedEnterIncome": "✅ Month closed! Enter your income for this month.",
+  "monthCloseError": "Error closing the month",
+
+  "transactionAddError": "Error adding transaction",
+  "transactionEditError": "Error editing transaction",
+  "transactionDeleteError": "Error deleting transaction",
+
+  "syncComplete": "Synchronization complete",
+  "syncError": "Synchronization error",
+  "dataInitError": "Error initializing data",
+  "dataDeletedSuccess": "All data has been deleted",
+  "dataDeleteError": "Error deleting data",
+
+  "categoryAlreadyExists": "This category already exists",
+  "categoryPercentExceeded": "Total percentages cannot exceed 100%. Available: {percent}%",
+  "@categoryPercentExceeded": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "categoryServerEditError": "Error editing on server",
+  "categoryServerDeleteError": "Error deleting on server",
+
+  "noTransactionsToExport": "No transactions to export",
+
+  "pdfFinancialStatement": "Financial Statement of: {month}",
+  "@pdfFinancialStatement": {
+    "placeholders": {
+      "month": {"type": "String"}
+    }
+  },
+  "pdfGeneratedOn": "Generated on {date}",
+  "@pdfGeneratedOn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "pdfFinancialOverview": "FINANCIAL OVERVIEW",
+  "pdfTransactionDetails": "TRANSACTION DETAILS",
+  "pdfCategoryAnalysis": "CATEGORY ANALYSIS",
+  "pdfSmartSpendFooter": "SmartSpend - Smart financial management",
+  "pdfTableDate": "Date",
+  "pdfTableCategory": "Category",
+  "pdfTableDescription": "Description",
+  "pdfTableAmount": "Amount ({currency})",
+  "@pdfTableAmount": {
+    "placeholders": {
+      "currency": {"type": "String"}
+    }
+  },
+  "pdfCategoryTableCategory": "Category",
+  "pdfCategoryTableAmount": "Amount",
+  "pdfCategoryTableBudget": "Budget",
+  "pdfCategoryTableDiff": "Difference",
+
+  "premiumUnlockFeatures": "Unlock all features:",
+  "premiumUnlimitedPdf": "Unlimited PDF exports",
+  "premiumUnlimitedAI": "Unlimited AI assistant",
+  "premiumAdvancedAnalytics": "Advanced analytics",
+  "premiumNoAds": "No ads",
+  "premiumAnnual": "Annual",
+  "premiumMonthly": "Monthly",
+  "premiumPurchaseError": "Purchase error. Try again.",
+  "premiumProductUnavailable": "Product unavailable. Try again later.",
+
+  "pdfLimitReached": "Limit reached",
+  "pdfLimitMessage": "You've used your 3 free PDF exports.",
+  "pdfLimitUpgrade": "Upgrade to Premium for unlimited exports and full access to the financial assistant.",
+  "pdfLastFreeExport": "This was your last free PDF export.",
+  "closeButton": "Close",
+  "viewPremiumButton": "View Premium",
+  "startButton": "Start",
+
+  "goalsKeepGoingMessage": "Keep going to reach all your financial goals!",
+  "goalsSaveButton": "Save",
+
+  "premiumRequired": "Premium required",
+  "premiumRemainingTrials": "You have {count} free trials left for {feature}",
+  "@premiumRemainingTrials": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "feature": {"type": "String"}
+    }
+  },
+  "premiumTrialsExhausted": "You've used all your free trials for {feature}",
+  "@premiumTrialsExhausted": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "premiumUpgradeTo": "Upgrade to SmartSpend Premium for:",
+  "premiumFeaturePdf": "✨ Unlimited PDF exports",
+  "premiumFeatureAI": "🤖 Unlimited financial assistant",
+  "premiumFeatureAnalytics": "📊 Advanced analytics",
+  "premiumFeatureCloud": "☁️ Priority cloud sync",
+  "premiumFeatureGoals": "🎯 Advanced financial goals",
+  "premiumFeatureSupport": "📱 Priority support",
+  "premiumTryFree": "Try for free",
+  "premiumUpgradeButton": "Upgrade to Premium",
+  "premiumChooseSubscription": "Choose your subscription",
+  "premiumSaveBadge": "SAVE",
+  "cancelButton": "Cancel",
+  "premiumPurchasesRestoredSuccess": "Purchases restored successfully!",
+  "premiumNoPurchaseToRestore": "No purchase to restore",
+  "premiumRestorePurchases": "Restore purchases",
+  "premiumProcessingPurchase": "Processing your purchase...",
+  "premiumPurchaseErrorDetail": "Purchase error: {error}",
+  "@premiumPurchaseErrorDetail": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "premiumWelcomeTitle": "Welcome Premium!",
+  "premiumCongratulationsDetail": "Congratulations! You now have access to all SmartSpend Premium features.",
+  "premiumEnjoyNoLimits": "Enjoy all features without limits!",
+  "premiumProductLoadError": "Error loading products. Please try again.",
+  "premiumUpgradeErrorGeneric": "Error upgrading to Premium",
+
+  "exportCsv": "Export as CSV",
+  "exportPdf": "Export as PDF",
+  "exportOptions": "Export options",
+  "exportSuccessNoMore": "🎉 Export successful! No more free trials available.",
+  "exportSuccessRemaining": "🎉 Export successful! {count} trials remaining.",
+  "@exportSuccessRemaining": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "pdfExportLabel": "PDF export",
+  "pdfExportErrorGeneric": "Error during PDF export",
+
+  "drawerSubtitle": "Your personal financial assistant",
+  "drawerNotifications": "NOTIFICATIONS",
+  "drawerManagement": "MANAGEMENT",
+  "drawerFinancialAssistant": "Financial assistant",
+  "drawerFinancialAssistantSubtitle": "Get personalized advice",
+  "drawerFinancialAssistantLabel": "financial assistant",
+  "drawerAccessError": "Error accessing assistant",
+  "drawerMyProfile": "My Profile",
+  "drawerMyProfileSubtitle": "Manage your account information",
+
+  "transactionOptions": "Transaction options",
+  "editButton": "Edit",
+  "deleteButton": "Delete",
+  "editTransactionTitle": "Edit transaction",
+  "transactionCategoryLabel": "Category: {name}",
+  "@transactionCategoryLabel": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "percentageLabel": "Percentage (%)",
+  "amountCurrencyLabel": "Amount ({currency})",
+  "@amountCurrencyLabel": {
+    "placeholders": {
+      "currency": {"type": "String"}
+    }
+  },
+  "switchToAmount": "Switch to Amount",
+  "switchToPercent": "Switch to Percentage",
+  "iconLabel": "Icon",
+  "colorLabel": "Color",
+  "categoryNameEmpty": "Category name cannot be empty.",
+  "budgetTotalAvailable": "Total budget available:",
+
+  "premiumUpgradeDialogWelcome": "Welcome Premium!",
+  "premiumUpgradeDialogCongrats": "Congratulations! You now have access to all Premium features.",
+  "premiumUpgradeDialogFeature": "You can now use {feature} without limits!",
+  "@premiumUpgradeDialogFeature": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "premiumUpgradeDialogButton": "Perfect!",
+  "premiumUpgradeDialogError": "Error upgrading",
+
+  "addTransactionTitle": "Add a transaction",
+  "categoryLabel": "Category",
+  "descriptionLabel": "Description",
+  "drawerDailyReminders": "Daily reminders",
+  "drawerDailyRemindersSubtitle": "Evening reminder for your transactions",
+  "drawerFinancialGoals": "Financial goals",
+  "drawerFinancialGoalsSubtitle": "Set and track your savings goals",
+  "newCategoryTitle": "New Category",
+  "editCategoryTitle": "Edit Category",
+  "equivalentAmount": "Equivalent: {amount} {currency}",
+  "@equivalentAmount": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "currency": {"type": "String"}
+    }
+  },
+  "equivalentPercent": "Equivalent: {percent}%",
+  "@equivalentPercent": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "budgetRemainingLabel": "Remaining",
+  "budgetExceedsRemaining": "Amount exceeds available remaining budget!",
+  "incomeFirstMessage": "Please set your income first.",
+  "switchToLabel": "Switch to {mode}",
+  "@switchToLabel": {
+    "placeholders": {
+      "mode": {"type": "String"}
+    }
+  }
+}

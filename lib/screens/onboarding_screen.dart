@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../generated/gen_l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -14,26 +15,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<OnboardingPage> _pages = [
-    OnboardingPage(
-      image: 'assets/Illustrations/onboarding_budget.webp',
-      title: 'Gérez votre budget',
-      description: 'Définissez votre salaire ou revenus et répartissez-le intelligemment entre vos différentes catégories de dépenses.',
-      color: const Color(0xFF6366F1),
-    ),
-    OnboardingPage(
-      image: 'assets/Illustrations/onboarding_savings.webp',
-      title: 'Suivez vos dépenses',
-      description: 'Enregistrez chaque transaction et visualisez en temps réel où va votre argent grâce à des graphiques clairs.',
-      color: const Color(0xFF10B981),
-    ),
-    OnboardingPage(
-      image: 'assets/Illustrations/onboarding_goals.webp',
-      title: 'Atteignez vos objectifs',
-      description: 'Créez des objectifs d\'épargne personnalisés et suivez votre progression jusqu\'à leur réalisation.',
-      color: const Color(0xFFFFD700),
-    ),
-  ];
+  List<OnboardingPage> _getPages(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      OnboardingPage(
+        image: 'assets/Illustrations/onboarding_budget.webp',
+        title: l10n.onboardingBudgetTitle,
+        description: l10n.onboardingBudgetDescription,
+        color: const Color(0xFF6366F1),
+      ),
+      OnboardingPage(
+        image: 'assets/Illustrations/onboarding_savings.webp',
+        title: l10n.onboardingTrackingTitle,
+        description: l10n.onboardingTrackingDescription,
+        color: const Color(0xFF10B981),
+      ),
+      OnboardingPage(
+        image: 'assets/Illustrations/onboarding_goals.webp',
+        title: l10n.onboardingGoalsTitle,
+        description: l10n.onboardingGoalsDescription,
+        color: const Color(0xFFFFD700),
+      ),
+    ];
+  }
 
   @override
   void dispose() {
@@ -41,8 +45,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+  void _nextPage(int pagesLength) {
+    if (_currentPage < pagesLength - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -65,6 +69,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    final pages = _getPages(context);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
@@ -79,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: TextButton(
                   onPressed: _skip,
                   child: Text(
-                    'Passer',
+                    l10n.onboardingSkip,
                     style: TextStyle(
                       color: isDark ? Colors.white70 : Colors.grey[600],
                       fontSize: 16,
@@ -93,12 +99,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
                 },
                 itemBuilder: (context, index) {
-                  return _buildPage(_pages[index], isDark);
+                  return _buildPage(pages[index], isDark);
                 },
               ),
             ),
@@ -109,8 +115,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  _pages.length,
-                  (index) => _buildDot(index),
+                  pages.length,
+                  (index) => _buildDot(index, pages),
                 ),
               ),
             ),
@@ -122,9 +128,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _nextPage,
+                  onPressed: () => _nextPage(pages.length),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _pages[_currentPage].color,
+                    backgroundColor: pages[_currentPage].color,
                     foregroundColor: _currentPage == 2 ? Colors.black87 : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -135,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _currentPage == _pages.length - 1 ? 'Commencer' : 'Suivant',
+                        _currentPage == pages.length - 1 ? l10n.onboardingStart : l10n.onboardingNext,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -143,7 +149,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       const SizedBox(width: 8),
                       Icon(
-                        _currentPage == _pages.length - 1 
+                        _currentPage == pages.length - 1 
                             ? Icons.check_rounded 
                             : Icons.arrow_forward_rounded,
                         size: 20,
@@ -212,7 +218,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildDot(int index) {
+  Widget _buildDot(int index, List<OnboardingPage> pages) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -220,7 +226,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       width: _currentPage == index ? 24 : 8,
       decoration: BoxDecoration(
         color: _currentPage == index 
-            ? _pages[_currentPage].color 
+            ? pages[_currentPage].color 
             : Colors.grey[300],
         borderRadius: BorderRadius.circular(4),
       ),

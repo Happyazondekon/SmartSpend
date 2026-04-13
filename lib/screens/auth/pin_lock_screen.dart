@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import '../../generated/gen_l10n/app_localizations.dart';
 import 'dart:io' show Platform;
 import '../../new_design_system.dart';
 import '../../theme_provider.dart';
@@ -156,7 +157,7 @@ class _PinLockScreenState extends State<PinLockScreen>
     
     try {
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Déverrouillez SmartSpend avec votre empreinte',
+        localizedReason: AppLocalizations.of(context)!.pinLockBiometricPrompt,
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: false, // Permettre PIN/Pattern sur anciennes versions
@@ -240,7 +241,7 @@ class _PinLockScreenState extends State<PinLockScreen>
         _lockApp();
       } else {
         setState(() {
-          _error = 'Code incorrect (${_maxAttempts - _attempts} essais restants)';
+          _error = AppLocalizations.of(context)!.pinLockErrorIncorrect(_maxAttempts - _attempts);
           _enteredPin = '';
         });
       }
@@ -353,8 +354,8 @@ class _PinLockScreenState extends State<PinLockScreen>
                   // Sous-titre
                   Text(
                     _isLocked
-                        ? 'Trop de tentatives'
-                        : 'Entrez votre code PIN',
+                        ? AppLocalizations.of(context)!.pinLockTooManyAttempts
+                        : AppLocalizations.of(context)!.pinLockEnterCode,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: _isLocked ? colors.error : colors.textSecondary,
                     ),
@@ -431,7 +432,7 @@ class _PinLockScreenState extends State<PinLockScreen>
                             color: colors.primary,
                           ),
                           label: Text(
-                            'Biométrie',
+                            AppLocalizations.of(context)!.pinLockBiometricButton,
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: colors.primary,
                             ),
@@ -447,7 +448,7 @@ class _PinLockScreenState extends State<PinLockScreen>
                             color: colors.error,
                           ),
                           label: Text(
-                            'Déconnexion',
+                            AppLocalizations.of(context)!.pinLockLogoutButton,
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: colors.error,
                             ),
@@ -477,7 +478,7 @@ class _PinLockScreenState extends State<PinLockScreen>
         ),
         const SizedBox(height: 16),
         Text(
-          'Réessayez dans $_lockSeconds secondes',
+          AppLocalizations.of(context)!.pinLockErrorLocked(_lockSeconds),
           style: AppTextStyles.bodyLarge.copyWith(
             color: colors.error,
             fontWeight: FontWeight.w600,

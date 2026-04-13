@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../generated/gen_l10n/app_localizations.dart';
 import '../budget_logic.dart';
 import '../new_design_system.dart';
 
@@ -55,12 +56,12 @@ class _NewReportsScreenState extends State<NewReportsScreen>
               children: [
                 // Header
                 Text(
-                  'Rapports',
+                  AppLocalizations.of(context)!.reportsTitle,
                   style: AppTextStyles.displaySmall(isDark),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Analysez vos dépenses',
+                  AppLocalizations.of(context)!.reportsSubtitle,
                   style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                     color: colors.textSecondary,
                   ),
@@ -100,7 +101,11 @@ class _NewReportsScreenState extends State<NewReportsScreen>
   }
 
   Widget _buildPeriodSelector(AppColorScheme colors, bool isDark) {
-    final periods = ['Ce mois', '3 mois', '6 mois'];
+    final periods = [
+      AppLocalizations.of(context)!.reportsPeriodThisMonth,
+      AppLocalizations.of(context)!.reportsPeriod3Months,
+      AppLocalizations.of(context)!.reportsPeriod6Months,
+    ];
 
     return Container(
       padding: const EdgeInsets.all(4),
@@ -162,7 +167,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
       child: Column(
         children: [
           Text(
-            'Répartition des dépenses',
+            AppLocalizations.of(context)!.reportsSpendingDistribution,
             style: AppTextStyles.titleMedium(isDark),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -206,7 +211,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
                       ),
                     ),
                     Text(
-                      'Total dépensé',
+                      AppLocalizations.of(context)!.reportsTotalSpent,
                       style: AppTextStyles.labelSmall(isDark).copyWith(
                         color: colors.textSecondary,
                       ),
@@ -267,11 +272,11 @@ class _NewReportsScreenState extends State<NewReportsScreen>
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Aucune donnée',
+            AppLocalizations.of(context)!.reportsNoData,
             style: AppTextStyles.titleMedium(isDark),
           ),
           Text(
-            'Ajoutez des transactions pour voir vos rapports',
+            AppLocalizations.of(context)!.reportsNoDataDescription,
             style: AppTextStyles.bodySmallThemed(isDark).copyWith(
               color: colors.textSecondary,
             ),
@@ -295,7 +300,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
         Expanded(
           child: _buildStatCard(
             icon: Icons.trending_down_rounded,
-            label: 'Dépensé',
+            label: AppLocalizations.of(context)!.reportsSpent,
             value: '$currencySymbol${_formatNumber(totalSpent)}',
             color: colors.error,
             colors: colors,
@@ -306,7 +311,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
         Expanded(
           child: _buildStatCard(
             icon: Icons.account_balance_wallet_rounded,
-            label: 'Restant',
+            label: AppLocalizations.of(context)!.budgetRemainingLabel,
             value: '$currencySymbol${_formatNumber(remaining)}',
             color: remaining >= 0 ? colors.success : colors.error,
             colors: colors,
@@ -317,7 +322,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
         Expanded(
           child: _buildStatCard(
             icon: Icons.savings_rounded,
-            label: 'Épargne',
+            label: AppLocalizations.of(context)!.reportsSavings,
             value: '${savingsRate.toStringAsFixed(0)}%',
             color: colors.secondary,
             colors: colors,
@@ -389,7 +394,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Budget vs Dépenses',
+            AppLocalizations.of(context)!.reportsBudgetVsSpending,
             style: AppTextStyles.titleMedium(isDark),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -465,9 +470,9 @@ class _NewReportsScreenState extends State<NewReportsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLegendItem('Budget', colors.primary.withOpacity(0.3), isDark),
+              _buildLegendItem(AppLocalizations.of(context)!.budgetLabel, colors.primary.withOpacity(0.3), isDark),
               const SizedBox(width: AppSpacing.lg),
-              _buildLegendItem('Dépensé', colors.secondary, isDark),
+              _buildLegendItem(AppLocalizations.of(context)!.reportsSpent, colors.secondary, isDark),
             ],
           ),
         ],
@@ -515,7 +520,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Détails par catégorie',
+            AppLocalizations.of(context)!.reportsCategoryDetails,
             style: AppTextStyles.titleMedium(isDark),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -524,8 +529,8 @@ class _NewReportsScreenState extends State<NewReportsScreen>
             final e = entry.value;
             final amount = (e.value['amount'] as num?)?.toDouble() ?? 0.0;
             final spent = (e.value['spent'] as num?)?.toDouble() ?? 0.0;
-            final percentage = (e.value['percentage'] as num?) ?? 0;
             final progress = amount > 0 ? spent / amount : 0.0;
+            final spentPercent = (progress * 100).round();
             final isOverBudget = spent > amount;
 
             return Padding(
@@ -558,7 +563,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
                             ),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
-                              '(${percentage.toInt()}%)',
+                              '($spentPercent%)',
                               style: AppTextStyles.labelSmall(isDark).copyWith(
                                 color: colors.textSecondary,
                               ),
@@ -611,7 +616,7 @@ class _NewReportsScreenState extends State<NewReportsScreen>
           ),
         ),
         icon: const Icon(Icons.picture_as_pdf_rounded),
-        label: const Text('Exporter en PDF'),
+        label: Text(AppLocalizations.of(context)!.reportsExportPDF),
       ),
     );
   }

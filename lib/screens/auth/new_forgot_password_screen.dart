@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../generated/gen_l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../../new_design_system.dart';
 import '../../theme_provider.dart';
@@ -68,7 +69,7 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Une erreur est survenue. Vérifiez votre adresse email.';
+          _errorMessage = AppLocalizations.of(context)!.forgotPasswordError;
         });
       }
     } finally {
@@ -149,7 +150,7 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
 
                   // Titre
                   Text(
-                    _emailSent ? 'Email envoyé !' : 'Mot de passe oublié ?',
+                    _emailSent ? AppLocalizations.of(context)!.forgotPasswordEmailSent : AppLocalizations.of(context)!.forgotPasswordTitle,
                     style: AppTextStyles.h1.copyWith(
                       color: colors.textPrimary,
                     ),
@@ -158,8 +159,8 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     _emailSent
-                        ? 'Vérifiez votre boîte de réception et suivez les instructions pour réinitialiser votre mot de passe.'
-                        : 'Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.',
+                        ? AppLocalizations.of(context)!.forgotPasswordSuccessDescription
+                        : AppLocalizations.of(context)!.forgotPasswordDescription,
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: colors.textSecondary,
                     ),
@@ -177,17 +178,17 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
                       key: _formKey,
                       child: _buildTextField(
                         controller: _emailController,
-                        label: 'Email',
-                        hint: 'votre@email.com',
+                        label: AppLocalizations.of(context)!.registerFieldEmail,
+                        hint: AppLocalizations.of(context)!.registerFieldEmailHint,
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                         colors: colors,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Veuillez entrer votre email';
+                            return AppLocalizations.of(context)!.forgotPasswordEmailRequired;
                           }
                           if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                            return 'Format d\'email invalide';
+                            return AppLocalizations.of(context)!.forgotPasswordInvalidEmail;
                           }
                           return null;
                         },
@@ -198,7 +199,7 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
 
                     // Bouton envoi
                     _buildPrimaryButton(
-                      text: 'Envoyer le lien',
+                      text: AppLocalizations.of(context)!.forgotPasswordSendButton,
                       onPressed: _resetPassword,
                       isLoading: _isLoading,
                       colors: colors,
@@ -235,7 +236,7 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
 
                     // Bouton retour
                     _buildPrimaryButton(
-                      text: 'Retour à la connexion',
+                      text: AppLocalizations.of(context)!.forgotPasswordBackToLogin,
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
@@ -259,7 +260,7 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
                           });
                         },
                         child: Text(
-                          'Renvoyer l\'email',
+                          AppLocalizations.of(context)!.forgotPasswordResend,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: colors.primary,
                             fontWeight: FontWeight.w600,
@@ -277,7 +278,7 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Vous vous souvenez ? ',
+                          AppLocalizations.of(context)!.forgotPasswordRemember,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: colors.textSecondary,
                           ),
@@ -292,7 +293,7 @@ class _NewForgotPasswordScreenState extends State<NewForgotPasswordScreen>
                             );
                           },
                           child: Text(
-                            'Se connecter',
+                            AppLocalizations.of(context)!.loginButton,
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: colors.primary,
                               fontWeight: FontWeight.w700,

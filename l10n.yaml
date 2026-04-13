@@ -1,0 +1,9 @@
+arb-dir: lib/l10n
+template-arb-file: app_fr.arb
+output-localization-file: app_localizations.dart
+
+# Désactive le package temporaire et génère les fichiers dans ton projet
+synthetic-package: false
+
+# Définit l'endroit exact où le code sera généré
+output-dir: lib/generated/gen_l10n

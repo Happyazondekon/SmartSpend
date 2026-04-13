@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'in_app_purchase_service.dart';
+import '../generated/gen_l10n/app_localizations.dart';
 
 class PremiumService {
   static final PremiumService _instance = PremiumService._internal();
@@ -167,7 +168,7 @@ class PremiumService {
       await prefs.setBool('is_premium', true);
 
     } catch (e) {
-      throw 'Erreur lors de la mise à niveau Premium';
+      throw 'Error upgrading to Premium';
     }
   }
 
@@ -248,7 +249,7 @@ class PremiumService {
             ),
             const SizedBox(width: 12),
             Text(
-              'Premium requis',
+              AppLocalizations.of(context)!.premiumRequired,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
@@ -270,7 +271,7 @@ class PremiumService {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Il vous reste $remainingUses essais gratuits pour $feature',
+                        AppLocalizations.of(context)!.premiumRemainingTrials(remainingUses, feature),
                         style: TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -293,7 +294,7 @@ class PremiumService {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Vous avez épuisé vos essais gratuits pour $feature',
+                        AppLocalizations.of(context)!.premiumTrialsExhausted(feature),
                         style: TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -304,18 +305,18 @@ class PremiumService {
             ],
 
             Text(
-              'Passez à SmartSpend Premium pour :',
+              AppLocalizations.of(context)!.premiumUpgradeTo,
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
             ),
             const SizedBox(height: 8),
 
             ...[
-              '✨ Exports PDF illimités',
-              '🤖 Assistant financier illimité',
-              '📊 Analyses avancées',
-              '☁️ Synchronisation cloud prioritaire',
-              '🎯 Objectifs financiers avancés',
-              '📱 Support prioritaire',
+              AppLocalizations.of(context)!.premiumFeaturePdf,
+              AppLocalizations.of(context)!.premiumFeatureAI,
+              AppLocalizations.of(context)!.premiumFeatureAnalytics,
+              AppLocalizations.of(context)!.premiumFeatureCloud,
+              AppLocalizations.of(context)!.premiumFeatureGoals,
+              AppLocalizations.of(context)!.premiumFeatureSupport,
             ].map((benefit) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Text(benefit, style: TextStyle(fontSize: 14)),
@@ -325,7 +326,7 @@ class PremiumService {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Plus tard'),
+            child: Text(AppLocalizations.of(context)!.laterButton),
           ),
           if (remainingUses != null && remainingUses > 0)
             TextButton(
@@ -333,7 +334,7 @@ class PremiumService {
                 Navigator.of(context).pop();
                 _showPurchaseDialog(context);
               },
-              child: Text('Essayer gratuitement'),
+              child: Text(AppLocalizations.of(context)!.premiumTryFree),
             ),
           Container(
             decoration: BoxDecoration(
@@ -358,7 +359,7 @@ class PremiumService {
                   Icon(Icons.star, color: Colors.white, size: 18),
                   const SizedBox(width: 4),
                   Text(
-                    'Passer à Premium',
+                    AppLocalizations.of(context)!.premiumUpgradeButton,
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -380,7 +381,7 @@ class PremiumService {
     if (products.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur de chargement des produits. Veuillez réessayer.'),
+          content: Text(AppLocalizations.of(context)!.premiumProductLoadError),
           backgroundColor: Colors.red,
         ),
       );
@@ -409,7 +410,7 @@ class PremiumService {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Choisir votre abonnement',
+                AppLocalizations.of(context)!.premiumChooseSubscription,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -474,7 +475,7 @@ class PremiumService {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'ÉCONOMISEZ',
+                            AppLocalizations.of(context)!.premiumSaveBadge,
                             style: TextStyle(
                               fontSize: 8,
                               fontWeight: FontWeight.bold,
@@ -505,7 +506,7 @@ class PremiumService {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuler'),
+            child: Text(AppLocalizations.of(context)!.cancelButton),
           ),
           TextButton(
             onPressed: () async {
@@ -517,20 +518,20 @@ class PremiumService {
               if (isPremium && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Achats restaurés avec succès !'),
+                    content: Text(AppLocalizations.of(context)!.premiumPurchasesRestoredSuccess),
                     backgroundColor: Colors.green,
                   ),
                 );
               } else if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Aucun achat à restaurer'),
+                    content: Text(AppLocalizations.of(context)!.premiumNoPurchaseToRestore),
                     backgroundColor: Colors.orange,
                   ),
                 );
               }
             },
-            child: Text('Restaurer les achats'),
+            child: Text(AppLocalizations.of(context)!.premiumRestorePurchases),
           ),
         ],
       ),
@@ -558,7 +559,7 @@ class PremiumService {
             children: [
               CircularProgressIndicator(),
               const SizedBox(height: 16),
-              Text('Traitement de votre achat...'),
+              Text(AppLocalizations.of(context)!.premiumProcessingPurchase),
             ],
           ),
         ),
@@ -588,7 +589,7 @@ class PremiumService {
         Navigator.of(context).pop(); // Fermer l'indicateur de chargement
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de l\'achat: ${e.toString()}'),
+            content: Text(AppLocalizations.of(context)!.premiumPurchaseErrorDetail(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -617,7 +618,7 @@ class PremiumService {
               child: Icon(Icons.star, color: Colors.white, size: 24),
             ),
             const SizedBox(width: 12),
-            Text('Bienvenue Premium !'),
+            Text(AppLocalizations.of(context)!.premiumWelcomeTitle),
           ],
         ),
         content: Column(
@@ -630,7 +631,7 @@ class PremiumService {
             ),
             const SizedBox(height: 16),
             Text(
-              'Félicitations ! Vous avez maintenant accès à toutes les fonctionnalités Premium de SmartSpend.',
+              AppLocalizations.of(context)!.premiumCongratulationsDetail,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16),
             ),
@@ -647,7 +648,7 @@ class PremiumService {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Profitez de toutes les fonctionnalités sans limite !',
+                      AppLocalizations.of(context)!.premiumEnjoyNoLimits,
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ),
@@ -663,7 +664,7 @@ class PremiumService {
               backgroundColor: Color(0xFFFFD700),
               foregroundColor: Colors.white,
             ),
-            child: Text('Commencer'),
+            child: Text(AppLocalizations.of(context)!.startButton),
           ),
         ],
       ),

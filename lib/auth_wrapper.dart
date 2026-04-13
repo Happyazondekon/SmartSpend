@@ -15,6 +15,7 @@ import 'firestore_service.dart';
 import 'widgets/sync_status_widget.dart';
 import 'new_design_system.dart';
 import 'services/remote_config_service.dart';
+import 'generated/gen_l10n/app_localizations.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -137,7 +138,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
 
     // Vérification de la mise à jour en cours
     if (_checkingUpdate) {
-      return _buildLoadingScreen(context, colors, isDark, 'Vérification...');
+      return _buildLoadingScreen(context, colors, isDark, AppLocalizations.of(context)!.authVerifying);
     }
 
     // Mise à jour requise - bloquer l'accès
@@ -149,7 +150,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingScreen(context, colors, isDark, 'Chargement...');
+          return _buildLoadingScreen(context, colors, isDark, AppLocalizations.of(context)!.loading);
         }
 
         final user = snapshot.data;
@@ -167,7 +168,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
           future: _initializeUserData(),
           builder: (context, initSnapshot) {
             if (initSnapshot.connectionState == ConnectionState.waiting) {
-              return _buildLoadingScreen(context, colors, isDark, 'Initialisation de vos données...');
+              return _buildLoadingScreen(context, colors, isDark, AppLocalizations.of(context)!.authInitializingData);
             }
 
             if (initSnapshot.hasError) {
@@ -177,7 +178,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
             // Vérifier le statut du PIN
             if (_checkingPin) {
               _checkPinStatus();
-              return _buildLoadingScreen(context, colors, isDark, 'Vérification de la sécurité...');
+              return _buildLoadingScreen(context, colors, isDark, AppLocalizations.of(context)!.authVerifyingSecurity);
             }
 
             // Si pas de PIN configuré, afficher l'écran de configuration
@@ -196,7 +197,7 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
             // Vérifier le statut de l'onboarding
             if (_checkingOnboarding) {
               _checkOnboardingStatus();
-              return _buildLoadingScreen(context, colors, isDark, 'Préparation de votre expérience...');
+              return _buildLoadingScreen(context, colors, isDark, AppLocalizations.of(context)!.authPreparingExperience);
             }
 
             // Si onboarding pas encore complété, afficher le tutoriel

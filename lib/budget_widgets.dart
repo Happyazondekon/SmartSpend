@@ -13,6 +13,7 @@ import '../screens/financial_goals_screen.dart';
 import 'models/user_data.dart';
 import 'services/premium_service.dart';
 import 'design_system.dart';
+import 'generated/gen_l10n/app_localizations.dart';
 
 class BudgetWidgets {
   final BuildContext context;
@@ -124,7 +125,7 @@ class BudgetWidgets {
     final salary = budgetLogic.getSalary();
     final budget = budgetLogic.getBudget();
     final currency = budgetLogic.getCurrency();
-    
+
     double totalSpent = 0;
     budget.forEach((key, value) {
       totalSpent += value['spent'] as double;
@@ -166,7 +167,7 @@ class BudgetWidgets {
                 style: GoogleFonts.poppins(
                   fontSize: 42,
                   fontWeight: FontWeight.w700,
-                  color: availableBalance >= 0 
+                  color: availableBalance >= 0
                       ? AppDesign.textPrimary(_isDark)
                       : AppDesign.error,
                   height: 1,
@@ -266,12 +267,12 @@ class BudgetWidgets {
     final salary = budgetLogic.getSalary();
     final budget = budgetLogic.getBudget();
     final currency = budgetLogic.getCurrency();
-    
+
     double totalSpent = 0;
     budget.forEach((key, value) {
       totalSpent += value['spent'] as double;
     });
-    
+
     final progress = salary > 0 ? (totalSpent / salary).clamp(0.0, 1.0) : 0.0;
     final percentage = (progress * 100).toInt();
 
@@ -319,7 +320,7 @@ class BudgetWidgets {
             final icon = entry.value['icon'] as IconData;
             final color = entry.value['color'] as Color;
             final percent = entry.value['percent'] as double;
-            
+
             return AllocationCard(
               name: entry.key,
               subtitle: '${(percent * 100).toStringAsFixed(0)}% of income',
@@ -371,23 +372,28 @@ class BudgetWidgets {
   Widget _buildWeeklyInsightsCard() {
     final budget = budgetLogic.getBudget();
     final salary = budgetLogic.getSalary();
-    
+
     double totalSpent = 0;
     budget.forEach((key, value) {
       totalSpent += value['spent'] as double;
     });
-    
-    final savingsRate = salary > 0 ? ((salary - totalSpent) / salary * 100).clamp(0, 100) : 0;
-    
+
+    final savingsRate =
+        salary > 0 ? ((salary - totalSpent) / salary * 100).clamp(0, 100) : 0;
+
     String insightMessage;
     if (savingsRate >= 30) {
-      insightMessage = 'Excellent! You\'re saving ${savingsRate.toStringAsFixed(0)}% of your income. Keep up the great work!';
+      insightMessage =
+          'Excellent! You\'re saving ${savingsRate.toStringAsFixed(0)}% of your income. Keep up the great work!';
     } else if (savingsRate >= 15) {
-      insightMessage = 'Good progress! You\'re on track with ${savingsRate.toStringAsFixed(0)}% savings this month.';
+      insightMessage =
+          'Good progress! You\'re on track with ${savingsRate.toStringAsFixed(0)}% savings this month.';
     } else if (savingsRate > 0) {
-      insightMessage = 'Consider reviewing your spending. Current savings rate: ${savingsRate.toStringAsFixed(0)}%';
+      insightMessage =
+          'Consider reviewing your spending. Current savings rate: ${savingsRate.toStringAsFixed(0)}%';
     } else {
-      insightMessage = 'You\'re spending more than your income. Review your budget allocations.';
+      insightMessage =
+          'You\'re spending more than your income. Review your budget allocations.';
     }
 
     return InsightCard(
@@ -404,7 +410,9 @@ class BudgetWidgets {
 
   void _showSalaryEditDialog() {
     final controller = TextEditingController(
-      text: budgetLogic.getSalary() > 0 ? budgetLogic.getSalary().toStringAsFixed(0) : '',
+      text: budgetLogic.getSalary() > 0
+          ? budgetLogic.getSalary().toStringAsFixed(0)
+          : '',
     );
     String selectedCurrency = budgetLogic.getCurrency();
 
@@ -430,7 +438,18 @@ class BudgetWidgets {
                 suffix: DropdownButton<String>(
                   value: selectedCurrency,
                   underline: const SizedBox(),
-                  items: ['XOF', 'USD', 'EUR', 'GBP', 'CAD', 'NGN', 'GHS', 'AUD', 'JPY', 'CNY']
+                  items: [
+                    'XOF',
+                    'USD',
+                    'EUR',
+                    'GBP',
+                    'CAD',
+                    'NGN',
+                    'GHS',
+                    'AUD',
+                    'JPY',
+                    'CNY'
+                  ]
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
                   onChanged: (value) {
@@ -480,16 +499,18 @@ class BudgetWidgets {
     final budget = budgetLogic.getBudget();
     final currency = budgetLogic.getCurrency();
     final selectedMonth = budgetLogic.getSelectedMonth();
-    
-    double totalSpent = filteredTransactions.fold(0.0, (sum, item) => sum + item.amount);
-    
+
+    double totalSpent =
+        filteredTransactions.fold(0.0, (sum, item) => sum + item.amount);
+
     // Calculate daily average
-    final daysInMonth = DateTime(selectedMonth.year, selectedMonth.month + 1, 0).day;
-    final currentDay = selectedMonth.month == DateTime.now().month 
-        ? DateTime.now().day 
+    final daysInMonth =
+        DateTime(selectedMonth.year, selectedMonth.month + 1, 0).day;
+    final currentDay = selectedMonth.month == DateTime.now().month
+        ? DateTime.now().day
         : daysInMonth;
     final dailyAvg = currentDay > 0 ? totalSpent / currentDay : 0.0;
-    
+
     // Find peak day
     Map<int, double> dailySpending = {};
     for (var t in filteredTransactions) {
@@ -504,7 +525,7 @@ class BudgetWidgets {
         peakAmount = amount;
       }
     });
-    
+
     // Find top category
     MapEntry<String, Map<String, dynamic>>? topCategory;
     double maxSpent = 0;
@@ -571,9 +592,9 @@ class BudgetWidgets {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Total Spending Circle
           Center(
             child: SmartCard(
@@ -581,7 +602,7 @@ class BudgetWidgets {
               child: Column(
                 children: [
                   CircularProgressWidget(
-                    progress: budgetLogic.getSalary() > 0 
+                    progress: budgetLogic.getSalary() > 0
                         ? totalSpent / budgetLogic.getSalary()
                         : 0,
                     value: _formatCurrency(totalSpent),
@@ -594,8 +615,12 @@ class BudgetWidgets {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildStatColumn('Daily Avg', '${dailyAvg.toStringAsFixed(0)}\n$currency'),
-                      Container(width: 1, height: 40, color: AppDesign.surfaceElevated(_isDark)),
+                      _buildStatColumn('Daily Avg',
+                          '${dailyAvg.toStringAsFixed(0)}\n$currency'),
+                      Container(
+                          width: 1,
+                          height: 40,
+                          color: AppDesign.surfaceElevated(_isDark)),
                       _buildStatColumn('Peak Day', '${_getDayName(peakDay)}'),
                     ],
                   ),
@@ -603,46 +628,48 @@ class BudgetWidgets {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Top Category Card
           if (topCategory != null && maxSpent > 0)
             _buildTopCategoryCard(topCategory!, totalSpent, currency),
-          
+
           const SizedBox(height: 16),
-          
+
           // AI Insights Section
           _buildAIInsightsSection(totalSpent, currency),
-          
+
           const SizedBox(height: 24),
-          
+
           // Category Breakdown
           SectionHeader(
             title: 'Category Breakdown',
             actionLabel: 'VIEW ALL',
             onAction: () {},
           ),
-          
+
           ...budget.entries
               .where((e) => e.value['spent'] > 0)
               .map((entry) => _buildCategoryBreakdownItem(
-                entry.key,
-                entry.value['spent'] as double,
-                entry.value['icon'] as IconData,
-                entry.value['color'] as Color,
-                filteredTransactions.where((t) => t.category == entry.key).length,
-                totalSpent,
-                currency,
-              ))
+                    entry.key,
+                    entry.value['spent'] as double,
+                    entry.value['icon'] as IconData,
+                    entry.value['color'] as Color,
+                    filteredTransactions
+                        .where((t) => t.category == entry.key)
+                        .length,
+                    totalSpent,
+                    currency,
+                  ))
               .toList(),
-          
+
           const SizedBox(height: 100),
         ],
       ),
     );
   }
-  
+
   Widget _buildStatColumn(String label, String value) {
     return Column(
       children: [
@@ -668,19 +695,22 @@ class BudgetWidgets {
       ],
     );
   }
-  
+
   String _getDayName(int day) {
-    final date = DateTime(budgetLogic.getSelectedMonth().year, budgetLogic.getSelectedMonth().month, day);
+    final date = DateTime(budgetLogic.getSelectedMonth().year,
+        budgetLogic.getSelectedMonth().month, day);
     return DateFormat('EEE, d').format(date);
   }
-  
-  Widget _buildTopCategoryCard(MapEntry<String, Map<String, dynamic>> category, double totalSpent, String currency) {
+
+  Widget _buildTopCategoryCard(MapEntry<String, Map<String, dynamic>> category,
+      double totalSpent, String currency) {
     final spent = category.value['spent'] as double;
     final allocated = category.value['amount'] as double;
     final icon = category.value['icon'] as IconData;
     final color = category.value['color'] as Color;
     final percentage = totalSpent > 0 ? (spent / totalSpent * 100).toInt() : 0;
-    final budgetUtilization = allocated > 0 ? (spent / allocated * 100).toInt() : 0;
+    final budgetUtilization =
+        allocated > 0 ? (spent / allocated * 100).toInt() : 0;
 
     return SmartCard(
       child: Column(
@@ -699,7 +729,8 @@ class BudgetWidgets {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppDesign.primary(_isDark).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -766,7 +797,8 @@ class BudgetWidgets {
                 builder: (context, constraints) => AnimatedContainer(
                   duration: const Duration(milliseconds: 500),
                   height: 8,
-                  width: constraints.maxWidth * (budgetUtilization / 100).clamp(0.0, 1.0),
+                  width: constraints.maxWidth *
+                      (budgetUtilization / 100).clamp(0.0, 1.0),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [color, color.withOpacity(0.7)],
@@ -800,11 +832,11 @@ class BudgetWidgets {
       ),
     );
   }
-  
+
   Widget _buildAIInsightsSection(double totalSpent, String currency) {
     final salary = budgetLogic.getSalary();
     final savingsRate = salary > 0 ? ((salary - totalSpent) / salary * 100) : 0;
-    
+
     return SmartCard(
       elevated: true,
       child: Column(
@@ -812,7 +844,8 @@ class BudgetWidgets {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, color: AppDesign.primary(_isDark), size: 20),
+              Icon(Icons.auto_awesome,
+                  color: AppDesign.primary(_isDark), size: 20),
               const SizedBox(width: 8),
               Text(
                 'AI INSIGHTS',
@@ -829,7 +862,7 @@ class BudgetWidgets {
           _buildInsightItem(
             Icons.analytics_outlined,
             'Spending Analysis',
-            savingsRate >= 20 
+            savingsRate >= 20
                 ? 'Great job! You\'re saving ${savingsRate.toStringAsFixed(0)}% of your income.'
                 : 'Consider reducing non-essential spending to increase savings.',
           ),
@@ -864,7 +897,7 @@ class BudgetWidgets {
       ),
     );
   }
-  
+
   Widget _buildInsightItem(IconData icon, String title, String description) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -904,10 +937,11 @@ class BudgetWidgets {
       ],
     );
   }
-  
-  Widget _buildCategoryBreakdownItem(String name, double spent, IconData icon, Color color, int transactionCount, double totalSpent, String currency) {
+
+  Widget _buildCategoryBreakdownItem(String name, double spent, IconData icon,
+      Color color, int transactionCount, double totalSpent, String currency) {
     final percentage = totalSpent > 0 ? (spent / totalSpent * 100).toInt() : 0;
-    
+
     return SmartCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -979,8 +1013,9 @@ class BudgetWidgets {
     final budget = budgetLogic.getBudget();
     final currency = budgetLogic.getCurrency();
     final selectedMonth = budgetLogic.getSelectedMonth();
-    
-    double totalSpent = filteredTransactions.fold(0.0, (sum, item) => sum + item.amount);
+
+    double totalSpent =
+        filteredTransactions.fold(0.0, (sum, item) => sum + item.amount);
 
     return SingleChildScrollView(
       child: Column(
@@ -1056,19 +1091,19 @@ class BudgetWidgets {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Spending Velocity Chart
           _buildSpendingVelocityCard(filteredTransactions),
-          
+
           const SizedBox(height: 16),
-          
+
           // Goal Progress Card (si objectifs existent)
           _buildGoalProgressHighlight(),
-          
+
           const SizedBox(height: 24),
-          
+
           // Recent Activity Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1097,9 +1132,9 @@ class BudgetWidgets {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Transaction List
           if (filteredTransactions.isEmpty)
             _buildEmptyTransactionsState()
@@ -1108,7 +1143,8 @@ class BudgetWidgets {
               final categoryData = budget[transaction.category];
               return TransactionItem(
                 title: transaction.description,
-                subtitle: '${DateFormat('MMM dd, HH:mm').format(transaction.date)} • ${transaction.category}',
+                subtitle:
+                    '${DateFormat('MMM dd, HH:mm').format(transaction.date)} • ${transaction.category}',
                 amount: transaction.amount,
                 currency: currency,
                 icon: categoryData?['icon'] ?? Icons.receipt_outlined,
@@ -1116,7 +1152,7 @@ class BudgetWidgets {
                 onTap: () => showTransactionOptionsDialog(transaction),
               );
             }).toList(),
-          
+
           if (filteredTransactions.length > 20)
             Padding(
               padding: const EdgeInsets.all(20),
@@ -1136,13 +1172,13 @@ class BudgetWidgets {
                 ),
               ),
             ),
-          
+
           const SizedBox(height: 100),
         ],
       ),
     );
   }
-  
+
   Widget _buildSpendingVelocityCard(List<Transaction> transactions) {
     // Group by week
     Map<int, double> weeklySpending = {1: 0, 2: 0, 3: 0, 4: 0};
@@ -1152,8 +1188,9 @@ class BudgetWidgets {
         weeklySpending[week] = (weeklySpending[week] ?? 0) + t.amount;
       }
     }
-    
-    final maxSpending = weeklySpending.values.fold(0.0, (a, b) => a > b ? a : b);
+
+    final maxSpending =
+        weeklySpending.values.fold(0.0, (a, b) => a > b ? a : b);
 
     return SmartCard(
       child: Column(
@@ -1188,8 +1225,9 @@ class BudgetWidgets {
               children: List.generate(4, (index) {
                 final week = index + 1;
                 final spending = weeklySpending[week] ?? 0;
-                final height = maxSpending > 0 ? (spending / maxSpending * 80) : 10;
-                
+                final height =
+                    maxSpending > 0 ? (spending / maxSpending * 80) : 10;
+
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -1223,21 +1261,22 @@ class BudgetWidgets {
       ),
     );
   }
-  
+
   Widget _buildGoalProgressHighlight() {
     return StreamBuilder<UserData?>(
       stream: budgetLogic.getUserDataStream(),
       builder: (context, snapshot) {
         final goals = snapshot.data?.financialGoals ?? [];
         final activeGoals = goals.where((g) => !g.isCompleted).toList();
-        
+
         if (activeGoals.isEmpty) return const SizedBox();
-        
+
         // Get the goal with highest progress
-        activeGoals.sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
+        activeGoals.sort(
+            (a, b) => b.progressPercentage.compareTo(a.progressPercentage));
         final topGoal = activeGoals.first;
         final progress = topGoal.progressPercentage / 100;
-        
+
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
@@ -1345,7 +1384,7 @@ class BudgetWidgets {
       },
     );
   }
-  
+
   Widget _buildEmptyTransactionsState() {
     return SmartCard(
       margin: const EdgeInsets.all(20),
@@ -1393,7 +1432,9 @@ class BudgetWidgets {
         color: AppDesign.surface(_isDark),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+          color: _isDark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.05),
         ),
       ),
       child: Row(
@@ -1413,10 +1454,12 @@ class BudgetWidgets {
                 Icon(Icons.calendar_month_outlined, size: 20),
                 SizedBox(width: 8),
                 Text(
-                  DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth),
+                  DateFormat('MMMM yyyy',
+                          Localizations.localeOf(context).toString())
+                      .format(selectedMonth),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
               ],
             ),
@@ -1429,7 +1472,8 @@ class BudgetWidgets {
                   color: Theme.of(context).colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.ios_share_outlined,
+                child: Icon(
+                  Icons.ios_share_outlined,
                   size: 20,
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
@@ -1451,7 +1495,7 @@ class BudgetWidgets {
                       Icon(Icons.table_chart_outlined,
                           color: Theme.of(context).colorScheme.onSurface),
                       SizedBox(width: 12),
-                      Text('Exporter en CSV'),
+                      Text(AppLocalizations.of(context)!.exportCsv),
                     ],
                   ),
                 ),
@@ -1462,13 +1506,14 @@ class BudgetWidgets {
                       Icon(Icons.picture_as_pdf_outlined,
                           color: Theme.of(context).colorScheme.onSurface),
                       SizedBox(width: 12),
-                      Expanded(child: Text('Exporter en PDF')),
+                      Expanded(
+                          child: Text(AppLocalizations.of(context)!.exportPdf)),
                       _premiumService.buildPremiumBadge(),
                     ],
                   ),
                 ),
               ],
-              tooltip: 'Options d\'export',
+              tooltip: AppLocalizations.of(context)!.exportOptions,
             ),
         ],
       ),
@@ -1490,7 +1535,8 @@ class BudgetWidgets {
           if (remaining == 0) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('🎉 Export réussi ! Plus d\'essais gratuits disponibles.'),
+                content:
+                    Text(AppLocalizations.of(context)!.exportSuccessNoMore),
                 backgroundColor: Colors.orange,
                 action: SnackBarAction(
                   label: 'Premium',
@@ -1502,7 +1548,8 @@ class BudgetWidgets {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('🎉 Export réussi ! $remaining essais restants.'),
+                content: Text(AppLocalizations.of(context)!
+                    .exportSuccessRemaining(remaining)),
                 backgroundColor: Colors.green,
               ),
             );
@@ -1511,26 +1558,27 @@ class BudgetWidgets {
 
         // Procéder à l'export
         await budgetLogic.exportTransactionsToPDF();
-
       } else {
         // Afficher le dialogue Premium
         final remaining = await _premiumService.getRemainingPDFExports();
         _premiumService.showPremiumDialog(
           context,
-          feature: 'l\'export PDF',
+          feature: AppLocalizations.of(context)!.pdfExportLabel,
           remainingUses: remaining,
-          onUpgrade: () => _showUpgradeDialog('export PDF'),
+          onUpgrade: () =>
+              _showUpgradeDialog(AppLocalizations.of(context)!.pdfExportLabel),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur lors de l\'export PDF'),
+          content: Text(AppLocalizations.of(context)!.pdfExportErrorGeneric),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
+
   // Ajoutez cette nouvelle méthode dans BudgetWidgets
   Future<void> _showUpgradeDialog(String feature) async {
     final purchased = await _premiumService.simulatePurchase(context);
@@ -1560,7 +1608,8 @@ class BudgetWidgets {
                     child: Icon(Icons.star, color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  Text('Bienvenue Premium !'),
+                  Text(AppLocalizations.of(context)!
+                      .premiumUpgradeDialogWelcome),
                 ],
               ),
               content: Column(
@@ -1573,7 +1622,7 @@ class BudgetWidgets {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Félicitations ! Vous avez maintenant accès à toutes les fonctionnalités Premium.',
+                    AppLocalizations.of(context)!.premiumUpgradeDialogCongrats,
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16),
                   ),
@@ -1590,7 +1639,8 @@ class BudgetWidgets {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Vous pouvez maintenant utiliser $feature sans limite !',
+                            AppLocalizations.of(context)!
+                                .premiumUpgradeDialogFeature(feature),
                             style: TextStyle(fontWeight: FontWeight.w500),
                           ),
                         ),
@@ -1602,7 +1652,8 @@ class BudgetWidgets {
               actions: [
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Parfait !'),
+                  child: Text(
+                      AppLocalizations.of(context)!.premiumUpgradeDialogButton),
                 ),
               ],
             ),
@@ -1612,7 +1663,8 @@ class BudgetWidgets {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erreur lors de la mise à niveau'),
+              content:
+                  Text(AppLocalizations.of(context)!.premiumUpgradeDialogError),
               backgroundColor: Colors.red,
             ),
           );
@@ -1674,9 +1726,12 @@ class BudgetWidgets {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Votre assistant financier personnel',
+                    AppLocalizations.of(context)!.drawerSubtitle,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withOpacity(0.8),
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
@@ -1689,41 +1744,52 @@ class BudgetWidgets {
                 padding: EdgeInsets.zero,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
                     child: Text(
-                      'NOTIFICATIONS',
+                      AppLocalizations.of(context)!.drawerNotifications,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.8),
                         letterSpacing: 1.5,
                       ),
                     ),
                   ),
                   _buildListTile(
-                    title: 'Rappels quotidiens',
-                    subtitle: 'Rappel du soir pour vos transactions',
+                    title: AppLocalizations.of(context)!.drawerDailyReminders,
+                    subtitle: AppLocalizations.of(context)!
+                        .drawerDailyRemindersSubtitle,
                     icon: Icons.notifications_active_outlined,
                     isSwitch: true,
                     switchValue: budgetLogic.getNotificationsEnabled(),
                     onSwitchChanged: budgetLogic.toggleDailyReminders,
                   ),
-                  const Divider(indent: 24, endIndent: 24, height: 1, thickness: 1),
+                  const Divider(
+                      indent: 24, endIndent: 24, height: 1, thickness: 1),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
                     child: Text(
-                      'GESTION',
+                      AppLocalizations.of(context)!.drawerManagement,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.8),
                         letterSpacing: 1.5,
                       ),
                     ),
                   ),
                   _buildListTile(
-                    title: 'Objectifs financiers',
-                    subtitle: 'Définir et suivre vos objectifs d\'épargne',
+                    title: AppLocalizations.of(context)!.drawerFinancialGoals,
+                    subtitle: AppLocalizations.of(context)!
+                        .drawerFinancialGoalsSubtitle,
                     icon: Icons.track_changes_outlined,
                     onTap: () {
                       Navigator.pop(context);
@@ -1734,10 +1800,13 @@ class BudgetWidgets {
                       );
                     },
                   ),
-                  const Divider(indent: 24, endIndent: 24, height: 1, thickness: 1),
+                  const Divider(
+                      indent: 24, endIndent: 24, height: 1, thickness: 1),
                   _buildListTile(
-                    title: 'Assistant financier',
-                    subtitle: 'Obtenez des conseils personnalisés',
+                    title:
+                        AppLocalizations.of(context)!.drawerFinancialAssistant,
+                    subtitle: AppLocalizations.of(context)!
+                        .drawerFinancialAssistantSubtitle,
                     icon: Icons.chat_bubble_outline_rounded,
                     onTap: () async {
                       Navigator.pop(context);
@@ -1746,24 +1815,28 @@ class BudgetWidgets {
                         final canUse = await _premiumService.canUseChatbot();
 
                         if (canUse) {
-                          // Ouvrir l'assistant - le compteur sera incrémenté uniquement 
+                          // Ouvrir l'assistant - le compteur sera incrémenté uniquement
                           // quand l'utilisateur posera vraiment une question
                           showElegantFAQChatBot(context);
-
                         } else {
                           // Afficher le dialogue Premium
-                          final remaining = await _premiumService.getRemainingChatbotUses();
+                          final remaining =
+                              await _premiumService.getRemainingChatbotUses();
                           _premiumService.showPremiumDialog(
                             context,
-                            feature: 'l\'assistant financier',
+                            feature: AppLocalizations.of(context)!
+                                .drawerFinancialAssistantLabel,
                             remainingUses: remaining,
-                            onUpgrade: () => _showUpgradeDialog('assistant financier'),
+                            onUpgrade: () => _showUpgradeDialog(
+                                AppLocalizations.of(context)!
+                                    .drawerFinancialAssistantLabel),
                           );
                         }
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Erreur lors de l\'accès à l\'assistant'),
+                            content: Text(AppLocalizations.of(context)!
+                                .drawerAccessError),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -1771,8 +1844,9 @@ class BudgetWidgets {
                     },
                   ),
                   _buildListTile(
-                    title: 'Mon Profil',
-                    subtitle: 'Gérez vos informations de compte',
+                    title: AppLocalizations.of(context)!.drawerMyProfile,
+                    subtitle:
+                        AppLocalizations.of(context)!.drawerMyProfileSubtitle,
                     icon: Icons.person_outline_rounded,
                     onTap: () {
                       Navigator.pop(context);
@@ -1793,7 +1867,10 @@ class BudgetWidgets {
                 'SmartSpend v1.0.0',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onBackground.withOpacity(0.5),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onBackground
+                      .withOpacity(0.5),
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1826,53 +1903,62 @@ class BudgetWidgets {
       ),
       child: isSwitch
           ? SwitchListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        secondary: Icon(
-          icon,
-          color: iconColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.7),
-        ),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: subtitle != null
-            ? Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-          ),
-        )
-            : null,
-        value: switchValue ?? false,
-        onChanged: onSwitchChanged,
-        activeColor: Theme.of(context).colorScheme.primary,
-        activeTrackColor: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-      )
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              secondary: Icon(
+                icon,
+                color: iconColor ??
+                    Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              ),
+              title: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              subtitle: subtitle != null
+                  ? Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.5),
+                          ),
+                    )
+                  : null,
+              value: switchValue ?? false,
+              onChanged: onSwitchChanged,
+              activeColor: Theme.of(context).colorScheme.primary,
+              activeTrackColor:
+                  Theme.of(context).colorScheme.primary.withOpacity(0.4),
+            )
           : ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        leading: Icon(
-          icon,
-          color: iconColor ?? Theme.of(context).colorScheme.primary.withOpacity(0.7),
-        ),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: subtitle != null
-            ? Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-          ),
-        )
-            : null,
-        trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: onTap,
-      ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              leading: Icon(
+                icon,
+                color: iconColor ??
+                    Theme.of(context).colorScheme.primary.withOpacity(0.7),
+              ),
+              title: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              subtitle: subtitle != null
+                  ? Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.5),
+                          ),
+                    )
+                  : null,
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: onTap,
+            ),
     );
   }
 
@@ -1884,10 +1970,9 @@ class BudgetWidgets {
     final budget = budgetLogic.getBudget();
     final currency = budgetLogic.getCurrency();
 
-    if(budget.isEmpty){
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Veuillez d\'abord créer une catégorie.'))
-      );
+    if (budget.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context)!.createCategoryFirst)));
       return;
     }
 
@@ -1898,91 +1983,94 @@ class BudgetWidgets {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Ajouter une transaction'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: selectedCategory,
-                  items: budget.keys.map((String category) => DropdownMenuItem<String>(
-                    value: category,
-                    child: Row(
-                      children: [
-                        Icon(budget[category]!['icon'], color: budget[category]!['color']),
-                        SizedBox(width: 8),
-                        Text(category),
-                      ],
+              title: Text(AppLocalizations.of(context)!.addTransactionTitle),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      items: budget.keys
+                          .map((String category) => DropdownMenuItem<String>(
+                                value: category,
+                                child: Row(
+                                  children: [
+                                    Icon(budget[category]!['icon'],
+                                        color: budget[category]!['color']),
+                                    SizedBox(width: 8),
+                                    Text(category),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (String? value) => selectedCategory = value!,
+                      decoration: InputDecoration(
+                          labelText:
+                              AppLocalizations.of(context)!.categoryLabel),
                     ),
-                  )).toList(),
-                  onChanged: (String? value) => selectedCategory = value!,
-                  decoration: InputDecoration(labelText: 'Catégorie'),
+                    SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!
+                              .amountCurrencyLabel(currency)),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) =>
+                          amount = double.tryParse(value) ?? 0,
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                          labelText:
+                              AppLocalizations.of(context)!.descriptionLabel),
+                      onChanged: (value) => description = value,
+                    ),
+                  ],
                 ),
-                SizedBox(height: 16),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Montant ($currency)'),
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) => amount = double.tryParse(value) ?? 0,
-                ),
-                SizedBox(height: 16),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Description'),
-                  onChanged: (value) => description = value,
+              ),
+              actions: [
+                TextButton(
+                    child: Text(AppLocalizations.of(context)!.cancelButton),
+                    onPressed: () => Navigator.of(context).pop()),
+                ElevatedButton(
+                  child: Text(AppLocalizations.of(context)!.addButton),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    budgetLogic.addTransaction(
+                        selectedCategory, amount, description);
+                  },
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                child: Text('Annuler'),
-                onPressed: () => Navigator.of(context).pop()
-            ),
-            ElevatedButton(
-              child: Text('Ajouter'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                budgetLogic.addTransaction(selectedCategory, amount, description);
-              },
-            ),
-          ],
-        )
-    );
+            ));
   }
 
   void showTransactionOptionsDialog(Transaction transaction) {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Options de la transaction'),
-          content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+              title: Text(AppLocalizations.of(context)!.transactionOptions),
+              content: Column(mainAxisSize: MainAxisSize.min, children: [
                 ListTile(
                     leading: Icon(Icons.edit_outlined),
-                    title: Text('Modifier'),
+                    title: Text(AppLocalizations.of(context)!.editButton),
                     onTap: () {
                       Navigator.of(context).pop();
                       showEditTransactionDialog(transaction);
-                    }
-                ),
+                    }),
                 ListTile(
-                    leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                    title: Text('Supprimer'),
+                    leading: Icon(Icons.delete_outline,
+                        color: Theme.of(context).colorScheme.error),
+                    title: Text(AppLocalizations.of(context)!.deleteButton),
                     onTap: () {
                       Navigator.of(context).pop();
                       budgetLogic.deleteTransaction(transaction);
-                    }
-                ),
-              ]
-          ),
-          actions: [
-            TextButton(
-                child: Text('Fermer'),
-                onPressed: () => Navigator.of(context).pop()
-            )
-          ],
-        )
-    );
+                    }),
+              ]),
+              actions: [
+                TextButton(
+                    child: Text(AppLocalizations.of(context)!.closeButton),
+                    onPressed: () => Navigator.of(context).pop())
+              ],
+            ));
   }
 
   void showEditTransactionDialog(Transaction transaction) {
@@ -1993,43 +2081,43 @@ class BudgetWidgets {
     showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Modifier la transaction'),
-          content: SingleChildScrollView(
-            child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Catégorie: ${transaction.category}'),
+              title: Text(AppLocalizations.of(context)!.editTransactionTitle),
+              content: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(AppLocalizations.of(context)!
+                      .transactionCategoryLabel(transaction.category)),
                   SizedBox(height: 16),
                   TextField(
                     controller: TextEditingController(text: amount.toString()),
-                    decoration: InputDecoration(labelText: 'Montant ($currency)'),
+                    decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!
+                            .amountCurrencyLabel(currency)),
                     keyboardType: TextInputType.number,
                     onChanged: (value) => amount = double.tryParse(value) ?? 0,
                   ),
                   SizedBox(height: 16),
                   TextField(
                     controller: TextEditingController(text: description),
-                    decoration: InputDecoration(labelText: 'Description'),
+                    decoration: InputDecoration(
+                        labelText:
+                            AppLocalizations.of(context)!.descriptionLabel),
                     onChanged: (value) => description = value,
                   ),
-                ]
-            ),
-          ),
-          actions: [
-            TextButton(
-                child: Text('Annuler'),
-                onPressed: () => Navigator.of(context).pop()
-            ),
-            ElevatedButton(
-                child: Text('Modifier'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  budgetLogic.editTransaction(transaction, amount, description);
-                }
-            ),
-          ],
-        )
-    );
+                ]),
+              ),
+              actions: [
+                TextButton(
+                    child: Text(AppLocalizations.of(context)!.cancelButton),
+                    onPressed: () => Navigator.of(context).pop()),
+                ElevatedButton(
+                    child: Text(AppLocalizations.of(context)!.editButton),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      budgetLogic.editTransaction(
+                          transaction, amount, description);
+                    }),
+              ],
+            ));
   }
 
   // ===================================================================
@@ -2046,7 +2134,7 @@ class BudgetWidgets {
 
         final userData = snapshot.data;
         final currency = userData?.currency ?? budgetLogic.getCurrency();
-        
+
         if (userData == null || userData.financialGoals.isEmpty) {
           return _buildGoalsEmptyState();
         }
@@ -2054,16 +2142,21 @@ class BudgetWidgets {
         final goals = userData.financialGoals;
         final activeGoals = goals.where((g) => !g.isCompleted).toList();
         final completedGoals = goals.where((g) => g.isCompleted).toList();
-        
+
         // Calculate overall progress
-        final totalTargetAmount = goals.fold(0.0, (sum, goal) => sum + goal.targetAmount);
-        final totalCurrentAmount = goals.fold(0.0, (sum, goal) => sum + goal.currentAmount);
-        final overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) : 0.0;
-        
+        final totalTargetAmount =
+            goals.fold(0.0, (sum, goal) => sum + goal.targetAmount);
+        final totalCurrentAmount =
+            goals.fold(0.0, (sum, goal) => sum + goal.currentAmount);
+        final overallProgress = totalTargetAmount > 0
+            ? (totalCurrentAmount / totalTargetAmount)
+            : 0.0;
+
         // Find top performer
         FinancialGoal? topPerformer;
         if (activeGoals.isNotEmpty) {
-          activeGoals.sort((a, b) => b.progressPercentage.compareTo(a.progressPercentage));
+          activeGoals.sort(
+              (a, b) => b.progressPercentage.compareTo(a.progressPercentage));
           topPerformer = activeGoals.first;
         }
 
@@ -2097,14 +2190,15 @@ class BudgetWidgets {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Global Milestone Card
-              _buildGlobalMilestoneCard(overallProgress, goals.length, completedGoals.length),
-              
+              _buildGlobalMilestoneCard(
+                  overallProgress, goals.length, completedGoals.length),
+
               const SizedBox(height: 16),
-              
+
               // Stats Row
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -2128,28 +2222,28 @@ class BudgetWidgets {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Create New Goal Button
               CreateGoalButton(
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const FinancialGoalsScreen(openAddDialog: true),
+                      builder: (context) =>
+                          const FinancialGoalsScreen(openAddDialog: true),
                     ),
                   );
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Top Performance
-              if (topPerformer != null)
-                _buildTopPerformanceCard(topPerformer),
-              
+              if (topPerformer != null) _buildTopPerformanceCard(topPerformer),
+
               const SizedBox(height: 24),
-              
+
               // Active Journeys Section
               SectionHeader(
                 title: 'Active Journeys',
@@ -2162,7 +2256,7 @@ class BudgetWidgets {
                   );
                 },
               ),
-              
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
@@ -2173,12 +2267,14 @@ class BudgetWidgets {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Goal Cards
-              ...activeGoals.take(5).map((goal) => _buildModernGoalCard(goal, currency)),
-              
+              ...activeGoals
+                  .take(5)
+                  .map((goal) => _buildModernGoalCard(goal, currency)),
+
               // Completed Goals
               if (completedGoals.isNotEmpty) ...[
                 const SizedBox(height: 24),
@@ -2190,14 +2286,16 @@ class BudgetWidgets {
                     size: 20,
                   ),
                 ),
-                ...completedGoals.take(2).map((goal) => _buildModernGoalCard(goal, currency)),
+                ...completedGoals
+                    .take(2)
+                    .map((goal) => _buildModernGoalCard(goal, currency)),
               ],
-              
+
               const SizedBox(height: 16),
-              
+
               // Plan your next goal
               _buildPlanNextGoalCard(),
-              
+
               const SizedBox(height: 100),
             ],
           ),
@@ -2205,10 +2303,11 @@ class BudgetWidgets {
       },
     );
   }
-  
-  Widget _buildGlobalMilestoneCard(double progress, int totalGoals, int completedGoals) {
+
+  Widget _buildGlobalMilestoneCard(
+      double progress, int totalGoals, int completedGoals) {
     final percentage = (progress * 100).toInt();
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -2297,7 +2396,7 @@ class BudgetWidgets {
       ),
     );
   }
-  
+
   Widget _buildMiniStatCard(String label, String value, IconData icon) {
     return SmartCard(
       padding: const EdgeInsets.all(16),
@@ -2339,7 +2438,7 @@ class BudgetWidgets {
       ),
     );
   }
-  
+
   Widget _buildTopPerformanceCard(FinancialGoal goal) {
     return SmartCard(
       elevated: true,
@@ -2396,22 +2495,26 @@ class BudgetWidgets {
       ),
     );
   }
-  
+
   Widget _buildModernGoalCard(FinancialGoal goal, String currency) {
     final isCompleted = goal.isCompleted;
-    
+
     // Determine category label
     String categoryLabel = 'GENERAL';
-    if (goal.name.toLowerCase().contains('vacation') || goal.name.toLowerCase().contains('trip')) {
+    if (goal.name.toLowerCase().contains('vacation') ||
+        goal.name.toLowerCase().contains('trip')) {
       categoryLabel = 'LEISURE';
-    } else if (goal.name.toLowerCase().contains('emergency') || goal.name.toLowerCase().contains('security')) {
+    } else if (goal.name.toLowerCase().contains('emergency') ||
+        goal.name.toLowerCase().contains('security')) {
       categoryLabel = 'SECURITY';
-    } else if (goal.name.toLowerCase().contains('car') || goal.name.toLowerCase().contains('vehicle')) {
+    } else if (goal.name.toLowerCase().contains('car') ||
+        goal.name.toLowerCase().contains('vehicle')) {
       categoryLabel = 'VEHICLE';
-    } else if (goal.name.toLowerCase().contains('house') || goal.name.toLowerCase().contains('home')) {
+    } else if (goal.name.toLowerCase().contains('house') ||
+        goal.name.toLowerCase().contains('home')) {
       categoryLabel = 'HOUSING';
     }
-    
+
     return GoalCard(
       name: goal.name,
       description: goal.description.isNotEmpty ? goal.description : null,
@@ -2431,7 +2534,7 @@ class BudgetWidgets {
       },
     );
   }
-  
+
   Widget _buildPlanNextGoalCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -2439,7 +2542,9 @@ class BudgetWidgets {
         color: AppDesign.surface(_isDark),
         borderRadius: BorderRadius.circular(AppDesign.radiusLarge),
         border: Border.all(
-          color: _isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08),
+          color: _isDark
+              ? Colors.white.withOpacity(0.1)
+              : Colors.black.withOpacity(0.08),
           width: 2,
           strokeAlign: BorderSide.strokeAlignOutside,
         ),
@@ -2452,7 +2557,8 @@ class BudgetWidgets {
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => const FinancialGoalsScreen(openAddDialog: true),
+                builder: (context) =>
+                    const FinancialGoalsScreen(openAddDialog: true),
               ),
             );
           },
@@ -2520,9 +2626,9 @@ class BudgetWidgets {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 48),
-          
+
           Icon(
             Icons.flag_outlined,
             size: 80,
@@ -2548,12 +2654,13 @@ class BudgetWidgets {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           CreateGoalButton(
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const FinancialGoalsScreen(openAddDialog: true),
+                  builder: (context) =>
+                      const FinancialGoalsScreen(openAddDialog: true),
                 ),
               );
             },
@@ -2568,9 +2675,8 @@ class BudgetWidgets {
     final currency = budgetLogic.getCurrency();
 
     if (salary <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Veuillez d\'abord définir vos revenus.'))
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context)!.incomeFirstMessage)));
       return;
     }
 
@@ -2580,7 +2686,8 @@ class BudgetWidgets {
     int selectedIconIndex = 0;
     int selectedColorIndex = 0;
 
-    final double totalUsedPercent = budgetLogic.getTotalBudgetPercentage() * 100;
+    final double totalUsedPercent =
+        budgetLogic.getTotalBudgetPercentage() * 100;
     final double remainingPercent = 100 - totalUsedPercent;
     final double remainingAmount = salary * (remainingPercent / 100);
 
@@ -2595,7 +2702,7 @@ class BudgetWidgets {
             double amount = isUsingPercent ? (percent * salary) / 100 : percent;
 
             return AlertDialog(
-              title: Text('Nouvelle Catégorie'),
+              title: Text(AppLocalizations.of(context)!.newCategoryTitle),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -2604,19 +2711,30 @@ class BudgetWidgets {
                     Container(
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.4),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withOpacity(0.4),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Budget restant:', style: Theme.of(context).textTheme.bodyMedium),
+                          Text(
+                              AppLocalizations.of(context)!
+                                  .budgetRemainingLabel,
+                              style: Theme.of(context).textTheme.bodyMedium),
                           Text(
                             '${remainingPercent.toStringAsFixed(1)}% (${remainingAmount.toStringAsFixed(0)} $currency)',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: remainingPercent < 0 ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: remainingPercent < 0
+                                      ? Theme.of(context).colorScheme.error
+                                      : Theme.of(context).colorScheme.primary,
+                                ),
                           ),
                         ],
                       ),
@@ -2624,63 +2742,98 @@ class BudgetWidgets {
                     SizedBox(height: 24),
                     TextField(
                       controller: nameController,
-                      decoration: InputDecoration(labelText: 'Nom de la catégorie'),
+                      decoration: InputDecoration(
+                          labelText:
+                              AppLocalizations.of(context)!.categoryNameLabel),
                       onChanged: (value) => name = value,
                     ),
                     SizedBox(height: 16),
                     TextField(
                       controller: percentController,
                       decoration: InputDecoration(
-                        labelText: isUsingPercent ? 'Pourcentage (%)' : 'Montant ($currency)',
+                        labelText: isUsingPercent
+                            ? AppLocalizations.of(context)!.percentageLabel
+                            : AppLocalizations.of(context)!
+                                .amountCurrencyLabel(currency),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.swap_horiz, color: Theme.of(context).colorScheme.primary),
-                          tooltip: 'Changer en ${isUsingPercent ? "Montant" : "Pourcentage"}',
+                          icon: Icon(Icons.swap_horiz,
+                              color: Theme.of(context).colorScheme.primary),
+                          tooltip: AppLocalizations.of(context)!.switchToLabel(
+                              isUsingPercent
+                                  ? AppLocalizations.of(context)!.switchToAmount
+                                  : AppLocalizations.of(context)!
+                                      .switchToPercent),
                           onPressed: () {
                             setState(() {
                               isUsingPercent = !isUsingPercent;
                               if (isUsingPercent) {
-                                percent = salary > 0 ? (percent / salary * 100) : 0;
+                                percent =
+                                    salary > 0 ? (percent / salary * 100) : 0;
                               } else {
                                 percent = (percent * salary) / 100;
                               }
-                              percentController.text = percent.toStringAsFixed(2);
+                              percentController.text =
+                                  percent.toStringAsFixed(2);
                             });
                           },
                         ),
                         helperText: isUsingPercent
-                            ? 'Équivalent: ${amount.toStringAsFixed(0)} $currency'
-                            : 'Équivalent: ${salary > 0 ? (amount / salary * 100).toStringAsFixed(1) : 0}%',
+                          ? AppLocalizations.of(context)!
+                            .equivalentAmount(
+                              amount.toStringAsFixed(0), currency)
+                          : AppLocalizations.of(context)!.equivalentPercent(
+                            salary > 0
+                              ? (amount / salary * 100)
+                                .toStringAsFixed(1)
+                              : '0'),
                       ),
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
                       onChanged: (value) {
                         percent = double.tryParse(value) ?? 0;
-                        setState((){});
+                        setState(() {});
                       },
                     ),
                     SizedBox(height: 24),
 
                     // Sélecteur d'icônes
-                    Text('Icône', style: Theme.of(context).textTheme.titleMedium),
+                    Text(AppLocalizations.of(context)!.iconLabel,
+                        style: Theme.of(context).textTheme.titleMedium),
                     SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: List.generate(availableIcons.length, (index) {
                         return InkWell(
-                          onTap: () => setState(() => selectedIconIndex = index),
+                          onTap: () =>
+                              setState(() => selectedIconIndex = index),
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
                             padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: selectedIconIndex == index ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceVariant,
+                              color: selectedIconIndex == index
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                  color: selectedIconIndex == index ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                                  color: selectedIconIndex == index
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.transparent,
                                   width: 2),
                             ),
                             child: Icon(
                               availableIcons[index],
-                              color: selectedIconIndex == index ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: selectedIconIndex == index
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                             ),
                           ),
                         );
@@ -2689,14 +2842,16 @@ class BudgetWidgets {
                     SizedBox(height: 24),
 
                     // Sélecteur de couleurs
-                    Text('Couleur', style: Theme.of(context).textTheme.titleMedium),
+                    Text(AppLocalizations.of(context)!.colorLabel,
+                        style: Theme.of(context).textTheme.titleMedium),
                     SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: List.generate(availableColors.length, (index) {
                         return InkWell(
-                          onTap: () => setState(() => selectedColorIndex = index),
+                          onTap: () =>
+                              setState(() => selectedColorIndex = index),
                           borderRadius: BorderRadius.circular(24),
                           child: Container(
                             width: 40,
@@ -2705,10 +2860,14 @@ class BudgetWidgets {
                               color: availableColors[index],
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: Theme.of(context).colorScheme.onBackground,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onBackground,
                                   width: selectedColorIndex == index ? 3 : 0),
                             ),
-                            child: selectedColorIndex == index ? Icon(Icons.check, color: Colors.white) : null,
+                            child: selectedColorIndex == index
+                                ? Icon(Icons.check, color: Colors.white)
+                                : null,
                           ),
                         );
                       }),
@@ -2718,23 +2877,31 @@ class BudgetWidgets {
               ),
               actions: [
                 TextButton(
-                    child: Text('Annuler'),
-                    onPressed: () => Navigator.of(context).pop()
-                ),
+                    child: Text(AppLocalizations.of(context)!.cancelButton),
+                    onPressed: () => Navigator.of(context).pop()),
                 ElevatedButton(
-                  child: Text('Ajouter'),
+                  child: Text(AppLocalizations.of(context)!.addButton),
                   onPressed: () {
-                    final calculatedPercent = isUsingPercent ? percent : (percent / salary * 100);
+                    final calculatedPercent =
+                        isUsingPercent ? percent : (percent / salary * 100);
                     if (name.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Le nom ne peut pas être vide.')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(AppLocalizations.of(context)!
+                              .categoryNameEmpty)));
                       return;
                     }
                     if (calculatedPercent > remainingPercent + 0.01) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Le montant dépasse le budget restant disponible !')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(AppLocalizations.of(context)!
+                              .budgetExceedsRemaining)));
                       return;
                     }
                     Navigator.of(context).pop();
-                    budgetLogic.addCategory(name, calculatedPercent, availableIcons[selectedIconIndex], availableColors[selectedColorIndex]);
+                    budgetLogic.addCategory(
+                        name,
+                        calculatedPercent,
+                        availableIcons[selectedIconIndex],
+                        availableColors[selectedColorIndex]);
                   },
                 ),
               ],
@@ -2759,17 +2926,22 @@ class BudgetWidgets {
     IconData currentIcon = currentCategory['icon'] as IconData;
     Color currentColor = currentCategory['color'] as Color;
 
-    int selectedIconIndex = availableIcons.indexWhere((icon) => icon.codePoint == currentIcon.codePoint);
+    int selectedIconIndex = availableIcons
+        .indexWhere((icon) => icon.codePoint == currentIcon.codePoint);
     if (selectedIconIndex == -1) selectedIconIndex = 0;
 
-    int selectedColorIndex = availableColors.indexWhere((color) => color.value == currentColor.value);
+    int selectedColorIndex = availableColors
+        .indexWhere((color) => color.value == currentColor.value);
     if (selectedColorIndex == -1) selectedColorIndex = 0;
 
-    double totalUsedPercent = (budgetLogic.getTotalBudgetPercentage() * 100) - originalPercent;
+    double totalUsedPercent =
+        (budgetLogic.getTotalBudgetPercentage() * 100) - originalPercent;
     double remainingPercent = 100 - totalUsedPercent;
 
-    final TextEditingController percentController = TextEditingController(text: percent.toString());
-    final TextEditingController nameController = TextEditingController(text: name);
+    final TextEditingController percentController =
+        TextEditingController(text: percent.toString());
+    final TextEditingController nameController =
+        TextEditingController(text: name);
 
     showDialog(
       context: context,
@@ -2779,7 +2951,7 @@ class BudgetWidgets {
             double amount = isUsingPercent ? (percent * salary) / 100 : percent;
 
             return AlertDialog(
-              title: Text('Modifier la Catégorie'),
+              title: Text(AppLocalizations.of(context)!.editCategoryTitle),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -2788,19 +2960,28 @@ class BudgetWidgets {
                     Container(
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.4),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withOpacity(0.4),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Budget total dispo.:', style: Theme.of(context).textTheme.bodyMedium),
+                          Text(
+                              AppLocalizations.of(context)!
+                                  .budgetTotalAvailable,
+                              style: Theme.of(context).textTheme.bodyMedium),
                           Text(
                             '${remainingPercent.toStringAsFixed(1)}%',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
                           ),
                         ],
                       ),
@@ -2808,63 +2989,96 @@ class BudgetWidgets {
                     SizedBox(height: 24),
                     TextField(
                       controller: nameController,
-                      decoration: InputDecoration(labelText: 'Nom de la catégorie'),
+                      decoration: InputDecoration(
+                          labelText:
+                              AppLocalizations.of(context)!.categoryNameLabel),
                       onChanged: (value) => name = value,
                     ),
                     SizedBox(height: 16),
                     TextField(
                       controller: percentController,
                       decoration: InputDecoration(
-                        labelText: isUsingPercent ? 'Pourcentage (%)' : 'Montant ($currency)',
+                        labelText: isUsingPercent
+                            ? AppLocalizations.of(context)!.percentageLabel
+                            : AppLocalizations.of(context)!
+                                .amountCurrencyLabel(currency),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.swap_horiz, color: Theme.of(context).colorScheme.primary),
-                          tooltip: 'Changer en ${isUsingPercent ? "Montant" : "Pourcentage"}',
+                          icon: Icon(Icons.swap_horiz,
+                              color: Theme.of(context).colorScheme.primary),
+                          tooltip: AppLocalizations.of(context)!.switchToLabel(
+                              isUsingPercent
+                                  ? AppLocalizations.of(context)!.switchToAmount
+                                  : AppLocalizations.of(context)!
+                                      .switchToPercent),
                           onPressed: () {
                             setState(() {
                               isUsingPercent = !isUsingPercent;
                               if (isUsingPercent) {
-                                percent = salary > 0 ? (percent / salary * 100) : 0;
+                                percent =
+                                    salary > 0 ? (percent / salary * 100) : 0;
                               } else {
                                 percent = (percent * salary) / 100;
                               }
-                              percentController.text = percent.toStringAsFixed(2);
+                              percentController.text =
+                                  percent.toStringAsFixed(2);
                             });
                           },
                         ),
                         helperText: isUsingPercent
-                            ? 'Équivalent: ${amount.toStringAsFixed(0)} $currency'
-                            : 'Équivalent: ${salary > 0 ? (amount / salary * 100).toStringAsFixed(1) : 0}%',
+                            ? AppLocalizations.of(context)!.equivalentAmount(
+                                amount.toStringAsFixed(0), currency)
+                            : AppLocalizations.of(context)!.equivalentPercent(
+                                salary > 0
+                                    ? (amount / salary * 100).toStringAsFixed(1)
+                                    : '0'),
                       ),
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
                       onChanged: (value) {
                         percent = double.tryParse(value) ?? 0;
-                        setState((){});
+                        setState(() {});
                       },
                     ),
                     SizedBox(height: 24),
 
                     // Sélecteur d'icônes
-                    Text('Icône', style: Theme.of(context).textTheme.titleMedium),
+                    Text(AppLocalizations.of(context)!.iconLabel,
+                        style: Theme.of(context).textTheme.titleMedium),
                     SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: List.generate(availableIcons.length, (index) {
                         return InkWell(
-                          onTap: () => setState(() => selectedIconIndex = index),
+                          onTap: () =>
+                              setState(() => selectedIconIndex = index),
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
                             padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: selectedIconIndex == index ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.surfaceVariant,
+                              color: selectedIconIndex == index
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .surfaceVariant,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                  color: selectedIconIndex == index ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                                  color: selectedIconIndex == index
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.transparent,
                                   width: 2),
                             ),
                             child: Icon(
                               availableIcons[index],
-                              color: selectedIconIndex == index ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: selectedIconIndex == index
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                             ),
                           ),
                         );
@@ -2873,14 +3087,16 @@ class BudgetWidgets {
                     SizedBox(height: 24),
 
                     // Sélecteur de couleurs
-                    Text('Couleur', style: Theme.of(context).textTheme.titleMedium),
+                    Text(AppLocalizations.of(context)!.colorLabel,
+                        style: Theme.of(context).textTheme.titleMedium),
                     SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: List.generate(availableColors.length, (index) {
                         return InkWell(
-                          onTap: () => setState(() => selectedColorIndex = index),
+                          onTap: () =>
+                              setState(() => selectedColorIndex = index),
                           borderRadius: BorderRadius.circular(24),
                           child: Container(
                             width: 40,
@@ -2889,10 +3105,14 @@ class BudgetWidgets {
                               color: availableColors[index],
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: Theme.of(context).colorScheme.onBackground,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onBackground,
                                   width: selectedColorIndex == index ? 3 : 0),
                             ),
-                            child: selectedColorIndex == index ? Icon(Icons.check, color: Colors.white) : null,
+                            child: selectedColorIndex == index
+                                ? Icon(Icons.check, color: Colors.white)
+                                : null,
                           ),
                         );
                       }),
@@ -2902,19 +3122,26 @@ class BudgetWidgets {
               ),
               actions: [
                 TextButton(
-                    child: Text('Annuler'),
-                    onPressed: () => Navigator.of(context).pop()
-                ),
+                    child: Text(AppLocalizations.of(context)!.cancelButton),
+                    onPressed: () => Navigator.of(context).pop()),
                 ElevatedButton(
-                  child: Text('Modifier'),
+                  child: Text(AppLocalizations.of(context)!.editButton),
                   onPressed: () {
-                    final calculatedPercent = isUsingPercent ? percent : (percent / salary * 100);
+                    final calculatedPercent =
+                        isUsingPercent ? percent : (percent / salary * 100);
                     if (calculatedPercent > remainingPercent + 0.01) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Le montant dépasse le budget restant disponible !')));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(AppLocalizations.of(context)!
+                              .budgetExceedsRemaining)));
                       return;
                     }
                     Navigator.of(context).pop();
-                    budgetLogic.editCategory(categoryName, name, calculatedPercent, availableIcons[selectedIconIndex], availableColors[selectedColorIndex]);
+                    budgetLogic.editCategory(
+                        categoryName,
+                        name,
+                        calculatedPercent,
+                        availableIcons[selectedIconIndex],
+                        availableColors[selectedColorIndex]);
                   },
                 ),
               ],

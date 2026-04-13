@@ -5,6 +5,8 @@ import '../new_design_system.dart';
 import '../theme_provider.dart';
 import '../notification_service.dart';
 import '../services/auth_service.dart';
+import '../services/localization_service.dart';
+import '../generated/gen_l10n/app_localizations.dart';
 import 'auth/pin_lock_screen.dart';
 import 'auth/pin_setup_screen.dart';
 
@@ -62,6 +64,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = isDark ? AppColors.dark : AppColors.light;
+    final l10n = AppLocalizations.of(context)!;
 
     return Consumer<BudgetLogic>(
       builder: (context, budgetLogic, _) {
@@ -74,12 +77,12 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
               children: [
                 // Header
                 Text(
-                  'Paramètres',
+                  l10n.settingsTitle,
                   style: AppTextStyles.displaySmall(isDark),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Personnalisez votre expérience',
+                  l10n.settingsSubtitle,
                   style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                     color: colors.textSecondary,
                   ),
@@ -87,49 +90,49 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                 const SizedBox(height: AppSpacing.xl),
 
                 // Profil
-                _buildProfileSection(colors, isDark, budgetLogic),
+                _buildProfileSection(colors, isDark, budgetLogic, l10n),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Apparence
                 _buildSection(
-                  title: 'Apparence',
+                  title: l10n.settingsAppearance,
                   icon: Icons.palette_rounded,
                   colors: colors,
                   isDark: isDark,
                   children: [
-                    _buildThemeSelector(colors, isDark),
+                    _buildThemeSelector(colors, isDark, l10n),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Notifications
                 _buildSection(
-                  title: 'Notifications',
+                  title: l10n.settingsNotifications,
                   icon: Icons.notifications_rounded,
                   colors: colors,
                   isDark: isDark,
                   children: [
-                    _buildNotificationToggle(colors, isDark),
+                    _buildNotificationToggle(colors, isDark, l10n),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Sécurité
                 _buildSection(
-                  title: 'Sécurité',
+                  title: l10n.settingsSecurity,
                   icon: Icons.security_rounded,
                   colors: colors,
                   isDark: isDark,
                   children: [
-                    _buildPinToggle(colors, isDark),
+                    _buildPinToggle(colors, isDark, l10n),
                     if (_pinEnabled)
                       _buildDataOption(
                         icon: Icons.lock_reset_rounded,
-                        title: 'Changer le code PIN',
-                        subtitle: 'Modifier votre code de sécurité',
+                        title: l10n.settingsChangePINTitle,
+                        subtitle: l10n.settingsChangePINSubtitle,
                         colors: colors,
                         isDark: isDark,
-                        onTap: () => _changePin(context, colors, isDark),
+                        onTap: () => _changePin(context, colors, isDark, l10n),
                       ),
                   ],
                 ),
@@ -137,7 +140,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
 
                 // Devise
                 _buildSection(
-                  title: 'Devise',
+                  title: l10n.currency,
                   icon: Icons.attach_money_rounded,
                   colors: colors,
                   isDark: isDark,
@@ -147,48 +150,60 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
+                // Langue
+                _buildSection(
+                  title: l10n.language,
+                  icon: Icons.language_rounded,
+                  colors: colors,
+                  isDark: isDark,
+                  children: [
+                    _buildLanguageSelector(colors, isDark),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
                 // Données
                 _buildSection(
-                  title: 'Données',
+                  title: l10n.settingsData,
                   icon: Icons.storage_rounded,
                   colors: colors,
                   isDark: isDark,
                   children: [
                     _buildDataOption(
                       icon: Icons.download_rounded,
-                      title: 'Exporter les données',
-                      subtitle: 'Télécharger vos données en PDF',
+                      title: l10n.settingsExportData,
+                      subtitle: l10n.settingsExportDataSubtitle,
                       colors: colors,
                       isDark: isDark,
                       onTap: () => budgetLogic.exportToPDF(context),
                     ),
                     _buildDataOption(
                       icon: Icons.history_rounded,
-                      title: 'Historique mensuel',
-                      subtitle: 'Voir l\'historique de vos mois clôturés',
+                      title: l10n.settingsMonthlyHistory,
+                      subtitle: l10n.settingsMonthlyHistorySubtitle,
                       colors: colors,
                       isDark: isDark,
-                      onTap: () => _showMonthlyHistory(context, budgetLogic),
+                      onTap: () => _showMonthlyHistory(context, budgetLogic, l10n),
                     ),
                     _buildDataOption(
                       icon: Icons.delete_forever_rounded,
-                      title: 'Réinitialiser les données',
-                      subtitle: 'Supprimer toutes vos données',
+                      title: l10n.settingsResetData,
+                      subtitle: l10n.settingsResetDataSubtitle,
                       colors: colors,
                       isDark: isDark,
                       isDestructive: true,
-                      onTap: () => _showResetConfirmation(context, budgetLogic),
+                      onTap: () => _showResetConfirmation(context, budgetLogic, l10n),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Premium
-                _buildPremiumCard(colors, isDark, budgetLogic),
+                _buildPremiumCard(colors, isDark, budgetLogic, l10n),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Déconnexion
-                _buildLogoutButton(colors, isDark),
+                _buildLogoutButton(colors, isDark, l10n),
                 const SizedBox(height: AppSpacing.xl),
 
                 // Version
@@ -210,9 +225,9 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
   }
 
   Widget _buildProfileSection(
-      AppColorScheme colors, bool isDark, BudgetLogic budgetLogic) {
+      AppColorScheme colors, bool isDark, BudgetLogic budgetLogic, AppLocalizations l10n) {
     final user = AuthService().currentUser;
-    final email = user?.email ?? 'Utilisateur';
+    final email = user?.email ?? l10n.user;
     final name = user?.displayName ?? email.split('@').first;
 
     return Container(
@@ -284,7 +299,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                     borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                   child: Text(
-                    budgetLogic.isPremium ? '⭐ Premium' : 'Gratuit',
+                    budgetLogic.isPremium ? '⭐ Premium' : l10n.freeVersion,
                     style: AppTextStyles.labelSmall(isDark).copyWith(
                       color: budgetLogic.isPremium
                           ? Colors.black87
@@ -337,7 +352,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
     );
   }
 
-  Widget _buildThemeSelector(AppColorScheme colors, bool isDark) {
+  Widget _buildThemeSelector(AppColorScheme colors, bool isDark, AppLocalizations l10n) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
         return Padding(
@@ -346,7 +361,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
             children: [
               Expanded(
                 child: _buildThemeOption(
-                  label: 'Clair',
+                  label: l10n.settingsLightMode,
                   icon: Icons.light_mode_rounded,
                   isSelected: !themeProvider.isDarkMode,
                   colors: colors,
@@ -357,7 +372,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _buildThemeOption(
-                  label: 'Sombre',
+                  label: l10n.settingsDarkMode,
                   icon: Icons.dark_mode_rounded,
                   isSelected: themeProvider.isDarkMode,
                   colors: colors,
@@ -414,7 +429,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
     );
   }
 
-  Widget _buildNotificationToggle(AppColorScheme colors, bool isDark) {
+  Widget _buildNotificationToggle(AppColorScheme colors, bool isDark, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
@@ -425,11 +440,11 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Rappels de transactions',
+                  l10n.transactionRemindersTitle,
                   style: AppTextStyles.bodyMediumThemed(isDark),
                 ),
                 Text(
-                  'Recevoir des rappels matin, midi et soir',
+                  l10n.transactionRemindersSubtitle,
                   style: AppTextStyles.bodySmallThemed(isDark).copyWith(
                     color: colors.textSecondary,
                   ),
@@ -458,7 +473,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
     );
   }
 
-  Widget _buildPinToggle(AppColorScheme colors, bool isDark) {
+  Widget _buildPinToggle(AppColorScheme colors, bool isDark, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
@@ -468,11 +483,11 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Code PIN',
+                l10n.pinCode,
                 style: AppTextStyles.bodyMediumThemed(isDark),
               ),
               Text(
-                'Protéger l\'accès à l\'application',
+                l10n.settingsPinProtection,
                 style: AppTextStyles.bodySmallThemed(isDark).copyWith(
                   color: colors.textSecondary,
                 ),
@@ -492,7 +507,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                         setState(() => _pinEnabled = true);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Code PIN activé avec succès'),
+                            content: Text(l10n.settingsPinEnabledSuccess),
                             backgroundColor: colors.success,
                           ),
                         );
@@ -502,7 +517,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                 );
               } else {
                 // Désactiver le PIN
-                _showDisablePinConfirmation(context, colors, isDark);
+                _showDisablePinConfirmation(context, colors, isDark, l10n);
               }
             },
             activeColor: colors.primary,
@@ -513,7 +528,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
   }
 
   void _showDisablePinConfirmation(
-      BuildContext context, AppColorScheme colors, bool isDark) {
+      BuildContext context, AppColorScheme colors, bool isDark, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -522,18 +537,18 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
           borderRadius: BorderRadius.circular(AppRadius.xl),
         ),
         title: Text(
-          'Désactiver le code PIN ?',
+          l10n.settingsDisablePinConfirm,
           style: AppTextStyles.titleMedium(isDark),
         ),
         content: Text(
-          'Votre application ne sera plus protégée par un code de sécurité.',
+          l10n.settingsDisablePinWarning,
           style: AppTextStyles.bodyMediumThemed(isDark),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
-              'Annuler',
+              l10n.cancel,
               style: TextStyle(color: colors.textSecondary),
             ),
           ),
@@ -544,13 +559,13 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
               setState(() => _pinEnabled = false);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Code PIN désactivé'),
+                  content: Text(l10n.settingsPinDisabledSuccess),
                   backgroundColor: colors.warning,
                 ),
               );
             },
             child: Text(
-              'Désactiver',
+              l10n.settingsDisableButton,
               style: TextStyle(color: colors.error),
             ),
           ),
@@ -559,7 +574,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
     );
   }
 
-  void _changePin(BuildContext context, AppColorScheme colors, bool isDark) {
+  void _changePin(BuildContext context, AppColorScheme colors, bool isDark, AppLocalizations l10n) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PinSetupScreen(
@@ -567,7 +582,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Code PIN modifié avec succès'),
+                content: Text(l10n.settingsPinChangedSuccess),
                 backgroundColor: colors.success,
               ),
             );
@@ -615,6 +630,63 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
           );
         }).toList(),
       ),
+    );
+  }
+
+  Widget _buildLanguageSelector(AppColorScheme colors, bool isDark) {
+    return Consumer<LocalizationService>(
+      builder: (context, locService, _) {
+        final languages = [
+          {'code': 'fr', 'label': 'Français', 'flag': '🇫🇷'},
+          {'code': 'en', 'label': 'English', 'flag': '🇬🇧'},
+        ];
+        final currentLang = locService.currentLocale.languageCode;
+
+        return Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: languages.map((lang) {
+              final isSelected = currentLang == lang['code'];
+              return GestureDetector(
+                onTap: () => locService.setLanguage(lang['code']!),
+                child: AnimatedContainer(
+                  duration: AppAnimations.fast,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected ? colors.primary : colors.background,
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                    border: Border.all(
+                      color: isSelected ? colors.primary : colors.border,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        lang['flag']!,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        lang['label']!,
+                        style: AppTextStyles.labelMedium(isDark).copyWith(
+                          color: isSelected ? Colors.white : colors.textPrimary,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -678,7 +750,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
   }
 
   Widget _buildPremiumCard(
-      AppColorScheme colors, bool isDark, BudgetLogic budgetLogic) {
+      AppColorScheme colors, bool isDark, BudgetLogic budgetLogic, AppLocalizations l10n) {
     if (budgetLogic.isPremium) return const SizedBox.shrink();
 
     return Container(
@@ -703,14 +775,14 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
               const Text('⭐', style: TextStyle(fontSize: 24)),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Passer à Premium',
+                l10n.settingsPremium,
                 style: AppTextStyles.titleMedium(isDark),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Débloquez toutes les fonctionnalités : exports PDF illimités, assistant IA illimité, et plus encore.',
+            l10n.settingsPremiumDescription,
             style: AppTextStyles.bodySmallThemed(isDark).copyWith(
               color: colors.textSecondary,
             ),
@@ -728,7 +800,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
               ),
-              child: const Text('Voir les offres'),
+              child: Text(l10n.seeOffers),
             ),
           ),
         ],
@@ -736,11 +808,11 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
     );
   }
 
-  Widget _buildLogoutButton(AppColorScheme colors, bool isDark) {
+  Widget _buildLogoutButton(AppColorScheme colors, bool isDark, AppLocalizations l10n) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () => _showLogoutConfirmation(context),
+        onPressed: () => _showLogoutConfirmation(context, l10n),
         style: OutlinedButton.styleFrom(
           foregroundColor: colors.error,
           side: BorderSide(color: colors.error),
@@ -750,12 +822,12 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
           ),
         ),
         icon: const Icon(Icons.logout_rounded),
-        label: const Text('Se déconnecter'),
+        label: Text(l10n.settingsLogout),
       ),
     );
   }
 
-  void _showMonthlyHistory(BuildContext context, BudgetLogic budgetLogic) {
+  void _showMonthlyHistory(BuildContext context, BudgetLogic budgetLogic, AppLocalizations l10n) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = isDark ? AppColors.dark : AppColors.light;
     final history = budgetLogic.getMonthlyHistory();
@@ -773,7 +845,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Historique mensuel',
+              l10n.settingsMonthlyHistory,
               style: AppTextStyles.titleLarge(isDark),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -782,7 +854,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
                   child: Text(
-                    'Aucun mois clôturé',
+                    l10n.settingsNoClosedMonths,
                     style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -798,9 +870,9 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
                     ),
                     title: Text('${month.monthName} ${month.year}'),
                     subtitle: Text(
-                        'Revenus: ${budgetLogic.getCurrencySymbol()}${month.salary.toStringAsFixed(0)}'),
+                        '${l10n.incomes}: ${budgetLogic.getCurrencySymbol()}${month.salary.toStringAsFixed(0)}'),
                     trailing: Text(
-                      '${month.transactions.length} transactions',
+                      '${month.transactions.length} ${l10n.transactions}',
                       style: AppTextStyles.labelSmall(isDark),
                     ),
                   )),
@@ -810,7 +882,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
     );
   }
 
-  void _showResetConfirmation(BuildContext context, BudgetLogic budgetLogic) {
+  void _showResetConfirmation(BuildContext context, BudgetLogic budgetLogic, AppLocalizations l10n) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = isDark ? AppColors.dark : AppColors.light;
 
@@ -822,18 +894,18 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         title: Text(
-          'Réinitialiser les données ?',
+          l10n.settingsResetConfirm,
           style: AppTextStyles.titleLarge(isDark),
         ),
         content: Text(
-          'Toutes vos données seront supprimées. Cette action est irréversible.',
+          l10n.settingsResetWarning,
           style: AppTextStyles.bodyMediumThemed(isDark),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Annuler',
+              l10n.cancel,
               style: TextStyle(color: colors.textSecondary),
             ),
           ),
@@ -843,20 +915,20 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Données réinitialisées'),
+                  content: Text(l10n.settingsResetSuccess),
                   backgroundColor: colors.success,
                 ),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: colors.error),
-            child: const Text('Réinitialiser'),
+            child: Text(l10n.settingsResetButton),
           ),
         ],
       ),
     );
   }
 
-  void _showLogoutConfirmation(BuildContext context) {
+  void _showLogoutConfirmation(BuildContext context, AppLocalizations l10n) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = isDark ? AppColors.dark : AppColors.light;
 
@@ -868,18 +940,18 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         title: Text(
-          'Se déconnecter ?',
+          l10n.settingsLogoutConfirm,
           style: AppTextStyles.titleLarge(isDark),
         ),
         content: Text(
-          'Vos données sont sauvegardées dans le cloud.',
+          l10n.settingsLogoutWarning,
           style: AppTextStyles.bodyMediumThemed(isDark),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Annuler',
+              l10n.cancel,
               style: TextStyle(color: colors.textSecondary),
             ),
           ),
@@ -889,7 +961,7 @@ class _NewSettingsScreenState extends State<NewSettingsScreen>
               await AuthService().signOut();
             },
             style: ElevatedButton.styleFrom(backgroundColor: colors.error),
-            child: const Text('Déconnecter'),
+            child: Text(l10n.settingsLogoutButton),
           ),
         ],
       ),

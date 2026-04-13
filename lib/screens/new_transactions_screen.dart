@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../budget_logic.dart';
 import '../new_design_system.dart';
+import '../generated/gen_l10n/app_localizations.dart';
 import '../models/transaction.dart' as models;
 
 class NewTransactionsScreen extends StatefulWidget {
@@ -13,7 +14,8 @@ class NewTransactionsScreen extends StatefulWidget {
 
 class _NewTransactionsScreenState extends State<NewTransactionsScreen>
     with TickerProviderStateMixin {
-  String _selectedFilter = 'Tout';
+  static const String _allFilter = '__all__';
+  String _selectedFilter = _allFilter;
   String _selectedSort = 'Date';
   final TextEditingController _searchController = TextEditingController();
   late AnimationController _fadeController;
@@ -83,7 +85,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
         children: [
           // Titre
           Text(
-            'Transactions',
+            AppLocalizations.of(context)!.transactionsTitle,
             style: AppTextStyles.displaySmall(isDark),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -100,7 +102,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
               onChanged: (_) => setState(() {}),
               style: AppTextStyles.bodyMediumThemed(isDark),
               decoration: InputDecoration(
-                hintText: 'Rechercher une transaction...',
+                hintText: AppLocalizations.of(context)!.transactionsSearchHint,
                 hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                   color: colors.textSecondary,
                 ),
@@ -132,7 +134,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip('Tout', Icons.apps_rounded),
+                _buildFilterChip(_allFilter, Icons.apps_rounded),
                 const SizedBox(width: AppSpacing.sm),
                 ...categories.map(
                   (cat) => Padding(
@@ -178,7 +180,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
             ),
             const SizedBox(width: AppSpacing.xs),
             Text(
-              label,
+              label == _allFilter ? AppLocalizations.of(context)!.filterAll : label,
               style: AppTextStyles.labelMedium(isDark).copyWith(
                 color: isSelected ? Colors.white : colors.textPrimary,
               ),
@@ -226,7 +228,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ce mois',
+                    AppLocalizations.of(context)!.transactionsSummaryThisMonth,
                     style: AppTextStyles.labelSmall(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -251,7 +253,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    'Transactions',
+                    AppLocalizations.of(context)!.transactionsSummaryCount,
                     style: AppTextStyles.labelSmall(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -276,7 +278,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Moyenne/jour',
+                    AppLocalizations.of(context)!.transactionsSummaryAveragePerDay,
                     style: AppTextStyles.labelSmall(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -312,12 +314,12 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Aucune transaction',
+            AppLocalizations.of(context)!.transactionsEmptyState,
             style: AppTextStyles.titleLarge(isDark),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Vos transactions apparaîtront ici',
+            AppLocalizations.of(context)!.transactionsEmptyDescription,
             style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
               color: colors.textSecondary,
             ),
@@ -433,18 +435,18 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             title: Text(
-              'Supprimer la transaction ?',
+              AppLocalizations.of(context)!.transactionDeleteConfirm,
               style: AppTextStyles.titleLarge(isDark),
             ),
             content: Text(
-              'Cette action est irréversible.',
+              AppLocalizations.of(context)!.transactionWarningIrreversible,
               style: AppTextStyles.bodyMediumThemed(isDark),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
-                  'Annuler',
+                  AppLocalizations.of(context)!.cancel,
                   style:
                       TextStyle(color: colors.textSecondary),
                 ),
@@ -454,7 +456,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colors.error,
                 ),
-                child: const Text('Supprimer'),
+                child: Text(AppLocalizations.of(context)!.deleteButton),
               ),
             ],
           ),
@@ -627,7 +629,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                       _showEditTransactionDialog(transaction, budgetLogic, currencySymbol);
                     },
                     icon: const Icon(Icons.edit_rounded),
-                    label: const Text('Modifier'),
+                    label: Text(AppLocalizations.of(context)!.editButton),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                       shape: RoundedRectangleBorder(
@@ -644,7 +646,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                       _confirmDeleteTransaction(transaction, budgetLogic);
                     },
                     icon: Icon(Icons.delete_rounded, color: colors.error),
-                    label: Text('Supprimer', style: TextStyle(color: colors.error)),
+                    label: Text(AppLocalizations.of(context)!.deleteButton, style: TextStyle(color: colors.error)),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: colors.error),
                       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -708,7 +710,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Modifier la transaction',
+                AppLocalizations.of(context)!.transactionEditTitle,
                 style: AppTextStyles.titleLarge(isDark),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -722,7 +724,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
 
               // Montant
               Text(
-                'Montant',
+                AppLocalizations.of(context)!.transactionFieldAmount,
                 style: AppTextStyles.labelMedium(isDark).copyWith(
                   color: colors.textSecondary,
                 ),
@@ -749,7 +751,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
 
               // Description
               Text(
-                'Description',
+                AppLocalizations.of(context)!.transactionFieldDescription,
                 style: AppTextStyles.labelMedium(isDark).copyWith(
                   color: colors.textSecondary,
                 ),
@@ -759,7 +761,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                 controller: descriptionController,
                 style: AppTextStyles.bodyMediumThemed(isDark),
                 decoration: InputDecoration(
-                  hintText: 'Ex: Courses du weekend',
+                hintText: AppLocalizations.of(context)!.transactionFieldDescriptionHint,
                   hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                     color: colors.textSecondary.withOpacity(0.5),
                   ),
@@ -775,7 +777,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
 
               // Date de la transaction
               Text(
-                'Date',
+                AppLocalizations.of(context)!.transactionFieldDate,
                 style: AppTextStyles.labelMedium(isDark).copyWith(
                   color: colors.textSecondary,
                 ),
@@ -838,7 +840,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Text('Transaction modifiée'),
+                          content: Text(AppLocalizations.of(context)!.transactionModified),
                           backgroundColor: colors.success,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
@@ -856,7 +858,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
                   ),
-                  child: const Text('Enregistrer'),
+                  child: Text(AppLocalizations.of(context)!.saveButton),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -883,18 +885,18 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         title: Text(
-          'Supprimer la transaction ?',
+          AppLocalizations.of(context)!.transactionDeleteConfirm,
           style: AppTextStyles.titleLarge(isDark),
         ),
         content: Text(
-          'Cette action est irréversible.',
+          AppLocalizations.of(context)!.transactionWarningIrreversible,
           style: AppTextStyles.bodyMediumThemed(isDark),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Annuler',
+              AppLocalizations.of(context)!.cancelButton,
               style: TextStyle(color: colors.textSecondary),
             ),
           ),
@@ -904,7 +906,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Transaction supprimée'),
+                  content: Text(AppLocalizations.of(context)!.transactionDeleted),
                   backgroundColor: colors.error,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
@@ -916,7 +918,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: colors.error,
             ),
-            child: const Text('Supprimer'),
+            child: Text(AppLocalizations.of(context)!.deleteButton),
           ),
         ],
       ),
@@ -928,7 +930,7 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
     final searchQuery = _searchController.text.toLowerCase();
 
     // Filtrer par catégorie
-    if (_selectedFilter != 'Tout') {
+    if (_selectedFilter != _allFilter) {
       transactions = transactions
           .where((t) => t.category == _selectedFilter)
           .toList();

@@ -1,5 +1,6 @@
 // screens/financial_goals_screen.dart
 import 'package:flutter/material.dart';
+import '../generated/gen_l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../models/financial_goal.dart';
 import '../firestore_service.dart';
@@ -68,7 +69,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
         });
       }
     } catch (e) {
-      _showSnackBar('Erreur lors du chargement des objectifs', Colors.red);
+      _showSnackBar(AppLocalizations.of(context)!.goalsLoadError, Colors.red);
     } finally {
       setState(() => _isLoading = false);
       // Ouvrir automatiquement le dialogue si demandé
@@ -90,7 +91,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Objectifs Financiers'),
+        title: Text(AppLocalizations.of(context)!.goalsScreenTitle),
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
       ),
@@ -120,14 +121,14 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Aucun objectif défini',
+              AppLocalizations.of(context)!.goalsEmptyTitle,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Créez votre premier objectif financier pour commencer à épargner avec un but précis !',
+              AppLocalizations.of(context)!.goalsEmptyDescription,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
@@ -137,7 +138,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             FilledButton.icon(
               onPressed: _showAddGoalDialog,
               icon: const Icon(Icons.add),
-              label: const Text('Créer un objectif'),
+              label: Text(AppLocalizations.of(context)!.goalsCreateButton),
             ),
           ],
         ),
@@ -235,30 +236,30 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   },
                   itemBuilder: (context) => [
                     if (!goal.isCompleted) ...[
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'add_money',
                         child: ListTile(
-                          leading: Icon(Icons.add_circle_outline),
-                          title: Text('Ajouter de l\'argent'),
+                          leading: const Icon(Icons.add_circle_outline),
+                          title: Text(AppLocalizations.of(context)!.goalsAddMoney),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
                       if (goal.currentAmount >= goal.targetAmount)
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'complete',
                           child: ListTile(
-                            leading: Icon(Icons.check_circle_outline, color: Colors.green),
-                            title: Text('Marquer comme terminé'),
+                            leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+                            title: Text(AppLocalizations.of(context)!.goalsMarkComplete),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
                     ],
                     if (!goal.isCompleted)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: ListTile(
-                          leading: Icon(Icons.edit_outlined),
-                          title: Text('Modifier'),
+                          leading: const Icon(Icons.edit_outlined),
+                          title: Text(AppLocalizations.of(context)!.goalsEditButton),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
@@ -266,7 +267,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                       value: 'delete',
                       child: ListTile(
                         leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
-                        title: Text('Supprimer', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        title: Text(AppLocalizations.of(context)!.goalsDeleteButton, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
@@ -314,15 +315,15 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Échéance: ${DateFormat('dd/MM/yyyy').format(goal.targetDate)}',
+                  '${AppLocalizations.of(context)!.goalsDeadlineLabel}: ${DateFormat('dd/MM/yyyy').format(goal.targetDate)}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 Text(
                   goal.isCompleted
-                      ? 'Terminé ✓'
+                      ? AppLocalizations.of(context)!.goalsCompleted
                       : isOverdue
-                      ? 'En retard'
-                      : '${goal.daysRemaining} jours restants',
+                      ? AppLocalizations.of(context)!.goalsOverdue
+                      : AppLocalizations.of(context)!.goalsDaysRemaining(goal.daysRemaining),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: goal.isCompleted
                         ? Colors.green
@@ -350,18 +351,18 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pour atteindre votre objectif:',
+                      AppLocalizations.of(context)!.goalsToReachObjective,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '• ${goal.dailySavingsNeeded.toStringAsFixed(0)} $_currency par jour',
+                      AppLocalizations.of(context)!.goalsDailyAmount(goal.dailySavingsNeeded.toStringAsFixed(0), _currency),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     Text(
-                      '• ${goal.monthlySavingsNeeded.toStringAsFixed(0)} $_currency par mois',
+                      AppLocalizations.of(context)!.goalsMonthlyAmount(goal.monthlySavingsNeeded.toStringAsFixed(0), _currency),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -426,14 +427,14 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   
                   // Titre
                   Text(
-                    'Nouvel objectif financier',
+                    AppLocalizations.of(context)!.goalsNewTitle,
                     style: AppTextStyles.titleLarge(isDark),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Nom de l'objectif
                   Text(
-                    'Nom de l\'objectif',
+                    AppLocalizations.of(context)!.goalsNameLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -443,7 +444,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                     controller: nameController,
                     style: AppTextStyles.bodyMediumThemed(isDark),
                     decoration: InputDecoration(
-                      hintText: 'Ex: Voyage au Bénin',
+                      hintText: AppLocalizations.of(context)!.goalsNameHint,
                       hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                         color: colors.textSecondary.withOpacity(0.5),
                       ),
@@ -459,7 +460,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
                   // Montant cible
                   Text(
-                    'Montant cible',
+                    AppLocalizations.of(context)!.goalsAmountLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -490,7 +491,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
                   // Description (optionnel)
                   Text(
-                    'Description (optionnel)',
+                    AppLocalizations.of(context)!.goalsDescriptionLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -501,7 +502,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                     style: AppTextStyles.bodyMediumThemed(isDark),
                     maxLines: 2,
                     decoration: InputDecoration(
-                      hintText: 'Plus de détails sur votre objectif...',
+                      hintText: AppLocalizations.of(context)!.goalsDescriptionHint,
                       hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                         color: colors.textSecondary.withOpacity(0.5),
                       ),
@@ -517,7 +518,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
                   // Date limite
                   Text(
-                    'Date limite',
+                    AppLocalizations.of(context)!.goalsDeadlineDateLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -558,7 +559,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Icônes
-                  Text('Icône', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.goalsIconLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -591,7 +592,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Couleurs
-                  Text('Couleur', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.goalsColorLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -629,7 +630,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                         final targetAmount = double.tryParse(amountController.text) ?? 0;
                         
                         if (name.isEmpty || targetAmount <= 0) {
-                          _showSnackBar('Veuillez remplir le nom et le montant', Colors.red);
+                          _showSnackBar(AppLocalizations.of(context)!.goalsValidationError, Colors.red);
                           return;
                         }
                         Navigator.pop(context);
@@ -650,7 +651,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                       ),
-                      child: const Text('Créer l\'objectif'),
+                      child: Text(AppLocalizations.of(context)!.goalsCreateButtonLabel),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -724,7 +725,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                           style: AppTextStyles.titleMedium(isDark),
                         ),
                         Text(
-                          '${progress.toStringAsFixed(0)}% atteint',
+                          AppLocalizations.of(context)!.goalsPercentReached(progress.toStringAsFixed(0)),
                           style: AppTextStyles.labelSmall(isDark).copyWith(
                             color: goal.color,
                           ),
@@ -766,7 +767,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
               // Champ montant
               Text(
-                'Montant à ajouter',
+                AppLocalizations.of(context)!.goalsAmountToAdd,
                 style: AppTextStyles.labelMedium(isDark).copyWith(
                   color: colors.textSecondary,
                 ),
@@ -799,7 +800,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.sm),
                 child: Text(
-                  'Il reste ${remaining.toStringAsFixed(0)} $_currency pour atteindre l\'objectif',
+                  AppLocalizations.of(context)!.goalsRemainingToReach(remaining.toStringAsFixed(0), _currency),
                   style: AppTextStyles.labelSmall(isDark).copyWith(color: colors.textSecondary),
                 ),
               ),
@@ -812,7 +813,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   onPressed: () {
                     final amount = double.tryParse(amountController.text) ?? 0;
                     if (amount <= 0) {
-                      _showSnackBar('Veuillez entrer un montant valide', Colors.red);
+                      _showSnackBar(AppLocalizations.of(context)!.goalsInvalidAmount, Colors.red);
                       return;
                     }
                     Navigator.pop(context);
@@ -826,7 +827,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
                   ),
-                  child: const Text('Ajouter'),
+                  child: Text(AppLocalizations.of(context)!.goalsAddMoney),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -895,14 +896,14 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   
                   // Titre
                   Text(
-                    'Modifier l\'objectif',
+                    AppLocalizations.of(context)!.goalsEditTitle,
                     style: AppTextStyles.titleLarge(isDark),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Nom de l'objectif
                   Text(
-                    'Nom de l\'objectif',
+                    AppLocalizations.of(context)!.goalsNameLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -912,7 +913,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                     controller: nameController,
                     style: AppTextStyles.bodyMediumThemed(isDark),
                     decoration: InputDecoration(
-                      hintText: 'Ex: Voyage au Bénin',
+                      hintText: AppLocalizations.of(context)!.goalsNameHint,
                       hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                         color: colors.textSecondary.withOpacity(0.5),
                       ),
@@ -928,7 +929,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
                   // Montant cible
                   Text(
-                    'Montant cible',
+                    AppLocalizations.of(context)!.goalsAmountLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -959,7 +960,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
                   // Description
                   Text(
-                    'Description (optionnel)',
+                    AppLocalizations.of(context)!.goalsDescriptionLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -970,7 +971,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                     style: AppTextStyles.bodyMediumThemed(isDark),
                     maxLines: 2,
                     decoration: InputDecoration(
-                      hintText: 'Plus de détails sur votre objectif...',
+                      hintText: AppLocalizations.of(context)!.goalsDescriptionHint,
                       hintStyle: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                         color: colors.textSecondary.withOpacity(0.5),
                       ),
@@ -986,7 +987,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
                   // Date limite
                   Text(
-                    'Date limite',
+                    AppLocalizations.of(context)!.goalsDeadlineDateLabel,
                     style: AppTextStyles.labelMedium(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -1027,7 +1028,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Icônes
-                  Text('Icône', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.goalsIconLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -1060,7 +1061,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   // Couleurs
-                  Text('Couleur', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.goalsColorLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -1098,7 +1099,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                         final targetAmount = double.tryParse(amountController.text) ?? 0;
                         
                         if (name.isEmpty || targetAmount <= 0) {
-                          _showSnackBar('Veuillez remplir le nom et le montant', Colors.red);
+                          _showSnackBar(AppLocalizations.of(context)!.goalsValidationError, Colors.red);
                           return;
                         }
                         Navigator.pop(context);
@@ -1119,7 +1120,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                       ),
-                      child: const Text('Enregistrer les modifications'),
+                      child: Text(AppLocalizations.of(context)!.goalsSaveButtonLabel),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -1145,18 +1146,18 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           title: Text(
-            'Supprimer l\'objectif',
+            AppLocalizations.of(context)!.goalsDeleteConfirm,
             style: AppTextStyles.titleLarge(isDark),
           ),
           content: Text(
-            'Êtes-vous sûr de vouloir supprimer "${goal.name}" ?',
+            AppLocalizations.of(context)!.goalsDeleteConfirmMessage(goal.name),
             style: AppTextStyles.bodyMediumThemed(isDark),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
-                'Annuler',
+                AppLocalizations.of(context)!.cancelButton,
                 style: TextStyle(color: colors.textSecondary),
               ),
             ),
@@ -1169,7 +1170,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                 Navigator.of(context).pop();
                 _deleteGoal(goal.id);
               },
-              child: const Text('Supprimer'),
+              child: Text(AppLocalizations.of(context)!.deleteButton),
             ),
           ],
         );
@@ -1193,30 +1194,30 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       );
 
       await _firestoreService.addFinancialGoal(goal);
-      _showSnackBar('Objectif créé avec succès !', Colors.green);
+      _showSnackBar(AppLocalizations.of(context)!.goalsCreateSuccess, Colors.green);
       _loadData();
     } catch (e) {
-      _showSnackBar('Erreur lors de la création de l\'objectif', Colors.red);
+      _showSnackBar(AppLocalizations.of(context)!.goalsCreateError, Colors.red);
     }
   }
 
   Future<void> _updateGoal(FinancialGoal goal) async {
     try {
       await _firestoreService.updateFinancialGoal(goal);
-      _showSnackBar('Objectif modifié avec succès !', Colors.green);
+      _showSnackBar(AppLocalizations.of(context)!.goalsEditSuccess, Colors.green);
       _loadData();
     } catch (e) {
-      _showSnackBar('Erreur lors de la modification', Colors.red);
+      _showSnackBar(AppLocalizations.of(context)!.goalsEditError, Colors.red);
     }
   }
 
   Future<void> _deleteGoal(String goalId) async {
     try {
       await _firestoreService.deleteFinancialGoal(goalId);
-      _showSnackBar('Objectif supprimé', Colors.orange);
+      _showSnackBar(AppLocalizations.of(context)!.goalsDeleteSuccess, Colors.orange);
       _loadData();
     } catch (e) {
-      _showSnackBar('Erreur lors de la suppression', Colors.red);
+      _showSnackBar(AppLocalizations.of(context)!.goalsDeleteError, Colors.red);
     }
   }
 
@@ -1228,7 +1229,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
 
       if (amount > montantRestant) {
         _showSnackBar(
-          'Le montant ajouté dépasse le montant restant à atteindre.\nIl reste ${montantRestant.toStringAsFixed(2)} à compléter.',
+          AppLocalizations.of(context)!.goalsAmountExceedsRemaining(montantRestant.toStringAsFixed(2)),
           Colors.red,
         );
         return;
@@ -1241,12 +1242,12 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       if (newAmount >= goal.targetAmount) {
         _showGoalAchievedDialog(goal.name);
       } else {
-        _showSuccessDialog('Montant ajouté !');
+        _showSuccessDialog(AppLocalizations.of(context)!.goalsAmountAdded);
       }
 
       _loadData();
     } catch (e) {
-      _showSnackBar('Erreur lors de l\'ajout', Colors.red);
+      _showSnackBar(AppLocalizations.of(context)!.goalsAddError, Colors.red);
     }
   }
 
@@ -1319,9 +1320,9 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 20),
-            const Text(
-              '🎉 Félicitations !',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)!.goalsCongratulations,
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF10B981),
@@ -1329,7 +1330,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Objectif "$goalName" atteint !',
+              AppLocalizations.of(context)!.goalsAchievedMessage(goalName),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
@@ -1351,7 +1352,7 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(AppLocalizations.of(context)!.goalsGreatButton, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -1362,10 +1363,10 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
   Future<void> _completeGoal(FinancialGoal goal) async {
     try {
       await _firestoreService.completeFinancialGoal(goal.id);
-      _showSnackBar('🎉 Objectif marqué comme terminé !', Colors.green);
+      _showSnackBar(AppLocalizations.of(context)!.goalsAchieved, Colors.green);
       _loadData();
     } catch (e) {
-      _showSnackBar('Erreur lors de la finalisation', Colors.red);
+      _showSnackBar(AppLocalizations.of(context)!.goalsFinalizeError, Colors.red);
     }
   }
 }

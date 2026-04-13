@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../generated/gen_l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../../new_design_system.dart';
 import '../../theme_provider.dart';
@@ -102,7 +103,7 @@ class _NewEmailVerificationScreenState extends State<NewEmailVerificationScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de l\'envoi de l\'email'),
+            content: Text(AppLocalizations.of(context)!.emailVerificationSendError),
             backgroundColor: Colors.red,
           ),
         );
@@ -169,8 +170,8 @@ class _NewEmailVerificationScreenState extends State<NewEmailVerificationScreen>
                   // Titre
                   Text(
                     _isEmailVerified
-                        ? 'Email vérifié ! 🎉'
-                        : 'Vérifiez votre email',
+                        ? AppLocalizations.of(context)!.emailVerificationSuccess
+                        : AppLocalizations.of(context)!.emailVerificationTitle,
                     style: AppTextStyles.h1.copyWith(
                       color: colors.textPrimary,
                     ),
@@ -179,8 +180,8 @@ class _NewEmailVerificationScreenState extends State<NewEmailVerificationScreen>
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     _isEmailVerified
-                        ? 'Votre compte est maintenant activé.\nRedirection en cours...'
-                        : 'Nous avons envoyé un email de vérification à :',
+                        ? AppLocalizations.of(context)!.emailVerificationSuccessMessage
+                        : AppLocalizations.of(context)!.emailVerificationSentMessage,
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: colors.textSecondary,
                     ),
@@ -242,7 +243,7 @@ class _NewEmailVerificationScreenState extends State<NewEmailVerificationScreen>
 
                     // Bouton changer email
                     _buildSecondaryButton(
-                      text: 'Utiliser un autre email',
+                      text: AppLocalizations.of(context)!.emailVerificationChangeEmail,
                       onPressed: () async {
                         await _authService.signOut();
                         if (mounted) {
@@ -390,21 +391,21 @@ class _NewEmailVerificationScreenState extends State<NewEmailVerificationScreen>
         children: [
           _buildInstructionRow(
             '1',
-            'Ouvrez votre application email',
+            AppLocalizations.of(context)!.emailVerificationStep1,
             Icons.email_outlined,
             colors,
           ),
           const SizedBox(height: AppSpacing.md),
           _buildInstructionRow(
             '2',
-            'Cliquez sur le lien de vérification',
+            AppLocalizations.of(context)!.emailVerificationInstructions,
             Icons.link_rounded,
             colors,
           ),
           const SizedBox(height: AppSpacing.md),
           _buildInstructionRow(
             '3',
-            'Revenez sur cette page',
+            AppLocalizations.of(context)!.emailVerificationStep3,
             Icons.refresh_rounded,
             colors,
           ),
@@ -478,8 +479,8 @@ class _NewEmailVerificationScreenState extends State<NewEmailVerificationScreen>
         child: Center(
           child: Text(
             _canResendEmail
-                ? 'Renvoyer l\'email'
-                : 'Renvoyer dans $_secondsRemaining s',
+                ? AppLocalizations.of(context)!.emailVerificationResend
+                : AppLocalizations.of(context)!.emailVerificationResendIn(_secondsRemaining),
             style: AppTextStyles.buttonLarge.copyWith(
               color: _canResendEmail ? Colors.white : colors.textSecondary,
             ),

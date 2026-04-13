@@ -17,6 +17,7 @@ import 'notification_service.dart';
 import 'firestore_service.dart';
 import 'models/user_data.dart';
 import '../models/financial_goal.dart';
+import 'generated/gen_l10n/app_localizations.dart';
 
 
 class BudgetLogic extends ChangeNotifier {
@@ -100,6 +101,7 @@ class BudgetLogic extends ChangeNotifier {
   // Constructeur pour Provider
   BudgetLogic.withContext(BuildContext context) {
     _context = context;
+    _budget = _defaultBudget();
     _initializeData();
   }
 
@@ -178,6 +180,32 @@ class BudgetLogic extends ChangeNotifier {
   // Contexte actif
   BuildContext get context => _context!;
   set context(BuildContext ctx) => _context = ctx;
+  AppLocalizations get l10n => AppLocalizations.of(context)!;
+
+  bool get _isEnglish => Localizations.localeOf(context).languageCode == 'en';
+
+  Map<String, Map<String, dynamic>> _defaultBudget() {
+    if (_isEnglish) {
+      return {
+        'Rent': {'percentage': 30, 'amount': 0.0, 'icon': Icons.home_work_outlined, 'color': const Color(0xFF6366F1), 'spent': 0.0},
+        'Transport': {'percentage': 10, 'amount': 0.0, 'icon': Icons.directions_bus_filled_outlined, 'color': const Color(0xFF3B82F6), 'spent': 0.0},
+        'Electricity/Water': {'percentage': 7, 'amount': 0.0, 'icon': Icons.lightbulb_outline, 'color': const Color(0xFFF59E0B), 'spent': 0.0},
+        'Internet': {'percentage': 5, 'amount': 0.0, 'icon': Icons.wifi, 'color': const Color(0xFF8B5CF6), 'spent': 0.0},
+        'Food': {'percentage': 15, 'amount': 0.0, 'icon': Icons.restaurant_menu_outlined, 'color': const Color(0xFFEF4444), 'spent': 0.0},
+        'Leisure': {'percentage': 8, 'amount': 0.0, 'icon': Icons.sports_esports_outlined, 'color': const Color(0xFFEC4899), 'spent': 0.0},
+        'Savings': {'percentage': 25, 'amount': 0.0, 'icon': Icons.savings_outlined, 'color': const Color(0xFF10B981), 'spent': 0.0},
+      };
+    }
+    return {
+      'Loyer': {'percentage': 30, 'amount': 0.0, 'icon': Icons.home_work_outlined, 'color': const Color(0xFF6366F1), 'spent': 0.0},
+      'Transport': {'percentage': 10, 'amount': 0.0, 'icon': Icons.directions_bus_filled_outlined, 'color': const Color(0xFF3B82F6), 'spent': 0.0},
+      'Électricité/Eau': {'percentage': 7, 'amount': 0.0, 'icon': Icons.lightbulb_outline, 'color': const Color(0xFFF59E0B), 'spent': 0.0},
+      'Internet': {'percentage': 5, 'amount': 0.0, 'icon': Icons.wifi, 'color': const Color(0xFF8B5CF6), 'spent': 0.0},
+      'Nourriture': {'percentage': 15, 'amount': 0.0, 'icon': Icons.restaurant_menu_outlined, 'color': const Color(0xFFEF4444), 'spent': 0.0},
+      'Loisirs': {'percentage': 8, 'amount': 0.0, 'icon': Icons.sports_esports_outlined, 'color': const Color(0xFFEC4899), 'spent': 0.0},
+      'Épargne': {'percentage': 25, 'amount': 0.0, 'icon': Icons.savings_outlined, 'color': const Color(0xFF10B981), 'spent': 0.0},
+    };
+  }
 
   // ===================================================================
   // ===================== GESTION DES NOTIFICATIONS ==================
@@ -193,7 +221,7 @@ class BudgetLogic extends ChangeNotifier {
       if (!hasPermissions) {
         setNotificationsEnabled(false);
         updateState();
-        _showSnackBar('Permission de notification refusée. Activez-la dans les paramètres.', Colors.red);
+        _showSnackBar(l10n.notifPermissionDenied, Colors.red);
         return;
       }
 
@@ -202,14 +230,14 @@ class BudgetLogic extends ChangeNotifier {
       if (!systemEnabled) {
         setNotificationsEnabled(false);
         updateState();
-        _showSnackBar('Les notifications sont désactivées dans les paramètres Android', Colors.red);
+        _showSnackBar(l10n.notifSystemDisabled, Colors.red);
         return;
       }
 
       // Vérifier l'optimisation batterie
       final batteryStatus = await Permission.ignoreBatteryOptimizations.status;
       if (batteryStatus.isDenied) {
-        _showSnackBar('Pour des rappels fiables, désactivez l\'optimisation de batterie pour SmartSpend', Colors.orange);
+        _showSnackBar(l10n.notifBatteryOptimization, Colors.orange);
       }
 
       try {
@@ -218,20 +246,20 @@ class BudgetLogic extends ChangeNotifier {
         await notificationService.scheduleNewMonthReminder();
         setNotificationsEnabled(true);
         updateState();
-        _showSnackBar('✅ Rappels activés !\nMatin (8h30) et Soir (20h00)', Colors.green);
+        _showSnackBar(l10n.notifActivated, Colors.green);
       } catch (e) {
         setNotificationsEnabled(false);
         updateState();
-        _showSnackBar('Erreur lors de l\'activation des rappels: $e', Colors.red);
+        _showSnackBar(l10n.notifActivationError(e.toString()), Colors.red);
       }
     } else {
       try {
         await notificationService.setNotificationsEnabled(false);
         setNotificationsEnabled(false);
         updateState();
-        _showSnackBar('Rappels désactivés', Colors.orange);
+        _showSnackBar(l10n.notifRemindersDisabled, Colors.orange);
       } catch (e) {
-        _showSnackBar('Erreur lors de la désactivation: $e', Colors.red);
+        _showSnackBar(l10n.notifDeactivationError(e.toString()), Colors.red);
       }
     }
   }
@@ -274,16 +302,16 @@ class BudgetLogic extends ChangeNotifier {
       final systemEnabled = await notificationService.areSystemNotificationsEnabled();
       
       if (!systemEnabled) {
-        _showSnackBar('Les notifications ne sont pas activées au niveau système', Colors.orange);
+        _showSnackBar(l10n.notifSystemNotEnabled, Colors.orange);
         return;
       }
 
       await notificationService.showTestNotification();
       await notificationService.scheduleTestNotification(delaySeconds: 3);
       
-      _showSnackBar('Tests lancés :\n• Notification immédiate\n• Notification dans 3 secondes', Colors.blue);
+      _showSnackBar(l10n.notifTestLaunched, Colors.blue);
     } catch (e) {
-      _showSnackBar('Erreur test notification: $e', Colors.red);
+      _showSnackBar(l10n.notifTestError(e.toString()), Colors.red);
     }
   }
 
@@ -330,9 +358,10 @@ class BudgetLogic extends ChangeNotifier {
   /// Affiche un dialogue pour informer l'utilisateur qu'un nouveau mois a commencé
   void _showNewMonthDialog(UserData userData) {
     final now = DateTime.now();
-    const months = [
-      'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+    final months = [
+      l10n.monthFullJan, l10n.monthFullFeb, l10n.monthFullMar, l10n.monthFullApr,
+      l10n.monthFullMay, l10n.monthFullJun, l10n.monthFullJul, l10n.monthFullAug,
+      l10n.monthFullSep, l10n.monthFullOct, l10n.monthFullNov, l10n.monthFullDec
     ];
     
     // Calculer le budget restant
@@ -350,23 +379,23 @@ class BudgetLogic extends ChangeNotifier {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('🎉 Nouveau mois !'),
+          title: Text(l10n.newMonthTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bienvenue en ${months[now.month - 1]} ${now.year} !',
+                l10n.newMonthWelcome(months[now.month - 1], now.year.toString()),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 12),
               Text(
-                'Voulez-vous clôturer ${months[userData.activeMonth - 1]} ${userData.activeYear} et commencer le nouveau mois ?',
+                l10n.newMonthCloseQuestion('${months[userData.activeMonth - 1]} ${userData.activeYear}'),
               ),
               const SizedBox(height: 12),
-              const Text(
-                '• Vos catégories seront conservées\n• Les dépenses seront archivées\n• Vous pourrez entrer vos nouveaux revenus',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+              Text(
+                l10n.newMonthDetails,
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
               if (remaining > 0) ...[
                 const SizedBox(height: 16),
@@ -385,7 +414,7 @@ class BudgetLogic extends ChangeNotifier {
                           const Icon(Icons.savings_outlined, color: Color(0xFF00A9A9), size: 20),
                           const SizedBox(width: 8),
                           Text(
-                            'Budget restant: ${formatCurrency(remaining)}',
+                            '${l10n.budgetRemainingBudget} ${formatCurrency(remaining)}',
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00A9A9)),
                           ),
                         ],
@@ -403,10 +432,10 @@ class BudgetLogic extends ChangeNotifier {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Reporter ce montant au mois suivant',
-                              style: TextStyle(fontSize: 13),
+                              l10n.newMonthCarryOver,
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                         ],
@@ -420,7 +449,7 @@ class BudgetLogic extends ChangeNotifier {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Plus tard'),
+              child: Text(l10n.laterButton),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -430,7 +459,7 @@ class BudgetLogic extends ChangeNotifier {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00A9A9),
               ),
-              child: const Text('Clôturer le mois', style: TextStyle(color: Colors.white)),
+              child: Text(l10n.closeMonthButton, style: const TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -452,15 +481,15 @@ class BudgetLogic extends ChangeNotifier {
         await notificationService.showNewMonthNotification();
         
         final message = carryOverAmount > 0
-            ? '✅ Mois clôturé ! ${formatCurrency(carryOverAmount)} reporté. Ajoutez vos revenus.'
-            : '✅ Mois clôturé ! Entrez vos revenus pour ce mois.';
+            ? l10n.monthClosedWithCarryOver(formatCurrency(carryOverAmount))
+            : l10n.monthClosedEnterIncome;
         _showSnackBar(message, Colors.green);
       } else {
-        _showSnackBar('Erreur lors de la clôture du mois', Colors.red);
+        _showSnackBar(l10n.monthCloseError, Colors.red);
       }
     } catch (e) {
       debugPrint('Erreur clôture mois: $e');
-      _showSnackBar('Erreur lors de la clôture du mois', Colors.red);
+      _showSnackBar(l10n.monthCloseError, Colors.red);
     }
   }
 
@@ -533,7 +562,7 @@ class BudgetLogic extends ChangeNotifier {
     double inputSalary = double.tryParse(salaryController.text) ?? 0;
 
     if (inputSalary <= 0) {
-      _showSnackBar('Veuillez entrer des revenus valides', Colors.red);
+      _showSnackBar(l10n.invalidIncomeError, Colors.red);
       return;
     }
 
@@ -562,7 +591,7 @@ class BudgetLogic extends ChangeNotifier {
   // Ajouter un montant au budget existant (pour revenus variables)
   void addToBudget(double amount) async {
     if (amount <= 0) {
-      _showSnackBar('Veuillez entrer un montant valide', Colors.red);
+      _showSnackBar(l10n.invalidAmountError, Colors.red);
       return;
     }
 
@@ -589,7 +618,7 @@ class BudgetLogic extends ChangeNotifier {
     try {
       await _firestoreService.updateSalary(newSalary);
       await _firestoreService.updateBudget(budget);
-      _showSnackBar('${formatCurrency(amount)} ajouté au budget', Colors.green);
+      _showSnackBar(l10n.budgetAmountAdded(formatCurrency(amount)), Colors.green);
     } catch (e) {
       debugPrint('Erreur lors de la sauvegarde du budget: $e');
     }
@@ -610,13 +639,13 @@ class BudgetLogic extends ChangeNotifier {
     double percentage = (spent / allocated) * 100;
 
     if (percentage > 100) {
-      return "Budget dépassé. Essayez de réduire vos dépenses.";
+      return l10n.budgetExceeded;
     }
     if (percentage == 100) {
-      return "Attention, vous avez atteint la limite de votre budget.";
+      return l10n.budgetLimitReached;
     }
     if (percentage >= 95) {
-      return "Attention, vous approchez de la limite de votre budget.";
+      return l10n.budgetNearLimit;
     }
     return "";
   }
@@ -652,7 +681,7 @@ class BudgetLogic extends ChangeNotifier {
       debugPrint('Transaction ajoutée avec succès');
     } catch (e) {
       debugPrint('Erreur lors de l\'ajout de la transaction: $e');
-      _showSnackBar('Erreur lors de l\'ajout de la transaction', Colors.red);
+      _showSnackBar(l10n.transactionAddError, Colors.red);
     }
   }
 
@@ -682,7 +711,7 @@ class BudgetLogic extends ChangeNotifier {
       debugPrint('Transaction modifiée avec succès');
     } catch (e) {
       debugPrint('Erreur lors de la modification de la transaction: $e');
-      _showSnackBar('Erreur lors de la modification de la transaction', Colors.red);
+      _showSnackBar(l10n.transactionEditError, Colors.red);
     }
   }
 
@@ -701,7 +730,7 @@ class BudgetLogic extends ChangeNotifier {
       debugPrint('Transaction supprimée avec succès');
     } catch (e) {
       debugPrint('Erreur lors de la suppression de la transaction: $e');
-      _showSnackBar('Erreur lors de la suppression de la transaction', Colors.red);
+      _showSnackBar(l10n.transactionDeleteError, Colors.red);
     }
   }
 
@@ -809,9 +838,9 @@ class BudgetLogic extends ChangeNotifier {
     try {
       await _firestoreService.forceSynchronization();
       await loadSavedData();
-      _showSnackBar('Synchronisation terminée', Colors.green);
+      _showSnackBar(l10n.syncComplete, Colors.green);
     } catch (e) {
-      _showSnackBar('Erreur de synchronisation', Colors.red);
+      _showSnackBar(l10n.syncError, Colors.red);
     }
   }
 
@@ -827,7 +856,7 @@ class BudgetLogic extends ChangeNotifier {
       await loadSavedData();
     } catch (e) {
       debugPrint('Erreur lors de l\'initialisation: $e');
-      _showSnackBar('Erreur lors de l\'initialisation des données', Colors.red);
+      _showSnackBar(l10n.dataInitError, Colors.red);
     }
   }
 
@@ -840,10 +869,10 @@ class BudgetLogic extends ChangeNotifier {
   Future<void> deleteAllUserData() async {
     try {
       await _firestoreService.deleteUserData();
-      _showSnackBar('Toutes les données ont été supprimées', Colors.green);
+      _showSnackBar(l10n.dataDeletedSuccess, Colors.green);
     } catch (e) {
       debugPrint('Erreur lors de la suppression des données: $e');
-      _showSnackBar('Erreur lors de la suppression des données', Colors.red);
+      _showSnackBar(l10n.dataDeleteError(e.toString()), Colors.red);
     }
   }
   // ===================================================================
@@ -852,13 +881,13 @@ class BudgetLogic extends ChangeNotifier {
 
   void addCategory(String name, double percent, IconData icon, Color color) async {
     if (name.isEmpty || percent <= 0) {
-      _showSnackBar('Nom ou pourcentage invalide', Colors.red);
+      _showSnackBar(l10n.categoryInvalidNamePercent, Colors.red);
       return;
     }
 
     final budget = getBudget();
     if (budget.containsKey(name)) {
-      _showSnackBar('Cette catégorie existe déjà', Colors.red);
+      _showSnackBar(l10n.categoryAlreadyExists, Colors.red);
       return;
     }
 
@@ -866,7 +895,7 @@ class BudgetLogic extends ChangeNotifier {
     // Tolérance de 0.5% pour les erreurs d'arrondi
     if (currentTotal + (percent / 100) > 1.005) {
       final availablePercent = ((1.0 - currentTotal) * 100).toStringAsFixed(0);
-      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Disponible: $availablePercent%', Colors.red);
+      _showSnackBar(l10n.categoryPercentExceeded(availablePercent), Colors.red);
       return;
     }
 
@@ -892,14 +921,14 @@ class BudgetLogic extends ChangeNotifier {
 
   void editCategory(String oldName, String newName, double percent, IconData icon, Color color) async {
     if (newName.isEmpty || percent <= 0) {
-      _showSnackBar('Veuillez entrer un nom valide et un pourcentage supérieur à 0', Colors.red);
+      _showSnackBar(l10n.categoryInvalidInput, Colors.red);
       return;
     }
 
     // Utiliser l'état local au lieu de recharger depuis Firestore
     final budget = getBudget();
     if (oldName != newName && budget.containsKey(newName)) {
-      _showSnackBar('Cette catégorie existe déjà', Colors.red);
+      _showSnackBar(l10n.categoryAlreadyExists, Colors.red);
       return;
     }
 
@@ -907,7 +936,7 @@ class BudgetLogic extends ChangeNotifier {
     // Tolérance de 0.5% pour les erreurs d'arrondi
     if (currentTotal + percent / 100 > 1.005) {
       final availablePercent = ((1.0 - currentTotal) * 100).toStringAsFixed(0);
-      _showSnackBar('Le total des pourcentages ne peut pas dépasser 100%. Disponible: $availablePercent%', Colors.red);
+      _showSnackBar(l10n.categoryPercentExceeded(availablePercent), Colors.red);
       return;
     }
 
@@ -962,7 +991,7 @@ class BudgetLogic extends ChangeNotifier {
 
     } catch (e) {
       debugPrint('Erreur lors de la modification de la catégorie: $e');
-      _showSnackBar('Erreur lors de la modification sur le serveur', Colors.red);
+      _showSnackBar(l10n.categoryServerEditError, Colors.red);
     }
   }
 
@@ -971,7 +1000,7 @@ class BudgetLogic extends ChangeNotifier {
     bool hasTransactions = transactions.any((t) => t.category == name);
 
     if (hasTransactions) {
-      _showSnackBar('Impossible de supprimer une catégorie avec des transactions', Colors.red);
+      _showSnackBar(l10n.categoryDeleteHasTransactions, Colors.red);
       return;
     }
 
@@ -985,7 +1014,7 @@ class BudgetLogic extends ChangeNotifier {
       await _firestoreService.updateBudget(budget);
     } catch (e) {
       debugPrint('Erreur lors de la suppression de la catégorie: $e');
-      _showSnackBar('Erreur lors de la suppression sur le serveur', Colors.red);
+      _showSnackBar(l10n.categoryServerDeleteError, Colors.red);
     }
   }
 
@@ -1004,12 +1033,12 @@ class BudgetLogic extends ChangeNotifier {
     ).toList();
 
     if (monthTransactions.isEmpty) {
-      _showSnackBar('Aucune transaction à exporter', Colors.orange);
+      _showSnackBar(l10n.noTransactionsToExport, Colors.orange);
       return;
     }
 
     final csvData = StringBuffer()
-      ..writeln('Date,Catégorie,Description,Montant ($currency)');
+      ..writeln(l10n.csvHeaderFull(currency));
 
     for (final t in monthTransactions) {
       csvData.writeln(
@@ -1045,7 +1074,7 @@ class BudgetLogic extends ChangeNotifier {
 
     // Récupérer les informations utilisateur
     final user = AuthService().currentUser;
-    final userName = user?.displayName ?? user?.email?.split('@').first ?? 'Utilisateur';
+    final userName = user?.displayName ?? user?.email?.split('@').first ?? l10n.chatbotDefaultUser;
 
     final monthTransactions = transactions.where((t) =>
     t.date.month == selectedMonth.month &&
@@ -1053,7 +1082,7 @@ class BudgetLogic extends ChangeNotifier {
     ).toList();
 
     if (monthTransactions.isEmpty) {
-      _showSnackBar('Aucune transaction à exporter', Colors.orange);
+      _showSnackBar(l10n.noTransactionsToExport, Colors.orange);
       return;
     }
 
@@ -1064,6 +1093,8 @@ class BudgetLogic extends ChangeNotifier {
     final ratioDepenses = salary > 0 ? (totalDepenses / salary) : 0;
 
     final pdf = pw.Document();
+
+    final locale = Localizations.localeOf(this.context).toString();
 
     pdf.addPage(
       pw.MultiPage(
@@ -1095,7 +1126,7 @@ class BudgetLogic extends ChangeNotifier {
 
                 pw.SizedBox(height: 8),
                 pw.Text(
-                  'Relevé Financier de : ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
+                  l10n.pdfFinancialStatement(DateFormat('MMMM yyyy', locale).format(selectedMonth)),
                   style: pw.TextStyle(
                     fontSize: 16,
                     color: pdfWhite,
@@ -1112,7 +1143,7 @@ class BudgetLogic extends ChangeNotifier {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Généré le ${DateFormat('dd/MM/yyyy à HH:mm', 'fr_FR').format(DateTime.now())}',
+                l10n.pdfGeneratedOn(DateFormat('dd/MM/yyyy HH:mm', locale).format(DateTime.now())),
                 style: pw.TextStyle(
                   fontSize: 10,
                   color: pdfGrey,
@@ -1138,7 +1169,7 @@ class BudgetLogic extends ChangeNotifier {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
-                      'SITUATION FINANCIÈRE',
+                      l10n.pdfFinancialOverview,
                       style: pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
@@ -1190,12 +1221,12 @@ class BudgetLogic extends ChangeNotifier {
                   ],
                 ),
                 pw.SizedBox(height: 16),
-                _infoRow('Revenus mensuels:', '${salary.toStringAsFixed(2)} $currency', bold: true),
+                _infoRow(l10n.pdfMonthlyIncome, '${salary.toStringAsFixed(2)} $currency', bold: true),
                 pw.Divider(color: pdfBlue, height: 20),
-                _infoRow('Total des dépenses:', '${totalDepenses.toStringAsFixed(2)} $currency',
+                _infoRow(l10n.pdfTotalExpenses, '${totalDepenses.toStringAsFixed(2)} $currency',
                     bold: true, colorValue: pdfRed),
                 pw.SizedBox(height: 8),
-                _infoRow('Solde restant:', '${totalRestant.toStringAsFixed(2)} $currency',
+                _infoRow(l10n.pdfRemainingBalance, '${totalRestant.toStringAsFixed(2)} $currency',
                     bold: true, colorValue: totalRestant >= 0 ? pdfGreen : pdfRed),
                 pw.SizedBox(height: 16),
                 pw.LinearProgressIndicator(
@@ -1210,7 +1241,7 @@ class BudgetLogic extends ChangeNotifier {
                 ),
                 pw.SizedBox(height: 8),
                 pw.Text(
-                  '${(ratioDepenses * 100).toStringAsFixed(1)}% de vos revenus dépensés',
+                  l10n.pdfIncomeSpentPercent((ratioDepenses * 100).toStringAsFixed(1)),
                   textAlign: pw.TextAlign.center,
                   style: pw.TextStyle(fontSize: 10),
                 ),
@@ -1221,7 +1252,7 @@ class BudgetLogic extends ChangeNotifier {
 
           // Tableau des transactions
           pw.Text(
-            'DÉTAIL DES TRANSACTIONS',
+            l10n.pdfTransactionDetails,
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -1261,7 +1292,7 @@ class BudgetLogic extends ChangeNotifier {
                 ),
               ),
             ),
-            headers: ['Date', 'Catégorie', 'Description', 'Montant ($currency)'],
+            headers: [l10n.pdfTableDate, l10n.pdfTableCategory, l10n.pdfTableDescription, l10n.pdfTableAmount(currency)],
             data: monthTransactions.map((t) {
               final categoryData = budget[t.category];
               final color = categoryData?['color'] != null
@@ -1269,7 +1300,7 @@ class BudgetLogic extends ChangeNotifier {
                   : pdfBlack;
 
               return [
-                DateFormat('dd/MM/yyyy', 'fr_FR').format(t.date),
+                DateFormat('dd/MM/yyyy', locale).format(t.date),
                 pw.Text(t.category, style: pw.TextStyle(color: color)),
                 t.description,
                 pw.Text('${t.amount.toStringAsFixed(2)}', style: pw.TextStyle(color: color)),
@@ -1280,7 +1311,7 @@ class BudgetLogic extends ChangeNotifier {
 
           // Analyse par catégorie
           pw.Text(
-            'ANALYSE PAR CATÉGORIE',
+            l10n.pdfCategoryAnalysis,
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
@@ -1307,7 +1338,7 @@ class BudgetLogic extends ChangeNotifier {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text(
-                      'CONSEILS SMARTSPEND',
+                      l10n.pdfAdviceTitle,
                       style: pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
@@ -1316,7 +1347,7 @@ class BudgetLogic extends ChangeNotifier {
                     ),
                     // 🆕 Badge personnalisé pour l'utilisateur
                     pw.Text(
-                      'Pour $userName',
+                      l10n.pdfForUser(userName),
                       style: pw.TextStyle(
                         fontSize: 10,
                         color: PdfColor.fromInt(0xFF7A9CC6), // Bleu moyen
@@ -1359,7 +1390,7 @@ class BudgetLogic extends ChangeNotifier {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'SmartSpend - Gestion financière intelligente',
+                l10n.pdfSmartSpendFooter,
                 style: pw.TextStyle(
                   fontSize: 9,
                   color: pdfGrey,
@@ -1367,7 +1398,7 @@ class BudgetLogic extends ChangeNotifier {
                 ),
               ),
               pw.Text(
-                'Rapport financier personnel de $userName',
+                l10n.pdfPersonalReport(userName),
                 style: pw.TextStyle(
                   fontSize: 9,
                   color: pdfBlue,
@@ -1382,13 +1413,13 @@ class BudgetLogic extends ChangeNotifier {
 
     final output = await getTemporaryDirectory();
     // 🆕 Nom de fichier personnalisé avec nom d'utilisateur
-    final fileName = 'SmartSpend_${userName.replaceAll(' ', '_')}_${DateFormat('yyyy-MM', 'fr_FR').format(selectedMonth)}.pdf';
+    final fileName = 'SmartSpend_${userName.replaceAll(' ', '_')}_${DateFormat('yyyy-MM', locale).format(selectedMonth)}.pdf';
     final file = File('${output.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
 
     await Share.shareFiles(
       [file.path],
-      text: 'Rapport financier SmartSpend de $userName - ${DateFormat('MMMM yyyy', 'fr_FR').format(selectedMonth)}',
+      text: l10n.pdfShareText(userName, DateFormat('MMMM yyyy', locale).format(selectedMonth)),
       subject: fileName,
     );
   }
@@ -1399,24 +1430,24 @@ class BudgetLogic extends ChangeNotifier {
     final salary = getSalary();
 
     if (remaining < 0) {
-      advice.add('$userName, attention ! Vous avez dépassé votre budget ce mois-ci. Essayez de réduire vos dépenses le mois prochain.');
+      advice.add(l10n.pdfAdviceOverBudget(userName));
     } else if (remaining > salary * 0.3) {
-      advice.add('Excellent travail, $userName ! Vous avez économisé plus de 30% de vos revenus ce mois-ci.');
+      advice.add(l10n.pdfAdviceGreatSaving(userName));
     } else if (remaining > 0) {
-      advice.add('$userName, vous êtes dans les clous avec ${remaining.toStringAsFixed(2)} ${getCurrency()} restants ce mois-ci.');
+      advice.add(l10n.pdfAdviceOnTrack(userName, remaining.toStringAsFixed(2), getCurrency()));
     }
 
     final maxCategory = byCategory.entries.reduce((a, b) => a.value > b.value ? a : b);
     if (maxCategory.value > totalSpent * 0.4) {
-      advice.add('$userName, la catégorie "${maxCategory.key}" représente une part importante (${(maxCategory.value/totalSpent*100).toStringAsFixed(1)}%) de vos dépenses. Pensez à diversifier.');
+      advice.add(l10n.pdfAdviceCategoryHigh(userName, maxCategory.key, (maxCategory.value/totalSpent*100).toStringAsFixed(1)));
     }
 
     if (byCategory.containsKey('Épargne') && byCategory['Épargne']! < salary * 0.1) {
-      advice.add('$userName, votre épargne est inférieure à 10% de vos revenus. Essayez d\'augmenter cette part progressivement.');
+      advice.add(l10n.pdfAdviceSavingsLow(userName));
     }
 
     if (advice.isEmpty) {
-      advice.add('$userName, votre gestion financière est équilibrée ce mois-ci. Continuez ainsi !');
+      advice.add(l10n.pdfAdviceBalanced(userName));
     }
 
     return advice;
@@ -1443,7 +1474,7 @@ class BudgetLogic extends ChangeNotifier {
       children: [
         pw.TableRow(
           decoration: pw.BoxDecoration(color: headerColor),
-          children: ['Catégorie', 'Montant', 'Budget', 'Écart'].map((text) =>
+          children: [l10n.pdfCategoryTableCategory, l10n.pdfCategoryTableAmount, l10n.pdfCategoryTableBudget, l10n.pdfCategoryTableDiff].map((text) =>
               pw.Padding(
                 padding: const pw.EdgeInsets.all(8),
                 child: pw.Text(text, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
@@ -1521,33 +1552,33 @@ class BudgetLogic extends ChangeNotifier {
   Future<void> addFinancialGoal(FinancialGoal goal) async {
     try {
       await _firestoreService.addFinancialGoal(goal);
-      _showSnackBar('Objectif financier créé avec succès !', Colors.green);
+      _showSnackBar(l10n.goalsCreateSuccess, Colors.green);
       updateState();
     } catch (e) {
       debugPrint('Erreur lors de l\'ajout de l\'objectif: $e');
-      _showSnackBar('Erreur lors de la création de l\'objectif', Colors.red);
+      _showSnackBar(l10n.goalsCreateError, Colors.red);
     }
   }
 
   Future<void> updateFinancialGoal(FinancialGoal goal) async {
     try {
       await _firestoreService.updateFinancialGoal(goal);
-      _showSnackBar('Objectif modifié avec succès !', Colors.green);
+      _showSnackBar(l10n.goalsEditSuccess, Colors.green);
       updateState();
     } catch (e) {
       debugPrint('Erreur lors de la modification de l\'objectif: $e');
-      _showSnackBar('Erreur lors de la modification', Colors.red);
+      _showSnackBar(l10n.goalsEditError, Colors.red);
     }
   }
 
   Future<void> deleteFinancialGoal(String goalId) async {
     try {
       await _firestoreService.deleteFinancialGoal(goalId);
-      _showSnackBar('Objectif supprimé', Colors.orange);
+      _showSnackBar(l10n.goalsDeleteSuccess, Colors.orange);
       updateState();
     } catch (e) {
       debugPrint('Erreur lors de la suppression de l\'objectif: $e');
-      _showSnackBar('Erreur lors de la suppression', Colors.red);
+      _showSnackBar(l10n.goalsDeleteError, Colors.red);
     }
   }
 
@@ -1574,14 +1605,14 @@ class BudgetLogic extends ChangeNotifier {
           // Optionnel : marquer automatiquement comme terminé
           await _firestoreService.completeFinancialGoal(goalId);
         } else {
-          _showSnackBar('Montant ajouté avec succès !', Colors.green);
+          _showSnackBar(l10n.goalsAmountAdded, Colors.green);
         }
       }
 
       updateState();
     } catch (e) {
       debugPrint('Erreur lors de l\'ajout d\'argent: $e');
-      _showSnackBar('Erreur lors de l\'ajout', Colors.red);
+      _showSnackBar(l10n.goalsAddError, Colors.red);
     }
   }
 
@@ -1604,9 +1635,9 @@ class BudgetLogic extends ChangeNotifier {
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 20),
-            const Text(
-              '🎉 Félicitations !',
-              style: TextStyle(
+            Text(
+              l10n.goalsCongratulations,
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF10B981),
@@ -1614,7 +1645,7 @@ class BudgetLogic extends ChangeNotifier {
             ),
             const SizedBox(height: 12),
             Text(
-              'Objectif "$goalName" atteint !',
+              l10n.goalsAchievedMessage(goalName),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
@@ -1622,10 +1653,10 @@ class BudgetLogic extends ChangeNotifier {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Continuez sur cette lancée pour atteindre tous vos objectifs financiers !',
+            Text(
+              l10n.goalsKeepGoingMessage,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
               ),
@@ -1645,7 +1676,7 @@ class BudgetLogic extends ChangeNotifier {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text(l10n.goalsGreatButton, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -1656,11 +1687,11 @@ class BudgetLogic extends ChangeNotifier {
   Future<void> completeFinancialGoal(String goalId) async {
     try {
       await _firestoreService.completeFinancialGoal(goalId);
-      _showSnackBar('🎉 Objectif marqué comme terminé !', Colors.green);
+      _showSnackBar(l10n.goalsMarkedComplete, Colors.green);
       updateState();
     } catch (e) {
       debugPrint('Erreur lors de la finalisation: $e');
-      _showSnackBar('Erreur lors de la finalisation', Colors.red);
+      _showSnackBar(l10n.goalsFinalizeError, Colors.red);
     }
   }
 
@@ -1701,7 +1732,7 @@ class BudgetLogic extends ChangeNotifier {
           children: [
             Icon(Icons.lightbulb_outline, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 8),
-            const Text('Suggestion d\'épargne'),
+            Text(l10n.goalsSavingSuggestion),
           ],
         ),
         content: Column(
@@ -1709,7 +1740,7 @@ class BudgetLogic extends ChangeNotifier {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Votre objectif "${goal.name}" arrive bientôt à échéance !',
+              l10n.goalsSavingSuggestionDesc(goal.name),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
@@ -1724,15 +1755,15 @@ class BudgetLogic extends ChangeNotifier {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Progression: ${goal.progressPercentage.toStringAsFixed(1)}%'),
-                  Text('Restant: ${goal.remainingAmount.toStringAsFixed(0)} $currency'),
-                  Text('Échéance: ${DateFormat('dd/MM/yyyy').format(goal.targetDate)}'),
+                  Text(l10n.goalsProgressLabel2(goal.progressPercentage.toStringAsFixed(1))),
+                  Text(l10n.goalsRemainingLabel(goal.remainingAmount.toStringAsFixed(0), currency)),
+                  Text(l10n.goalsDeadlineDate(DateFormat('dd/MM/yyyy').format(goal.targetDate))),
                 ],
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Voulez-vous épargner ${suggestedAmount.toStringAsFixed(0)} $currency pour cet objectif ?',
+              l10n.goalsSavingPrompt(suggestedAmount.toStringAsFixed(0), currency),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -1740,14 +1771,14 @@ class BudgetLogic extends ChangeNotifier {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Plus tard'),
+            child: Text(l10n.laterButton),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               addMoneyToGoal(goal.id, suggestedAmount);
             },
-            child: const Text('Épargner'),
+            child: Text(l10n.goalsSaveButton),
           ),
         ],
       ),
@@ -1888,30 +1919,30 @@ class BudgetLogic extends ChangeNotifier {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Débloquez toutes les fonctionnalités :'),
+            Text(l10n.premiumUnlockFeatures),
             const SizedBox(height: 12),
-            _buildFeatureRow(Icons.picture_as_pdf, 'Exports PDF illimités'),
-            _buildFeatureRow(Icons.smart_toy, 'Assistant IA illimité'),
-            _buildFeatureRow(Icons.analytics, 'Analyses avancées'),
-            _buildFeatureRow(Icons.block, 'Pas de publicités'),
+            _buildFeatureRow(Icons.picture_as_pdf, l10n.premiumUnlimitedPdf),
+            _buildFeatureRow(Icons.smart_toy, l10n.premiumUnlimitedAI),
+            _buildFeatureRow(Icons.analytics, l10n.premiumAdvancedAnalytics),
+            _buildFeatureRow(Icons.block, l10n.premiumNoAds),
             const SizedBox(height: 20),
             
             // Option annuelle
             _buildPlanOption(
               context: context,
-              title: 'Annuel',
+              title: l10n.premiumAnnual,
               price: yearlyPrice,
               isRecommended: true,
               onTap: () async {
                 Navigator.pop(context);
                 if (yearlyProduct != null) {
-                  _showSnackBar('Lancement de l\'achat...', Colors.blue);
+                  _showSnackBar(l10n.premiumPurchasing, Colors.blue);
                   final success = await iapService.purchaseProduct('smartspend_premium_yearly');
                   if (!success) {
-                    _showSnackBar('Erreur lors de l\'achat. Réessayez.', Colors.red);
+                    _showSnackBar(l10n.premiumPurchaseError, Colors.red);
                   }
                 } else {
-                  _showSnackBar('Produit non disponible. Réessayez plus tard.', Colors.orange);
+                  _showSnackBar(l10n.premiumProductUnavailable, Colors.orange);
                 }
               },
             ),
@@ -1920,19 +1951,19 @@ class BudgetLogic extends ChangeNotifier {
             // Option mensuelle
             _buildPlanOption(
               context: context,
-              title: 'Mensuel',
+              title: l10n.premiumMonthly,
               price: monthlyPrice,
               isRecommended: false,
               onTap: () async {
                 Navigator.pop(context);
                 if (monthlyProduct != null) {
-                  _showSnackBar('Lancement de l\'achat...', Colors.blue);
+                  _showSnackBar(l10n.premiumPurchasing, Colors.blue);
                   final success = await iapService.purchaseProduct('smartspend_premium_monthly');
                   if (!success) {
-                    _showSnackBar('Erreur lors de l\'achat. Réessayez.', Colors.red);
+                    _showSnackBar(l10n.premiumPurchaseError, Colors.red);
                   }
                 } else {
-                  _showSnackBar('Produit non disponible. Réessayez plus tard.', Colors.orange);
+                  _showSnackBar(l10n.premiumProductUnavailable, Colors.orange);
                 }
               },
             ),
@@ -1941,15 +1972,15 @@ class BudgetLogic extends ChangeNotifier {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Plus tard'),
+            child: Text(l10n.laterButton),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              _showSnackBar('Restauration des achats...', Colors.blue);
+              _showSnackBar(l10n.premiumRestoring, Colors.blue);
               await iapService.restorePurchases();
             },
-            child: const Text('Restaurer'),
+            child: Text(l10n.premiumRestoreButton),
           ),
         ],
       ),
@@ -2006,7 +2037,7 @@ class BudgetLogic extends ChangeNotifier {
                           color: const Color(0xFFFFD700),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('MEILLEUR', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        child: Text(l10n.premiumBestBadge, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ],
@@ -2024,15 +2055,7 @@ class BudgetLogic extends ChangeNotifier {
   /// Réinitialise toutes les données de l'utilisateur
   Future<void> resetAllData() async {
     try {
-      _budget = {
-        'Loyer': {'percentage': 30, 'amount': 0.0, 'icon': Icons.home_work_outlined, 'color': const Color(0xFF6366F1), 'spent': 0.0},
-        'Transport': {'percentage': 10, 'amount': 0.0, 'icon': Icons.directions_bus_filled_outlined, 'color': const Color(0xFF3B82F6), 'spent': 0.0},
-        'Électricité/Eau': {'percentage': 7, 'amount': 0.0, 'icon': Icons.lightbulb_outline, 'color': const Color(0xFFF59E0B), 'spent': 0.0},
-        'Internet': {'percentage': 5, 'amount': 0.0, 'icon': Icons.wifi, 'color': const Color(0xFF8B5CF6), 'spent': 0.0},
-        'Nourriture': {'percentage': 15, 'amount': 0.0, 'icon': Icons.restaurant_menu_outlined, 'color': const Color(0xFFEF4444), 'spent': 0.0},
-        'Loisirs': {'percentage': 8, 'amount': 0.0, 'icon': Icons.sports_esports_outlined, 'color': const Color(0xFFEC4899), 'spent': 0.0},
-        'Épargne': {'percentage': 25, 'amount': 0.0, 'icon': Icons.savings_outlined, 'color': const Color(0xFF10B981), 'spent': 0.0},
-      };
+      _budget = _defaultBudget();
       _salary = 0;
       _transactions = [];
       _filteredTransactions = [];
@@ -2073,7 +2096,7 @@ class BudgetLogic extends ChangeNotifier {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text('Limite atteinte'),
+              Text(l10n.pdfLimitReached),
             ],
           ),
           content: Column(
@@ -2092,7 +2115,7 @@ class BudgetLogic extends ChangeNotifier {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Vous avez utilisé vos 3 exports PDF gratuits.',
+                        l10n.pdfLimitMessage,
                         style: TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -2100,15 +2123,15 @@ class BudgetLogic extends ChangeNotifier {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Passez à Premium pour des exports illimités et un accès complet à l\'assistant financier.',
+              Text(
+                l10n.pdfLimitUpgrade,
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Fermer'),
+              child: Text(l10n.closeButton),
             ),
             ElevatedButton(
               onPressed: () {
@@ -2119,7 +2142,7 @@ class BudgetLogic extends ChangeNotifier {
                 backgroundColor: const Color(0xFFFFD700),
                 foregroundColor: Colors.black,
               ),
-              child: const Text('Voir Premium'),
+              child: Text(l10n.viewPremiumButton),
             ),
           ],
         ),
@@ -2135,8 +2158,8 @@ class BudgetLogic extends ChangeNotifier {
       final remaining = await premiumService.getRemainingPDFExports();
       if (remaining == 0 && ctx.mounted) {
         ScaffoldMessenger.of(ctx).showSnackBar(
-          const SnackBar(
-            content: Text('C\'était votre dernier export PDF gratuit.'),
+          SnackBar(
+            content: Text(l10n.pdfLastFreeExport),
             backgroundColor: Colors.orange,
           ),
         );

@@ -3,7 +3,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';  // Nouveau import
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:smartspend/services/premium_service.dart';
+import 'package:smartspend/services/localization_service.dart';
+import 'package:smartspend/generated/gen_l10n/app_localizations.dart';
 import 'auth_wrapper.dart';
 import 'notification_service.dart';
 import 'theme.dart';
@@ -83,16 +86,30 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocalizationService()),
+      ],
+      child: Consumer2<ThemeProvider, LocalizationService>(
+        builder: (context, themeProvider, localizationService, _) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'SmartSpend',
             theme: AppTheme.getTheme(false),
             darkTheme: AppTheme.getTheme(true),
             themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            locale: localizationService.currentLocale,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('fr'), // French
+              Locale('en'), // English
+            ],
             home: const AuthWrapper(),
           );
         },

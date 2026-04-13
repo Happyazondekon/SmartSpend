@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -22,6 +23,7 @@ class NotificationService {
   static const String _notificationsEnabledKey = 'notifications_enabled';
   static const String _lastNotificationTimeKey = 'last_notification_time';
   static const String _newMonthReminderShownKey = 'new_month_reminder_shown';
+  static const String _selectedLanguageKey = 'selected_language';
 
   // IDs des notifications
   static const int _morningReminderId = 1001;
@@ -33,7 +35,7 @@ class NotificationService {
   static const int _testNotificationId = 9999;
 
   // Messages motivationnels variés pour les rappels de transactions
-  static const List<String> _morningMessages = [
+  static const List<String> _morningMessagesFr = [
     "Bonjour ! 🌅 Avez-vous des dépenses à enregistrer ?",
     "Nouvelle journée, nouvelles finances ! 💼 Pensez à noter vos dépenses.",
     "Un petit check financier ce matin ? ☕",
@@ -41,7 +43,15 @@ class NotificationService {
     "Bonjour ! Vos objectifs financiers vous attendent 🎯",
   ];
 
-  static const List<String> _noonMessages = [
+  static const List<String> _morningMessagesEn = [
+    "Good morning! 🌅 Any expenses to log?",
+    "New day, new finances! 💼 Remember to track your spending.",
+    "Quick financial check this morning? ☕",
+    "Start your day strong by managing your finances! 📊",
+    "Good morning! Your financial goals are waiting for you 🎯",
+  ];
+
+  static const List<String> _noonMessagesFr = [
     "Pause déjeuner ! 🍽️ Avez-vous des dépenses à noter ?",
     "Mi-journée ! Pensez à enregistrer vos achats du matin 📝",
     "C'est l'heure de faire le point ! ☀️",
@@ -49,7 +59,15 @@ class NotificationService {
     "Midi pile ! Parfait pour noter vos transactions 🕛",
   ];
 
-  static const List<String> _eveningMessages = [
+  static const List<String> _noonMessagesEn = [
+    "Lunch break! 🍽️ Any expenses to note down?",
+    "Midday check-in! Remember to log your morning purchases 📝",
+    "Time for a quick finance check! ☀️",
+    "A quick look at your spending? 💳",
+    "It's noon! Perfect time to log your transactions 🕛",
+  ];
+
+  static const List<String> _eveningMessagesFr = [
     "Bonsoir ! 🌙 N'oubliez pas de saisir vos dépenses du jour.",
     "Fin de journée = bilan financier ! 💰 Avez-vous tout noté ?",
     "Avant de dormir, un petit tour sur vos finances ? 📱",
@@ -58,18 +76,37 @@ class NotificationService {
     "Votre portefeuille vous remercie de le tenir à jour ! 💳",
   ];
 
-  static const List<String> _newMonthMessages = [
+  static const List<String> _eveningMessagesEn = [
+    "Good evening! 🌙 Don't forget to log today's expenses.",
+    "End of day means finance recap! 💰 Did you track everything?",
+    "Before sleep, quick check on your finances? 📱",
+    "Daily recap: did you record all your transactions? ✅",
+    "Have a great evening! Update your expenses 🌟",
+    "Your wallet thanks you for staying organized! 💳",
+  ];
+
+  static const List<String> _newMonthMessagesFr = [
     "🎉 Nouveau mois, nouvelles opportunités ! Entrez vos revenus du mois.",
     "C'est le début du mois ! 📅 Définissez vos revenus pour bien démarrer.",
     "Nouveau mois = nouveau budget ! 💪 Commencez par entrer vos revenus.",
     "Le mois précédent est clôturé ! Entrez vos revenus pour ce mois 📊",
   ];
 
-  static const List<String> _goalReminderMessages = [
-    "Vos objectifs financiers vous attendent ! 🎯",
-    "N'oubliez pas vos rêves financiers ! Continuez à épargner 💎",
-    "Un pas de plus vers vos objectifs ! 🚀",
+  static const List<String> _newMonthMessagesEn = [
+    "🎉 New month, new opportunities! Enter your monthly income.",
+    "It's the start of the month! 📅 Set your income to begin strong.",
+    "New month = new budget! 💪 Start by entering your income.",
+    "Last month is closed! Enter your income for this month 📊",
   ];
+
+  Future<bool> _isEnglishLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedLanguage = prefs.getString(_selectedLanguageKey);
+    if (savedLanguage != null) {
+      return savedLanguage == 'en';
+    }
+    return ui.PlatformDispatcher.instance.locale.languageCode == 'en';
+  }
 
   // ===================================================================
   // ===================== INITIALISATION =============================
@@ -80,7 +117,7 @@ class NotificationService {
 
     try {
       tz.initializeTimeZones();
-      
+
       // Configurer le fuseau horaire local
       _configureLocalTimeZone();
 
@@ -108,16 +145,16 @@ class NotificationService {
       if (initialized == true) {
         _isInitialized = true;
         await _createNotificationChannels();
-        
+
         // Auto-setup au premier lancement
         await _autoSetupOnFirstLaunch();
-        
+
         // Toujours reprogrammer si notifications activées
         if (await areNotificationsEnabled()) {
           debugPrint('🔄 Reprogrammation des notifications activées...');
           await scheduleAllReminders();
         }
-        
+
         debugPrint('✅ Service de notification initialisé avec succès');
       }
     } catch (e) {
@@ -131,7 +168,7 @@ class NotificationService {
       // Obtenir le décalage UTC du device
       final now = DateTime.now();
       final offset = now.timeZoneOffset;
-      
+
       // Trouver un timezone correspondant (approximatif)
       String timezoneName;
       if (offset.inHours == 0) {
@@ -143,9 +180,10 @@ class NotificationService {
       } else {
         timezoneName = 'Africa/Lagos'; // Par défaut
       }
-      
+
       tz.setLocalLocation(tz.getLocation(timezoneName));
-      debugPrint('🕐 Timezone configuré: $timezoneName (offset: ${offset.inHours}h)');
+      debugPrint(
+          '🕐 Timezone configuré: $timezoneName (offset: ${offset.inHours}h)');
     } catch (e) {
       debugPrint('⚠️ Erreur configuration timezone: $e, utilisation du défaut');
       // En cas d'erreur, utiliser UTC
@@ -161,12 +199,13 @@ class NotificationService {
   /// Configuration automatique au premier lancement
   Future<void> _autoSetupOnFirstLaunch() async {
     if (!await isFirstLaunch()) return;
-    
-    debugPrint('🆕 Premier lancement détecté - configuration des notifications');
-    
+
+    debugPrint(
+        '🆕 Premier lancement détecté - configuration des notifications');
+
     // Demander les permissions
     final hasPermissions = await requestPermissions();
-    
+
     if (hasPermissions) {
       // Activer et programmer les notifications
       await setNotificationsEnabled(true);
@@ -181,18 +220,21 @@ class NotificationService {
   }
 
   Future<void> _createNotificationChannels() async {
-    final androidPlugin = _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
+    final androidPlugin =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidPlugin == null) return;
+    final isEnglish = await _isEnglishLocale();
 
     // Canal pour les rappels quotidiens
     await androidPlugin.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         'smartspend_daily',
-        'Rappels quotidiens',
-        description: 'Rappels pour saisir vos transactions',
+        isEnglish ? 'Daily reminders' : 'Rappels quotidiens',
+        description: isEnglish
+            ? 'Reminders to log your transactions'
+            : 'Rappels pour saisir vos transactions',
         importance: Importance.high,
         playSound: true,
         enableVibration: true,
@@ -201,10 +243,12 @@ class NotificationService {
 
     // Canal pour les rappels de nouveau mois
     await androidPlugin.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         'smartspend_monthly',
-        'Rappels mensuels',
-        description: 'Rappels pour entrer vos revenus mensuels',
+        isEnglish ? 'Monthly reminders' : 'Rappels mensuels',
+        description: isEnglish
+            ? 'Reminders to enter your monthly income'
+            : 'Rappels pour entrer vos revenus mensuels',
         importance: Importance.high,
         playSound: true,
         enableVibration: true,
@@ -213,10 +257,12 @@ class NotificationService {
 
     // Canal pour les objectifs
     await androidPlugin.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         'smartspend_goals',
-        'Objectifs financiers',
-        description: 'Notifications liées à vos objectifs',
+        isEnglish ? 'Financial goals' : 'Objectifs financiers',
+        description: isEnglish
+            ? 'Notifications related to your goals'
+            : 'Notifications liées à vos objectifs',
         importance: Importance.high,
         playSound: true,
       ),
@@ -224,10 +270,12 @@ class NotificationService {
 
     // Canal pour les alertes budget
     await androidPlugin.createNotificationChannel(
-      const AndroidNotificationChannel(
+      AndroidNotificationChannel(
         'smartspend_budget',
-        'Alertes budget',
-        description: 'Alertes de dépassement de budget',
+        isEnglish ? 'Budget alerts' : 'Alertes budget',
+        description: isEnglish
+            ? 'Budget limit warning alerts'
+            : 'Alertes de dépassement de budget',
         importance: Importance.high,
         playSound: true,
         enableVibration: true,
@@ -244,7 +292,8 @@ class NotificationService {
   Future<bool> requestPermissions() async {
     try {
       final notificationStatus = await Permission.notification.request();
-      if (notificationStatus.isDenied || notificationStatus.isPermanentlyDenied) {
+      if (notificationStatus.isDenied ||
+          notificationStatus.isPermanentlyDenied) {
         return false;
       }
 
@@ -298,8 +347,8 @@ class NotificationService {
   /// Vérifier si les notifications système sont activées
   Future<bool> areSystemNotificationsEnabled() async {
     try {
-      final androidPlugin = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<
+      final androidPlugin =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidPlugin != null) {
@@ -322,6 +371,7 @@ class NotificationService {
       return {'morning': false, 'noon': false, 'evening': false};
     }
 
+    final isEnglish = await _isEnglishLocale();
     final results = <String, bool>{};
     final now = tz.TZDateTime.now(tz.local);
     debugPrint('🕐 Heure actuelle: ${now.hour}:${now.minute}:${now.second}');
@@ -331,8 +381,11 @@ class NotificationService {
       id: _morningReminderId,
       hour: 8,
       minute: 30,
-      messages: _morningMessages,
-      title: '💰 SmartSpend - Bonjour !',
+      messages: isEnglish ? _morningMessagesEn : _morningMessagesFr,
+      title: isEnglish
+          ? '💰 SmartSpend - Good morning!'
+          : '💰 SmartSpend - Bonjour !',
+      isEnglish: isEnglish,
     );
 
     // Rappel du midi (12h30)
@@ -340,8 +393,11 @@ class NotificationService {
       id: _noonReminderId,
       hour: 12,
       minute: 30,
-      messages: _noonMessages,
-      title: '💰 SmartSpend - Pause déjeuner !',
+      messages: isEnglish ? _noonMessagesEn : _noonMessagesFr,
+      title: isEnglish
+          ? '💰 SmartSpend - Lunch break!'
+          : '💰 SmartSpend - Pause déjeuner !',
+      isEnglish: isEnglish,
     );
 
     // Rappel du soir (20h00)
@@ -349,8 +405,11 @@ class NotificationService {
       id: _eveningReminderId,
       hour: 20,
       minute: 0,
-      messages: _eveningMessages,
-      title: '💰 SmartSpend - Rappel du soir',
+      messages: isEnglish ? _eveningMessagesEn : _eveningMessagesFr,
+      title: isEnglish
+          ? '💰 SmartSpend - Evening reminder'
+          : '💰 SmartSpend - Rappel du soir',
+      isEnglish: isEnglish,
     );
 
     debugPrint('📅 Rappels programmés: $results');
@@ -363,6 +422,7 @@ class NotificationService {
     required int minute,
     required List<String> messages,
     required String title,
+    required bool isEnglish,
   }) async {
     try {
       if (!_isInitialized) await initialize();
@@ -370,7 +430,8 @@ class NotificationService {
       final scheduledTime = _nextInstanceOfTime(hour, minute);
       final message = messages[Random().nextInt(messages.length)];
 
-      debugPrint('⏰ Programmation notification ID $id pour: ${scheduledTime.day}/${scheduledTime.month} à ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}');
+      debugPrint(
+          '⏰ Programmation notification ID $id pour: ${scheduledTime.day}/${scheduledTime.month} à ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}');
       debugPrint('📝 Message: $message');
 
       await _notificationsPlugin.zonedSchedule(
@@ -381,14 +442,17 @@ class NotificationService {
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_daily',
-            'Rappels quotidiens',
-            channelDescription: 'Rappels pour saisir vos transactions',
+            isEnglish ? 'Daily reminders' : 'Rappels quotidiens',
+            channelDescription: isEnglish
+                ? 'Reminders to log your transactions'
+                : 'Rappels pour saisir vos transactions',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_wallet',
             color: const Color(0xFF00BCD4),
             category: AndroidNotificationCategory.reminder,
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -415,35 +479,42 @@ class NotificationService {
     try {
       if (!_isInitialized) await initialize();
       if (!await areNotificationsEnabled()) return false;
+      final isEnglish = await _isEnglishLocale();
 
       // Programmer pour le 1er du mois prochain à 9h00
       final now = DateTime.now();
       var nextMonth = DateTime(now.year, now.month + 1, 1, 9, 0);
-      
+
       // Si on est déjà le 1er et avant 9h, programmer pour aujourd'hui
       if (now.day == 1 && now.hour < 9) {
         nextMonth = DateTime(now.year, now.month, 1, 9, 0);
       }
 
       final scheduledTime = tz.TZDateTime.from(nextMonth, tz.local);
-      final message = _newMonthMessages[Random().nextInt(_newMonthMessages.length)];
+      final newMonthMessages =
+          isEnglish ? _newMonthMessagesEn : _newMonthMessagesFr;
+      final message =
+          newMonthMessages[Random().nextInt(newMonthMessages.length)];
 
       await _notificationsPlugin.zonedSchedule(
         _newMonthReminderId,
-        '📅 Nouveau mois !',
+        isEnglish ? '📅 New month!' : '📅 Nouveau mois !',
         message,
         scheduledTime,
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_monthly',
-            'Rappels mensuels',
-            channelDescription: 'Rappels pour entrer vos revenus mensuels',
+            isEnglish ? 'Monthly reminders' : 'Rappels mensuels',
+            channelDescription: isEnglish
+                ? 'Reminders to enter your monthly income'
+                : 'Rappels pour entrer vos revenus mensuels',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_calendar',
             color: const Color(0xFF4CAF50),
             category: AndroidNotificationCategory.reminder,
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -473,6 +544,7 @@ class NotificationService {
   Future<void> showNewMonthNotification() async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
       final prefs = await SharedPreferences.getInstance();
       final currentMonth = '${DateTime.now().year}-${DateTime.now().month}';
@@ -483,17 +555,20 @@ class NotificationService {
 
       await _notificationsPlugin.show(
         _newMonthReminderId + 100,
-        '🎉 Nouveau mois !',
-        _newMonthMessages[Random().nextInt(_newMonthMessages.length)],
+        isEnglish ? '🎉 New month!' : '🎉 Nouveau mois !',
+        (isEnglish ? _newMonthMessagesEn : _newMonthMessagesFr)[Random()
+            .nextInt((isEnglish ? _newMonthMessagesEn : _newMonthMessagesFr)
+                .length)],
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_monthly',
-            'Rappels mensuels',
+            isEnglish ? 'Monthly reminders' : 'Rappels mensuels',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_calendar',
             color: const Color(0xFF4CAF50),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -511,32 +586,43 @@ class NotificationService {
   }
 
   /// Afficher une notification d'alerte budget dépassé
-  Future<void> showBudgetWarningNotification(String category, double percentUsed) async {
+  Future<void> showBudgetWarningNotification(
+      String category, double percentUsed) async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
       String message;
       if (percentUsed >= 100) {
-        message = '🚨 Budget "$category" dépassé ! Attention aux dépenses.';
+        message = isEnglish
+            ? '🚨 Budget "$category" exceeded! Watch your spending.'
+            : '🚨 Budget "$category" dépassé ! Attention aux dépenses.';
       } else if (percentUsed >= 90) {
-        message = '⚠️ Budget "$category" presque épuisé (${percentUsed.toStringAsFixed(0)}%)';
+        message = isEnglish
+            ? '⚠️ Budget "$category" almost depleted (${percentUsed.toStringAsFixed(0)}%)'
+            : '⚠️ Budget "$category" presque épuisé (${percentUsed.toStringAsFixed(0)}%)';
       } else {
-        message = '📊 Vous avez utilisé ${percentUsed.toStringAsFixed(0)}% du budget "$category"';
+        message = isEnglish
+            ? '📊 You used ${percentUsed.toStringAsFixed(0)}% of budget "$category"'
+            : '📊 Vous avez utilisé ${percentUsed.toStringAsFixed(0)}% du budget "$category"';
       }
 
       await _notificationsPlugin.show(
         _budgetWarningId + category.hashCode % 1000,
-        '💰 Alerte Budget',
+        isEnglish ? '💰 Budget Alert' : '💰 Alerte Budget',
         message,
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_budget',
-            'Alertes budget',
+            isEnglish ? 'Budget alerts' : 'Alertes budget',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_warning',
-            color: percentUsed >= 100 ? const Color(0xFFE53935) : const Color(0xFFFF9800),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            color: percentUsed >= 100
+                ? const Color(0xFFE53935)
+                : const Color(0xFFFF9800),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -545,7 +631,8 @@ class NotificationService {
           ),
         ),
       );
-      debugPrint('✅ Notification alerte budget envoyée: $category (${percentUsed.toStringAsFixed(0)}%)');
+      debugPrint(
+          '✅ Notification alerte budget envoyée: $category (${percentUsed.toStringAsFixed(0)}%)');
     } catch (e) {
       debugPrint('❌ Erreur notification budget: $e');
     }
@@ -555,20 +642,24 @@ class NotificationService {
   Future<void> showGoalAchievedNotification(String goalName) async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
       await _notificationsPlugin.show(
         _goalReminderId,
-        '🎉 Objectif atteint !',
-        'Félicitations ! Vous avez atteint votre objectif "$goalName" 🏆',
+        isEnglish ? '🎉 Goal achieved!' : '🎉 Objectif atteint !',
+        isEnglish
+            ? 'Congratulations! You reached your goal "$goalName" 🏆'
+            : 'Félicitations ! Vous avez atteint votre objectif "$goalName" 🏆',
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_goals',
-            'Objectifs financiers',
+            isEnglish ? 'Financial goals' : 'Objectifs financiers',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_goal',
             color: const Color(0xFF4CAF50),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -584,23 +675,30 @@ class NotificationService {
   }
 
   /// Afficher un avertissement d'échéance d'objectif
-  Future<void> showGoalDeadlineWarning(String goalName, int daysRemaining) async {
+  Future<void> showGoalDeadlineWarning(
+      String goalName, int daysRemaining) async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
       await _notificationsPlugin.show(
         _goalReminderId + 1,
-        '⏰ Objectif bientôt échéant',
-        'Plus que $daysRemaining jours pour atteindre "$goalName"',
+        isEnglish
+            ? '⏰ Goal deadline approaching'
+            : '⏰ Objectif bientôt échéant',
+        isEnglish
+            ? 'Only $daysRemaining days left to reach "$goalName"'
+            : 'Plus que $daysRemaining jours pour atteindre "$goalName"',
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_goals',
-            'Objectifs financiers',
+            isEnglish ? 'Financial goals' : 'Objectifs financiers',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_warning',
             color: const Color(0xFFFF9800),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -622,20 +720,24 @@ class NotificationService {
   Future<void> showTestNotification() async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
       await _notificationsPlugin.show(
         _testNotificationId,
-        '✅ Test SmartSpend',
-        'Les notifications fonctionnent correctement ! 🎉',
+        isEnglish ? '✅ SmartSpend test' : '✅ Test SmartSpend',
+        isEnglish
+            ? 'Notifications are working correctly! 🎉'
+            : 'Les notifications fonctionnent correctement ! 🎉',
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_daily',
-            'Rappels quotidiens',
+            isEnglish ? 'Daily reminders' : 'Rappels quotidiens',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_success',
             color: const Color(0xFF00BCD4),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -653,23 +755,28 @@ class NotificationService {
   Future<void> scheduleTestNotification({int delaySeconds = 3}) async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
-      final scheduledTime = tz.TZDateTime.now(tz.local).add(Duration(seconds: delaySeconds));
+      final scheduledTime =
+          tz.TZDateTime.now(tz.local).add(Duration(seconds: delaySeconds));
 
       await _notificationsPlugin.zonedSchedule(
         _testNotificationId + 1,
-        '⏰ Test programmé',
-        'Cette notification était programmée pour dans $delaySeconds secondes !',
+        isEnglish ? '⏰ Scheduled test' : '⏰ Test programmé',
+        isEnglish
+            ? 'This notification was scheduled in $delaySeconds seconds!'
+            : 'Cette notification était programmée pour dans $delaySeconds secondes !',
         scheduledTime,
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_daily',
-            'Rappels quotidiens',
+            isEnglish ? 'Daily reminders' : 'Rappels quotidiens',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_wallet',
             color: const Color(0xFF00BCD4),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -682,7 +789,8 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      debugPrint('⏰ Notification test programmée pour dans $delaySeconds secondes');
+      debugPrint(
+          '⏰ Notification test programmée pour dans $delaySeconds secondes');
     } catch (e) {
       debugPrint('❌ Erreur programmation test: $e');
     }
@@ -694,7 +802,8 @@ class NotificationService {
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduledDate =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
@@ -745,35 +854,44 @@ class NotificationService {
   /// Sauvegarder le timestamp de la dernière notification
   Future<void> _saveLastNotificationTime() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_lastNotificationTimeKey, DateTime.now().millisecondsSinceEpoch);
+    await prefs.setInt(
+        _lastNotificationTimeKey, DateTime.now().millisecondsSinceEpoch);
   }
 
   /// Récupérer le timestamp de la dernière notification
   Future<DateTime?> getLastNotificationTime() async {
     final prefs = await SharedPreferences.getInstance();
     final timestamp = prefs.getInt(_lastNotificationTimeKey);
-    return timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null;
+    return timestamp != null
+        ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+        : null;
   }
 
   /// Envoyer une notification de test immédiate
   Future<bool> sendTestNotification() async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
       await _notificationsPlugin.show(
         _testNotificationId,
-        '🧪 Test SmartSpend',
-        'Les notifications fonctionnent correctement ! ✅',
+        isEnglish ? '🧪 SmartSpend test' : '🧪 Test SmartSpend',
+        isEnglish
+            ? 'Notifications are working correctly! ✅'
+            : 'Les notifications fonctionnent correctement ! ✅',
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_daily',
-            'Rappels quotidiens',
-            channelDescription: 'Rappels pour saisir vos transactions',
+            isEnglish ? 'Daily reminders' : 'Rappels quotidiens',
+            channelDescription: isEnglish
+                ? 'Reminders to log your transactions'
+                : 'Rappels pour saisir vos transactions',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_success',
             color: const Color(0xFF00BCD4),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -795,24 +913,33 @@ class NotificationService {
   Future<bool> sendScheduledTestNotification() async {
     try {
       if (!_isInitialized) await initialize();
+      final isEnglish = await _isEnglishLocale();
 
-      final scheduledTime = tz.TZDateTime.now(tz.local).add(const Duration(minutes: 1));
-      
+      final scheduledTime =
+          tz.TZDateTime.now(tz.local).add(const Duration(minutes: 1));
+
       await _notificationsPlugin.zonedSchedule(
         _testNotificationId + 1,
-        '⏰ Test programmé SmartSpend',
-        'Cette notification était programmée pour dans 1 minute ! ✅',
+        isEnglish
+            ? '⏰ SmartSpend scheduled test'
+            : '⏰ Test programmé SmartSpend',
+        isEnglish
+            ? 'This notification was scheduled for 1 minute later! ✅'
+            : 'Cette notification était programmée pour dans 1 minute ! ✅',
         scheduledTime,
         NotificationDetails(
           android: AndroidNotificationDetails(
             'smartspend_daily',
-            'Rappels quotidiens',
-            channelDescription: 'Rappels pour saisir vos transactions',
+            isEnglish ? 'Daily reminders' : 'Rappels quotidiens',
+            channelDescription: isEnglish
+                ? 'Reminders to log your transactions'
+                : 'Rappels pour saisir vos transactions',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_notif_wallet',
             color: const Color(0xFF00BCD4),
-            largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+            largeIcon:
+                const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
           ),
           iOS: const DarwinNotificationDetails(
             presentAlert: true,
@@ -825,7 +952,8 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      debugPrint('✅ Notification de test programmée pour ${scheduledTime.hour}:${scheduledTime.minute}');
+      debugPrint(
+          '✅ Notification de test programmée pour ${scheduledTime.hour}:${scheduledTime.minute}');
       return true;
     } catch (e) {
       debugPrint('❌ Erreur programmation notification test: $e');
@@ -836,41 +964,41 @@ class NotificationService {
   /// Debug complet du système de notifications
   Future<void> debugNotifications() async {
     debugPrint('=== DEBUG NOTIFICATIONS ===');
-    
+
     final stats = await getNotificationStats();
     debugPrint('📊 Stats: $stats');
-    
+
     final pending = await getPendingNotifications();
     debugPrint('📅 Notifications en attente: ${pending.length}');
     for (var notif in pending) {
       debugPrint('  - ID: ${notif.id}, Title: ${notif.title}');
     }
-    
+
     final now = DateTime.now();
     final tzNow = tz.TZDateTime.now(tz.local);
     debugPrint('🕐 Heure locale: $now');
     debugPrint('🕐 Heure TZ: $tzNow');
     debugPrint('🕐 Timezone: ${tz.local.name}');
-    
+
     final nextMorning = _nextInstanceOfTime(8, 30);
     final nextEvening = _nextInstanceOfTime(20, 0);
     debugPrint('📅 Prochain rappel matin (8h30): $nextMorning');
     debugPrint('📅 Prochain rappel soir (20h00): $nextEvening');
-    
+
     debugPrint('=== FIN DEBUG ===');
   }
 
   /// Reprogrammer toutes les notifications (utile après debug)
   Future<void> rescheduleAllNotifications() async {
     debugPrint('🔄 Reprogrammation de toutes les notifications...');
-    
+
     // Annuler tout
     await cancelAllNotifications();
-    
+
     // Reprogrammer
     await scheduleAllReminders();
     await scheduleNewMonthReminder();
-    
+
     // Afficher l'état
     await debugNotifications();
   }

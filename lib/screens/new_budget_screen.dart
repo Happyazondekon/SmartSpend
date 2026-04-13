@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../generated/gen_l10n/app_localizations.dart';
 import '../budget_logic.dart';
 import '../new_design_system.dart';
 
@@ -84,7 +85,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
           CircularProgressIndicator(color: colors.primary),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Chargement...',
+            AppLocalizations.of(context)!.loading,
             style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
               color: colors.textSecondary,
             ),
@@ -109,12 +110,12 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Vue d\'ensemble',
+              AppLocalizations.of(context)!.budgetHeaderTitle,
               style: AppTextStyles.displaySmall(isDark),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              _getGreeting(),
+              _getGreeting(AppLocalizations.of(context)!),
               style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                 color: colors.textSecondary,
               ),
@@ -146,7 +147,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 Text(
                   salary > 0
                       ? '$currencySymbol${_formatNumber(remaining)}'
-                      : 'Définir',
+                      : AppLocalizations.of(context)!.budgetSetButtonLabel,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -214,7 +215,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       ),
                     ),
                     Text(
-                      'utilisé',
+                      AppLocalizations.of(context)!.budgetUsedLabel,
                       style: AppTextStyles.labelSmall(isDark),
                     ),
                   ],
@@ -228,21 +229,21 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildStatRow(
-                      label: 'Budget',
+                      label: AppLocalizations.of(context)!.budgetLabel,
                       value: '$currencySymbol${_formatNumber(salary)}',
                       color: colors.primary,
                       isDark: isDark,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _buildStatRow(
-                      label: 'Dépensé',
+                      label: AppLocalizations.of(context)!.budgetSpentLabel,
                       value: '$currencySymbol${_formatNumber(totalSpent)}',
                       color: colors.error,
                       isDark: isDark,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _buildStatRow(
-                      label: 'Restant',
+                      label: AppLocalizations.of(context)!.budgetRemainingLabel,
                       value: '$currencySymbol${_formatNumber(remaining)}',
                       color: remaining >= 0 ? colors.success : colors.error,
                       isDark: isDark,
@@ -262,11 +263,11 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Progression du mois',
+                    AppLocalizations.of(context)!.monthProgress,
                     style: AppTextStyles.labelSmall(isDark),
                   ),
                   Text(
-                    '${_getDaysRemainingInMonth()} jours restants',
+                    AppLocalizations.of(context)!.daysRemaining(_getDaysRemainingInMonth()),
                     style: AppTextStyles.labelSmall(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -333,14 +334,14 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Catégories',
+              AppLocalizations.of(context)!.budgetCategoriesSection,
               style: AppTextStyles.titleLarge(isDark),
             ),
             TextButton.icon(
               onPressed: () => _showAddCategoryDialog(budgetLogic, colors, isDark),
               icon: Icon(Icons.add_rounded, color: colors.primary, size: 20),
               label: Text(
-                'Ajouter',
+                AppLocalizations.of(context)!.addButton,
                 style: TextStyle(color: colors.primary),
               ),
             ),
@@ -473,7 +474,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Transactions récentes',
+          AppLocalizations.of(context)!.budgetRecentTransactions,
           style: AppTextStyles.titleLarge(isDark),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -495,7 +496,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'Aucune transaction',
+                    AppLocalizations.of(context)!.noTransaction,
                     style: AppTextStyles.bodyMediumThemed(isDark).copyWith(
                       color: colors.textSecondary,
                     ),
@@ -568,11 +569,11 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
   }
 
   // Méthodes utilitaires
-  String _getGreeting() {
+  String _getGreeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Bonjour 👋';
-    if (hour < 18) return 'Bon après-midi ☀️';
-    return 'Bonsoir 🌙';
+    if (hour < 12) return l10n.greetingMorning;
+    if (hour < 18) return l10n.greetingAfternoon;
+    return l10n.greetingEvening;
   }
 
   String _formatNumber(double value) {
@@ -621,7 +622,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Gérer le budget',
+              AppLocalizations.of(context)!.budgetManageTitle,
               style: AppTextStyles.titleLarge(isDark),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -636,11 +637,11 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 ),
                 child: Icon(Icons.edit_rounded, color: colors.primary),
               ),
-              title: Text('Définir le budget', style: AppTextStyles.bodyLargeThemed(isDark)),
+              title: Text(AppLocalizations.of(context)!.budgetSetTitle, style: AppTextStyles.bodyLargeThemed(isDark)),
               subtitle: Text(
                 currentSalary > 0 
-                    ? 'Actuel: ${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary)}'
-                    : 'Aucun budget défini',
+                    ? '${AppLocalizations.of(context)!.budgetCurrentLabel}: ${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary)}'
+                    : AppLocalizations.of(context)!.budgetNotSet,
                 style: AppTextStyles.bodySmallThemed(isDark),
               ),
               onTap: () {
@@ -661,9 +662,9 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   ),
                   child: Icon(Icons.add_rounded, color: colors.success),
                 ),
-                title: Text('Ajouter au budget', style: AppTextStyles.bodyLargeThemed(isDark)),
+                title: Text(AppLocalizations.of(context)!.budgetAddToBudgetTitle, style: AppTextStyles.bodyLargeThemed(isDark)),
                 subtitle: Text(
-                  'Pour les revenus supplémentaires',
+                  AppLocalizations.of(context)!.budgetSupplementaryIncome,
                   style: AppTextStyles.bodySmallThemed(isDark),
                 ),
                 onTap: () {
@@ -716,12 +717,12 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Ajouter au budget',
+                  AppLocalizations.of(context)!.budgetAddToBudgetTitle,
                   style: AppTextStyles.titleLarge(isDark),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Ajoutez un revenu supplémentaire à votre budget actuel',
+                  AppLocalizations.of(context)!.budgetSupplementaryIncomeDescription,
                   style: AppTextStyles.bodySmallThemed(isDark),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -736,7 +737,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Budget actuel', style: AppTextStyles.labelMedium(isDark)),
+                      Text(AppLocalizations.of(context)!.budgetCurrentLabel, style: AppTextStyles.labelMedium(isDark)),
                       Text(
                         '${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary)}',
                         style: AppTextStyles.titleSmall(isDark).copyWith(color: colors.primary),
@@ -751,7 +752,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   keyboardType: TextInputType.number,
                   style: AppTextStyles.headlineMedium(isDark),
                   decoration: InputDecoration(
-                    labelText: 'Montant à ajouter',
+                    labelText: AppLocalizations.of(context)!.budgetSupplementaryAmountLabel,
                     prefixText: '${budgetLogic.getCurrencySymbol()} ',
                     prefixStyle: AppTextStyles.headlineMedium(isDark).copyWith(
                       color: colors.success,
@@ -774,7 +775,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 // Aperçu du nouveau total
                 if (controller.text.isNotEmpty)
                   Text(
-                    'Nouveau budget: ${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary + (double.tryParse(controller.text) ?? 0))}',
+                    AppLocalizations.of(context)!.budgetNewLabel('${budgetLogic.getCurrencySymbol()}${_formatNumber(currentSalary + (double.tryParse(controller.text) ?? 0))}'),
                     style: AppTextStyles.labelMedium(isDark).copyWith(color: colors.success),
                   ),
                 const SizedBox(height: AppSpacing.lg),
@@ -797,7 +798,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
                     ),
-                    child: const Text('Ajouter au budget'),
+                    child: Text(AppLocalizations.of(context)!.budgetAddToBudgetButton),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -845,12 +846,12 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Vos revenus mensuels',
+                AppLocalizations.of(context)!.budgetMonthlyIncomeTitle,
                 style: AppTextStyles.titleLarge(isDark),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Entrez votre salaire ou revenus mensuels nets',
+                AppLocalizations.of(context)!.budgetEnterMonthlyIncome,
                 style: AppTextStyles.bodySmallThemed(isDark),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -891,7 +892,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
                   ),
-                  child: const Text('Calculer le budget'),
+                  child: Text(AppLocalizations.of(context)!.calculateBudgetButton),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -980,7 +981,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Nouvelle catégorie',
+                    AppLocalizations.of(context)!.budgetNewCategoryTitle,
                     style: AppTextStyles.titleLarge(isDark),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -1004,7 +1005,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                         const SizedBox(width: AppSpacing.xs),
                         Expanded(
                           child: Text(
-                            'Disponible: ${remainingPercent.toStringAsFixed(0)}% (${budgetLogic.formatCurrency(remainingAmount)})',
+                            '${AppLocalizations.of(context)!.budgetAvailableLabel}: ${remainingPercent.toStringAsFixed(0)}% (${budgetLogic.formatCurrency(remainingAmount)})',
                             style: AppTextStyles.labelSmall(isDark).copyWith(
                               color: remainingPercent > 0 ? colors.success : colors.error,
                             ),
@@ -1020,7 +1021,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                     controller: nameController,
                     style: AppTextStyles.bodyMediumThemed(isDark),
                     decoration: InputDecoration(
-                      labelText: 'Nom de la catégorie',
+                      labelText: AppLocalizations.of(context)!.budgetCategoryNameLabel,
                       filled: true,
                       fillColor: colors.background,
                       border: OutlineInputBorder(
@@ -1055,7 +1056,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                             ),
                             child: Center(
                               child: Text(
-                                'Pourcentage',
+                                AppLocalizations.of(context)!.budgetPercentageLabel,
                                 style: AppTextStyles.labelMedium(isDark).copyWith(
                                   color: usePercentMode ? Colors.white : colors.textSecondary,
                                 ),
@@ -1083,7 +1084,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                             ),
                             child: Center(
                               child: Text(
-                                'Montant',
+                                AppLocalizations.of(context)!.budgetAmountLabel,
                                 style: AppTextStyles.labelMedium(isDark).copyWith(
                                   color: !usePercentMode ? Colors.white : colors.textSecondary,
                                 ),
@@ -1103,7 +1104,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       keyboardType: TextInputType.number,
                       style: AppTextStyles.bodyMediumThemed(isDark),
                       decoration: InputDecoration(
-                        labelText: 'Pourcentage du budget',
+                        labelText: AppLocalizations.of(context)!.budgetBudgetPercentageLabel,
                         suffixText: '%',
                         helperText: 'Max: ${remainingPercent.toStringAsFixed(0)}%',
                         filled: true,
@@ -1125,7 +1126,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       keyboardType: TextInputType.number,
                       style: AppTextStyles.bodyMediumThemed(isDark),
                       decoration: InputDecoration(
-                        labelText: 'Montant alloué',
+                        labelText: AppLocalizations.of(context)!.budgetAllocatedAmountLabel,
                         suffixText: budgetLogic.getCurrencySymbol(),
                         helperText: 'Max: ${budgetLogic.formatCurrency(remainingAmount)}',
                         filled: true,
@@ -1148,16 +1149,18 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
-                      usePercentMode
-                          ? 'Équivalent: ${budgetLogic.formatCurrency((salary * (double.tryParse(percentController.text) ?? 0) / 100))}'
-                          : 'Équivalent: ${((double.tryParse(amountController.text) ?? 0) / (salary > 0 ? salary : 1) * 100).toStringAsFixed(1)}%',
+                      AppLocalizations.of(context)!.budgetEquivalentLabel(
+                        usePercentMode
+                            ? budgetLogic.formatCurrency((salary * (double.tryParse(percentController.text) ?? 0) / 100))
+                            : '${((double.tryParse(amountController.text) ?? 0) / (salary > 0 ? salary : 1) * 100).toStringAsFixed(1)}%',
+                      ),
                       style: AppTextStyles.labelSmall(isDark).copyWith(color: colors.textSecondary),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Icônes
-                  Text('Icône', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.budgetIconLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -1189,7 +1192,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   const SizedBox(height: AppSpacing.lg),
 
                   // Couleurs
-                  Text('Couleur', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.goalsColorLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -1246,7 +1249,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                       ),
-                      child: const Text('Ajouter la catégorie'),
+                      child: Text(AppLocalizations.of(context)!.budgetAddCategoryButton),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -1317,7 +1320,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                     children: [
                       Text(name, style: AppTextStyles.titleLarge(isDark)),
                       Text(
-                        '${percentage.toInt()}% du budget',
+                        '${percentage.toInt()}${AppLocalizations.of(context)!.budgetOfBudget}',
                         style: AppTextStyles.bodySmallThemed(isDark),
                       ),
                     ],
@@ -1332,7 +1335,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
               children: [
                 Expanded(
                   child: _buildDetailStat(
-                    label: 'Budget',
+                    label: AppLocalizations.of(context)!.budgetLabel,
                     value: '$currencySymbol${_formatNumber(amount)}',
                     color: colors.primary,
                     isDark: isDark,
@@ -1340,7 +1343,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 ),
                 Expanded(
                   child: _buildDetailStat(
-                    label: 'Dépensé',
+                    label: AppLocalizations.of(context)!.budgetSpentLabel,
                     value: '$currencySymbol${_formatNumber(spent)}',
                     color: colors.error,
                     isDark: isDark,
@@ -1348,7 +1351,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                 ),
                 Expanded(
                   child: _buildDetailStat(
-                    label: 'Restant',
+                    label: AppLocalizations.of(context)!.budgetRemainingLabel,
                     value: '$currencySymbol${_formatNumber(remaining)}',
                     color: remaining >= 0 ? colors.success : colors.error,
                     isDark: isDark,
@@ -1374,7 +1377,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       );
                     },
                     icon: const Icon(Icons.edit_rounded),
-                    label: const Text('Modifier'),
+                    label: Text(AppLocalizations.of(context)!.editButton),
                     style: OutlinedButton.styleFrom(
                       padding:
                           const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -1392,7 +1395,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       budgetLogic.deleteCategory(name);
                     },
                     icon: Icon(Icons.delete_rounded, color: colors.error),
-                    label: Text('Supprimer',
+                    label: Text(AppLocalizations.of(context)!.deleteButton,
                         style: TextStyle(color: colors.error)),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: colors.error),
@@ -1504,7 +1507,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Modifier la catégorie',
+                    AppLocalizations.of(context)!.budgetEditCategoryTitle,
                     style: AppTextStyles.titleLarge(isDark),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -1526,7 +1529,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                         const SizedBox(width: AppSpacing.xs),
                         Expanded(
                           child: Text(
-                            'Disponible: ${remainingPercent.toStringAsFixed(0)}% (${budgetLogic.formatCurrency(remainingAmount)})',
+                            '${AppLocalizations.of(context)!.budgetAvailableLabel}: ${remainingPercent.toStringAsFixed(0)}% (${budgetLogic.formatCurrency(remainingAmount)})',
                             style: AppTextStyles.labelSmall(isDark).copyWith(
                               color: colors.success,
                             ),
@@ -1542,7 +1545,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                     controller: nameController,
                     style: AppTextStyles.bodyMediumThemed(isDark),
                     decoration: InputDecoration(
-                      labelText: 'Nom de la catégorie',
+                      labelText: AppLocalizations.of(context)!.budgetCategoryNameLabel,
                       filled: true,
                       fillColor: colors.background,
                       border: OutlineInputBorder(
@@ -1577,7 +1580,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                             ),
                             child: Center(
                               child: Text(
-                                'Pourcentage',
+                                AppLocalizations.of(context)!.budgetPercentageLabel,
                                 style: AppTextStyles.labelMedium(isDark).copyWith(
                                   color: usePercentMode ? Colors.white : colors.textSecondary,
                                 ),
@@ -1605,7 +1608,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                             ),
                             child: Center(
                               child: Text(
-                                'Montant',
+                                AppLocalizations.of(context)!.budgetAmountLabel,
                                 style: AppTextStyles.labelMedium(isDark).copyWith(
                                   color: !usePercentMode ? Colors.white : colors.textSecondary,
                                 ),
@@ -1625,7 +1628,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       keyboardType: TextInputType.number,
                       style: AppTextStyles.bodyMediumThemed(isDark),
                       decoration: InputDecoration(
-                        labelText: 'Pourcentage du budget',
+                        labelText: AppLocalizations.of(context)!.budgetBudgetPercentageLabel,
                         suffixText: '%',
                         helperText: 'Max: ${remainingPercent.toStringAsFixed(0)}%',
                         filled: true,
@@ -1646,7 +1649,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                       keyboardType: TextInputType.number,
                       style: AppTextStyles.bodyMediumThemed(isDark),
                       decoration: InputDecoration(
-                        labelText: 'Montant alloué',
+                        labelText: AppLocalizations.of(context)!.budgetAllocatedAmountLabel,
                         suffixText: budgetLogic.getCurrencySymbol(),
                         helperText: 'Max: ${budgetLogic.formatCurrency(remainingAmount)}',
                         filled: true,
@@ -1668,16 +1671,18 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
-                      usePercentMode
-                          ? 'Équivalent: ${budgetLogic.formatCurrency((salary * (double.tryParse(percentController.text) ?? 0) / 100))}'
-                          : 'Équivalent: ${((double.tryParse(amountController.text) ?? 0) / (salary > 0 ? salary : 1) * 100).toStringAsFixed(1)}%',
+                      AppLocalizations.of(context)!.budgetEquivalentLabel(
+                        usePercentMode
+                            ? budgetLogic.formatCurrency((salary * (double.tryParse(percentController.text) ?? 0) / 100))
+                            : '${((double.tryParse(amountController.text) ?? 0) / (salary > 0 ? salary : 1) * 100).toStringAsFixed(1)}%',
+                      ),
                       style: AppTextStyles.labelSmall(isDark).copyWith(color: colors.textSecondary),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
                   // Icônes
-                  Text('Icône', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.budgetIconLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -1709,7 +1714,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                   const SizedBox(height: AppSpacing.lg),
 
                   // Couleurs
-                  Text('Couleur', style: AppTextStyles.labelMedium(isDark)),
+                  Text(AppLocalizations.of(context)!.goalsColorLabel, style: AppTextStyles.labelMedium(isDark)),
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -1767,7 +1772,7 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                       ),
-                      child: const Text('Enregistrer les modifications'),
+                      child: Text(AppLocalizations.of(context)!.budgetSaveChanges),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),

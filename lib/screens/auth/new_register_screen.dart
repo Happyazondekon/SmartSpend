@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../generated/gen_l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../../new_design_system.dart';
 import '../../theme_provider.dart';
@@ -64,7 +65,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
 
     if (!_acceptedTerms) {
       setState(() {
-        _errorMessage = 'Veuillez accepter les conditions d\'utilisation';
+        _errorMessage = AppLocalizations.of(context)!.registerValidationTerms;
       });
       return;
     }
@@ -93,7 +94,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
       if (mounted) {
         setState(() {
           if (e.code == 'email-already-in-use') {
-            _errorMessage = 'Cette adresse email est déjà utilisée';
+            _errorMessage = AppLocalizations.of(context)!.registerErrorEmailInUse;
           } else {
             _errorMessage = e.message;
           }
@@ -102,7 +103,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Une erreur est survenue. Réessayez';
+          _errorMessage = AppLocalizations.of(context)!.registerErrorGeneral;
         });
       }
     } finally {
@@ -126,7 +127,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Erreur de connexion avec Google';
+          _errorMessage = AppLocalizations.of(context)!.registerErrorGoogle;
         });
       }
     } finally {
@@ -162,7 +163,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.sm),
 
                   // Header avec retour et toggle thème
                   Row(
@@ -180,26 +181,26 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                     ],
                   ),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Titre
                   Text(
-                    'Créer un compte',
-                    style: AppTextStyles.h1.copyWith(
+                    AppLocalizations.of(context)!.registerTitle,
+                    style: AppTextStyles.h2.copyWith(
                       color: colors.textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Rejoignez SmartSpend et prenez\nle contrôle de vos finances',
+                    AppLocalizations.of(context)!.registerSubtitle,
                     style: AppTextStyles.bodyLarge.copyWith(
                       color: colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.md),
 
                   // Erreur
                   if (_errorMessage != null) _buildErrorCard(colors),
@@ -211,16 +212,16 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                       children: [
                         _buildTextField(
                           controller: _nameController,
-                          label: 'Nom complet',
-                          hint: 'Jean Dupont',
+                          label: AppLocalizations.of(context)!.registerFieldFullName,
+                          hint: AppLocalizations.of(context)!.registerFieldFullNameHint,
                           icon: Icons.person_outline_rounded,
                           colors: colors,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer votre nom';
+                              return AppLocalizations.of(context)!.registerValidationNameRequired;
                             }
                             if (value.length < 2) {
-                              return 'Nom trop court';
+                              return AppLocalizations.of(context)!.registerValidationNameTooShort;
                             }
                             return null;
                           },
@@ -228,17 +229,17 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                         const SizedBox(height: AppSpacing.md),
                         _buildTextField(
                           controller: _emailController,
-                          label: 'Email',
-                          hint: 'votre@email.com',
+                          label: AppLocalizations.of(context)!.registerFieldEmail,
+                          hint: AppLocalizations.of(context)!.registerFieldEmailHint,
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           colors: colors,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer votre email';
+                              return AppLocalizations.of(context)!.registerValidationEmailRequired;
                             }
                             if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                              return 'Format d\'email invalide';
+                              return AppLocalizations.of(context)!.registerValidationInvalidEmail;
                             }
                             return null;
                           },
@@ -246,8 +247,8 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                         const SizedBox(height: AppSpacing.md),
                         _buildTextField(
                           controller: _passwordController,
-                          label: 'Mot de passe',
-                          hint: '••••••••',
+                          label: AppLocalizations.of(context)!.registerFieldPassword,
+                          hint: AppLocalizations.of(context)!.registerFieldPasswordHint,
                           icon: Icons.lock_outline_rounded,
                           obscure: _obscurePassword,
                           colors: colors,
@@ -264,10 +265,10 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Veuillez entrer un mot de passe';
+                              return AppLocalizations.of(context)!.registerValidationPasswordRequired;
                             }
                             if (value.length < 6) {
-                              return 'Minimum 6 caractères';
+                              return AppLocalizations.of(context)!.registerValidationPasswordTooShort;
                             }
                             return null;
                           },
@@ -275,8 +276,8 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                         const SizedBox(height: AppSpacing.md),
                         _buildTextField(
                           controller: _confirmPasswordController,
-                          label: 'Confirmer le mot de passe',
-                          hint: '••••••••',
+                          label: AppLocalizations.of(context)!.registerFieldConfirmPassword,
+                          hint: AppLocalizations.of(context)!.registerFieldPasswordHint,
                           icon: Icons.lock_outline_rounded,
                           obscure: _obscureConfirmPassword,
                           colors: colors,
@@ -294,7 +295,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                           ),
                           validator: (value) {
                             if (value != _passwordController.text) {
-                              return 'Les mots de passe ne correspondent pas';
+                              return AppLocalizations.of(context)!.registerValidationPasswordMismatch;
                             }
                             return null;
                           },
@@ -303,16 +304,16 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                     ),
                   ),
 
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.sm),
 
                   // Checkbox conditions
                   _buildTermsCheckbox(colors),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.md),
 
                   // Bouton inscription
                   _buildPrimaryButton(
-                    text: 'Créer mon compte',
+                    text: AppLocalizations.of(context)!.registerButtonSubmit,
                     onPressed: _signUp,
                     isLoading: _isLoading,
                     colors: colors,
@@ -327,7 +328,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                         child: Text(
-                          'ou',
+                          AppLocalizations.of(context)!.loginOrDivider,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: colors.textSecondary,
                           ),
@@ -337,34 +338,29 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                     ],
                   ),
 
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.md),
 
                   // Bouton Google
                   _buildGoogleButton(colors),
 
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Lien connexion
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Déjà un compte ? ',
+                        AppLocalizations.of(context)!.registerExistingAccount,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: colors.textSecondary,
                         ),
                       ),
                       GestureDetector(
                         onTap: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NewLoginScreen(),
-                            ),
-                          );
+                          Navigator.pop(context);
                         },
                         child: Text(
-                          'Se connecter',
+                          AppLocalizations.of(context)!.loginButton,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: colors.primary,
                             fontWeight: FontWeight.w700,
@@ -547,17 +543,17 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
                   color: colors.textSecondary,
                 ),
                 children: [
-                  const TextSpan(text: 'J\'accepte les '),
+                  TextSpan(text: AppLocalizations.of(context)!.termsPrefix),
                   TextSpan(
-                    text: 'conditions d\'utilisation',
+                    text: AppLocalizations.of(context)!.termsOfUse,
                     style: TextStyle(
                       color: colors.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const TextSpan(text: ' et la '),
+                  TextSpan(text: AppLocalizations.of(context)!.termsMiddle),
                   TextSpan(
-                    text: 'politique de confidentialité',
+                    text: AppLocalizations.of(context)!.privacyPolicy,
                     style: TextStyle(
                       color: colors.primary,
                       fontWeight: FontWeight.w600,
@@ -637,7 +633,7 @@ class _NewRegisterScreenState extends State<NewRegisterScreen>
             ),
             const SizedBox(width: AppSpacing.md),
             Text(
-              'Continuer avec Google',
+              AppLocalizations.of(context)!.loginWithGoogle,
               style: AppTextStyles.buttonLarge.copyWith(color: colors.textPrimary),
             ),
           ],

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:smartspend/services/auth_service.dart';
 import 'package:smartspend/services/premium_service.dart';
+import 'package:smartspend/services/localization_service.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'theme.dart';
+import 'generated/gen_l10n/app_localizations.dart';
 
 class _ScaleOnTap extends StatefulWidget {
   final Widget child;
@@ -88,20 +91,33 @@ class _ScaleOnTapState extends State<_ScaleOnTap> with SingleTickerProviderState
 
 class AIService {
 
-  static Future<String> getGroqResponse(String prompt) async {
-    try {
-      final response = await http.post(
-        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer $_groqApiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': 'llama-3.1-8b-instant',
-          'messages': [
-            {
-              'role': 'system',
-              'content': """Tu es SmartBot, l'assistant IA premium de SmartSpend, expert en finances personnelles et conseiller financier bienveillant. 
+  static String _getSystemPrompt(bool isEnglish) {
+    if (isEnglish) {
+      return """You are SmartBot, SmartSpend's premium AI assistant, a personal finance expert and caring financial advisor.
+
+MAIN CAPABILITIES:
+🏦 FINANCIAL EXPERTISE: Budgeting, savings, investing, debt management, financial planning
+📱 APP GUIDE: SmartSpend features (transactions, budgets, statistics, notifications)
+💡 PERSONALIZED ADVICE: Savings strategies, budget optimization, tailored investment advice
+📊 FINANCIAL ANALYSIS: Spending trends interpretation, improvement recommendations
+
+RESPONSE STYLE:
+- Warm, professional and motivating
+- Structured responses with appropriate emojis
+- Practical and actionable advice
+- Natural and accessible English
+- Maximum 200 words per response
+
+AREAS OF EXPERTISE:
+✓ Creating and tracking personal budgets
+✓ Savings strategies and emergency funds
+✓ Debt reduction and management
+✓ Beginner investments
+✓ Long-term financial planning
+✓ Current expense optimization
+✓ General financial education""";
+    } else {
+      return """Tu es SmartBot, l'assistant IA premium de SmartSpend, expert en finances personnelles et conseiller financier bienveillant. 
 
 CAPACITÉS PRINCIPALES:
 🏦 EXPERTISE FINANCIÈRE: Budgétisation, épargne, investissement, gestion de dettes, planification financière
@@ -123,7 +139,24 @@ DOMAINES D'EXPERTISE:
 ✓ Investissements pour débutants
 ✓ Planification financière à long terme
 ✓ Optimisation des dépenses courantes
-✓ Éducation financière générale"""
+✓ Éducation financière générale""";
+    }
+  }
+
+  static Future<String> getGroqResponse(String prompt, {bool isEnglish = false}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+        headers: {
+          'Authorization': 'Bearer $_groqApiKey',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'model': 'llama-3.1-8b-instant',
+          'messages': [
+            {
+              'role': 'system',
+              'content': _getSystemPrompt(isEnglish)
             },
             {
               'role': 'user',
@@ -150,34 +183,51 @@ DOMAINES D'EXPERTISE:
     return '';
   }
 
-  static Future<String> getAIResponse(String prompt) async {
+  static Future<String> getAIResponse(String prompt, {bool isEnglish = false}) async {
     // D'abord essayer la FAQ locale
-    String localAnswer = FAQChatBot.getLocalAnswer(prompt);
+    String localAnswer = FAQChatBot.getLocalAnswer(prompt, isEnglish: isEnglish);
     if (localAnswer.isNotEmpty) {
       return localAnswer;
     }
     
     // Sinon appeler l'API
-    String response = await getGroqResponse(prompt);
+    String response = await getGroqResponse(prompt, isEnglish: isEnglish);
     if (response.isNotEmpty) return response;
 
-    return "⚠️ Connexion temporairement indisponible. Essayez une question des suggestions ci-dessous.";
+    return isEnglish 
+        ? "⚠️ Connection temporarily unavailable. Try a question from the suggestions below."
+        : "⚠️ Connexion temporairement indisponible. Essayez une question des suggestions ci-dessous.";
   }
 }
 
 class FAQChatBot {
-  static final Map<String, String> enhancedFAQ = {
-    "📱 Comment ajouter une transaction?": "📝 **Ajouter une transaction:**\n\n1. Ouvrez l'onglet 'Transactions'\n2. Appuyez sur le bouton '+' \n3. Saisissez le montant, choisissez la catégorie et ajoutez une description\n4. Validez pour enregistrer\n\n💡 **Astuce:** Ajoutez vos transactions immédiatement pour un suivi précis!",
-    "🎯 Comment créer un budget?": "🎯 **Créer un budget efficace:**\n\n1. Accédez à l'onglet 'Budget'\n2. Cliquez sur '+' pour ajouter un nouveau budget\n3. Définissez le montant maximal par catégorie\n4. Activez les alertes pour rester dans les limites\n\n💰 **Conseil:** Suivez la règle 50/30/20 (besoins/envies/épargne)",
-    "📊 Comment consulter mes statistiques?": "📊 **Analyser vos finances:**\n\nL'onglet 'Statistiques' vous offre:\n• Graphiques de dépenses par catégorie\n• Évolution mensuelle de vos finances\n• Comparaisons périodiques\n• Tendances de consommation\n\n🔍 **Utilisez ces données** pour identifier vos habitudes et optimiser votre budget!",
-    "💰 Comment économiser efficacement?": "💰 **Stratégies d'épargne éprouvées:**\n\n🎯 **Méthode des 52 semaines:** Épargnez 1€ la 1ère semaine, 2€ la 2ème...\n🏦 **Épargne automatique:** 10-20% de chaque revenu\n📱 **Utilisez SmartSpend** pour tracker vos progrès\n⚡ **Réduisez les abonnements** non-essentiels\n\n**Objectif:** Constituez d'abord un fonds d'urgence (3-6 mois de charges)!",
-    "✂️ Comment réduire mes dépenses?": "✂️ **Optimisation des dépenses:**\n\n🔍 **Analysez vos statistiques SmartSpend:**\n• Identifiez les catégories les plus coûteuses\n• Repérez les dépenses récurrentes\n• Trouvez les 'fuites' budgétaires\n\n💡 **Actions concrètes:**\n• Comparez les prix avant d'acheter\n• Cuisinez plus à la maison\n• Renégociez vos contrats (assurance, téléphone)\n• Privilégiez l'occasion quand possible",
-    "📊 Conseils investissement débutant?": "🚀 **Débuter en investissement:**\n\n⚠️ **Prérequis essentiels:**\n✓ Fonds d'urgence constitué (3-6 mois)\n✓ Dettes remboursées (sauf prêt immobilier)\n✓ Budget maîtrisé avec SmartSpend\n\n📈 **Premiers pas:**\n• Commencez petit (50-100€/mois)\n• Diversifiez vos placements\n• Privilégiez le long terme\n• Formez-vous avant d'investir\n\n🏦 **Options:** Livret A, PEL, assurance-vie, PEA",
-    "💳Comment gérer mes dettes?": "💳 **Stratégie de remboursement:**\n\n🎯 **Méthode 'Boule de neige':**\n1. Listez toutes vos dettes\n2. Payez les minimums partout\n3. Attaquez la plus petite dette en premier\n4. Une fois remboursée, passez à la suivante\n\n📊 **Utilisez SmartSpend** pour tracker vos remboursements et célébrer vos progrès!\n\n⚡ **Négociez** avec vos créanciers si nécessaire.",
-    "🎯 Comment créer un objectif?": "🎯 **Créer un objectif financier:**\n\n1. Accédez à l’onglet 'Objectifs'\n2. Appuyez sur '+' pour ajouter un nouvel objectif\n3. Indiquez le nom, la description (facultative), le montant cible et la date limite\n4. Choisissez une icône et une couleur pour personnaliser votre objectif\n5. Validez en appuyant sur 'Créer'\n",
+  static final Map<String, String> enhancedFAQFr = {
+    "📱 Comment ajouter une transaction?": "📝 Ajouter une transaction:\n\n1. Ouvrez l'onglet 'Transactions'\n2. Appuyez sur le bouton '+' \n3. Saisissez le montant, choisissez la catégorie et ajoutez une description\n4. Validez pour enregistrer\n\n💡 Astuce: Ajoutez vos transactions immédiatement pour un suivi précis!",
+    "🎯 Comment créer un budget?": "🎯 Créer un budget efficace:\n\n1. Accédez à l'onglet 'Budget'\n2. Cliquez sur '+' pour ajouter un nouveau budget\n3. Définissez le montant maximal par catégorie\n4. Activez les alertes pour rester dans les limites\n\n💰 Conseil: Suivez la règle 50/30/20 (besoins/envies/épargne)",
+    "📊 Comment consulter mes statistiques?": "📊 Analyser vos finances:\n\nL'onglet 'Statistiques' vous offre:\n• Graphiques de dépenses par catégorie\n• Évolution mensuelle de vos finances\n• Comparaisons périodiques\n• Tendances de consommation\n\n🔍 Utilisez ces données pour identifier vos habitudes et optimiser votre budget!",
+    "💰 Comment économiser efficacement?": "💰 Stratégies d'épargne éprouvées:\n\n🎯 Méthode des 52 semaines: Épargnez 1€ la 1ère semaine, 2€ la 2ème...\n🏦 Épargne automatique: 10-20% de chaque revenu\n📱 Utilisez SmartSpend pour tracker vos progrès\n⚡ Réduisez les abonnements non-essentiels\n\nObjectif: Constituez d'abord un fonds d'urgence (3-6 mois de charges)!",
+    "✂️ Comment réduire mes dépenses?": "✂️ Optimisation des dépenses:\n\n🔍 Analysez vos statistiques SmartSpend:\n• Identifiez les catégories les plus coûteuses\n• Repérez les dépenses récurrentes\n• Trouvez les 'fuites' budgétaires\n\n💡 Actions concrètes:\n• Comparez les prix avant d'acheter\n• Cuisinez plus à la maison\n• Renégociez vos contrats (assurance, téléphone)\n• Privilégiez l'occasion quand possible",
+    "📊 Conseils investissement débutant?": "🚀 Débuter en investissement:\n\n⚠️ Prérequis essentiels:\n✓ Fonds d'urgence constitué (3-6 mois)\n✓ Dettes remboursées (sauf prêt immobilier)\n✓ Budget maîtrisé avec SmartSpend\n\n📈 Premiers pas:\n• Commencez petit (50-100€/mois)\n• Diversifiez vos placements\n• Privilégiez le long terme\n• Formez-vous avant d'investir\n\n🏦 Options: Livret A, PEL, assurance-vie, PEA",
+    "💳Comment gérer mes dettes?": "💳 Stratégie de remboursement:\n\n🎯 Méthode 'Boule de neige':\n1. Listez toutes vos dettes\n2. Payez les minimums partout\n3. Attaquez la plus petite dette en premier\n4. Une fois remboursée, passez à la suivante\n\n📊 Utilisez SmartSpend pour tracker vos remboursements et célébrer vos progrès!\n\n⚡ Négociez avec vos créanciers si nécessaire.",
+    "🎯 Comment créer un objectif?": "🎯 Créer un objectif financier:\n\n1. Accédez à l’onglet 'Objectifs'\n2. Appuyez sur '+' pour ajouter un nouvel objectif\n3. Indiquez le nom, la description (facultative), le montant cible et la date limite\n4. Choisissez une icône et une couleur pour personnaliser votre objectif\n5. Validez en appuyant sur 'Créer'\n",
   };
 
-  static final List<String> financialTopics = [
+  static final Map<String, String> enhancedFAQEn = {
+    "📱 How to add a transaction?": "📝 **Add a transaction:**\n\n1. Open the 'Transactions' tab\n2. Tap the '+' button\n3. Enter the amount, choose the category and add a description\n4. Confirm to save\n\n💡 **Tip:** Add your transactions immediately for accurate tracking!",
+    "🎯 How to create a budget?": "🎯 **Create an effective budget:**\n\n1. Go to the 'Budget' tab\n2. Click '+' to add a new budget\n3. Set the maximum amount per category\n4. Enable alerts to stay within limits\n\n💰 **Tip:** Follow the 50/30/20 rule (needs/wants/savings)",
+    "📊 How to view my statistics?": "📊 **Analyze your finances:**\n\nThe 'Statistics' tab offers:\n• Spending charts by category\n• Monthly evolution of your finances\n• Periodic comparisons\n• Consumption trends\n\n🔍 **Use this data** to identify your habits and optimize your budget!",
+    "💰 How to save effectively?": "💰 **Proven saving strategies:**\n\n🎯 **52-week method:** Save \$1 week 1, \$2 week 2...\n🏦 **Automatic savings:** 10-20% of each income\n📱 Use **SmartSpend** to track your progress\n⚡ Reduce non-essential subscriptions\n\n**Goal:** First build an emergency fund (3-6 months of expenses)!",
+    "✂️ How to reduce spending?": "✂️ **Spending optimization:**\n\n🔍 Analyze your **SmartSpend** statistics:\n• Identify the most expensive categories\n• Spot recurring expenses\n• Find budget 'leaks'\n\n💡 **Concrete actions:**\n• Compare prices before buying\n• Cook more at home\n• Renegotiate contracts (insurance, phone)\n• Choose second-hand when possible",
+    "📊 Beginner investing tips?": "🚀 **Getting started with investing:**\n\n⚠️ **Essential prerequisites:**\n✓ Emergency fund saved (3-6 months)\n✓ Debts paid off (except mortgage)\n✓ Budget managed with **SmartSpend**\n\n📈 **First steps:**\n• Start small (\$50-100/month)\n• Diversify your investments\n• Focus on long-term\n• Learn before investing\n\n🏦 **Options:** Savings accounts, index funds, retirement accounts",
+    "💳 How to manage my debt?": "💳 **Repayment strategy:**\n\n🎯 **'Snowball' method:**\n1. List all your debts\n2. Pay minimums everywhere\n3. Attack the smallest debt first\n4. Once paid, move to the next\n\n📊 Use **SmartSpend** to track your repayments and celebrate your progress!\n\n⚡ **Negotiate** with your creditors if necessary.",
+    "🎯 How to create a goal?": "🎯 **Create a financial goal:**\n\n1. Go to the 'Goals' tab\n2. Tap '+' to add a new goal\n3. Enter the name, description (optional), target amount and deadline\n4. Choose an icon and color to personalize your goal\n5. Confirm by tapping 'Create'\n",
+  };
+
+  static Map<String, String> getEnhancedFAQ(bool isEnglish) {
+    return isEnglish ? enhancedFAQEn : enhancedFAQFr;
+  }
+
+  static final List<String> financialTopicsFr = [
     "💰 Comment économiser efficacement?",
     "📊 Conseils investissement débutant?",
     "💳 Comment gérer mes dettes?",
@@ -186,7 +236,16 @@ class FAQChatBot {
     "🏦 Fonds d'urgence: combien épargner?",
   ];
 
-  static final List<String> appTopics = [
+  static final List<String> financialTopicsEn = [
+    "💰 How to save effectively?",
+    "📊 Beginner investing tips?",
+    "💳 How to manage my debt?",
+    "✂️ How to reduce spending?",
+    "🎯 Create an optimal budget",
+    "🏦 Emergency fund: how much to save?",
+  ];
+
+  static final List<String> appTopicsFr = [
     "📱 Comment ajouter une transaction?",
     "🎯 Comment créer un budget?",
     "📊 Comment consulter mes statistiques?",
@@ -196,7 +255,21 @@ class FAQChatBot {
     "🎯 Comment créer un objectif?"
   ];
 
-  static List<String> getSuggestions(String query) {
+  static final List<String> appTopicsEn = [
+    "📱 How to add a transaction?",
+    "🎯 How to create a budget?",
+    "📊 How to view my statistics?",
+    "🔔 Configure notifications",
+    "⚙️ Sync issues",
+    "✏️ Edit/delete a transaction",
+    "🎯 How to create a goal?"
+  ];
+
+  static List<String> getSuggestions(String query, {bool isEnglish = false}) {
+    final financialTopics = isEnglish ? financialTopicsEn : financialTopicsFr;
+    final appTopics = isEnglish ? appTopicsEn : appTopicsFr;
+    final enhancedFAQ = getEnhancedFAQ(isEnglish);
+
     if (query.isEmpty) {
       List<String> suggestions = [];
       suggestions.addAll(financialTopics.take(3));
@@ -210,7 +283,9 @@ class FAQChatBot {
     }).take(6).toList();
   }
 
-  static String getLocalAnswer(String question) {
+  static String getLocalAnswer(String question, {bool isEnglish = false}) {
+    final enhancedFAQ = getEnhancedFAQ(isEnglish);
+
     if (enhancedFAQ.containsKey(question)) {
       return enhancedFAQ[question]!;
     }
@@ -226,13 +301,13 @@ class FAQChatBot {
     return "";
   }
 
-  static Future<String> getAnswer(String question) async {
-    String localAnswer = getLocalAnswer(question);
+  static Future<String> getAnswer(String question, {bool isEnglish = false}) async {
+    String localAnswer = getLocalAnswer(question, isEnglish: isEnglish);
     if (localAnswer.isNotEmpty) {
       return localAnswer;
     }
 
-    return await AIService.getAIResponse(question);
+    return await AIService.getAIResponse(question, isEnglish: isEnglish);
   }
 }
 
@@ -255,6 +330,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
   bool isTyping = false;
   int selectedSuggestionTab = 0;
   bool _hasCountedUsage = false; // Pour tracker si on a déjà compté l'utilisation
+  bool _welcomeAdded = false;
 
   late AnimationController _typingController;
   late AnimationController _botAvatarController;
@@ -279,30 +355,38 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
       vsync: this,
     );
 
-    _addWelcomeMessages();
     suggestions = FAQChatBot.getSuggestions("");
 
     _botAvatarController.repeat();
     _shimmerController.repeat();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_welcomeAdded) {
+        _welcomeAdded = true;
+        _addWelcomeMessages();
+      }
+    });
   }
 
   void _addWelcomeMessages() {
+    final l10n = AppLocalizations.of(context)!;
     // Récupérer les informations utilisateur
     final user = AuthService().currentUser;
-    final userName = user?.displayName ?? user?.email?.split('@').first ?? 'Utilisateur';
+    final userName = user?.displayName ?? user?.email?.split('@').first ?? l10n.chatbotDefaultUser;
 
     messages.add({
       'sender': 'bot',
-      'text': '👋 Bonjour et bienvenue, $userName !',
+      'text': l10n.chatbotGreeting(userName),
       'timestamp': DateTime.now(),
       'type': 'welcome',
     });
+    _listKey.currentState?.insertItem(messages.length - 1);
 
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         messages.add({
           'sender': 'bot',
-          'text': '🤖 Je suis **SmartBot**, votre conseiller financier intelligent et assistant personnel pour SmartSpend.',
+          'text': l10n.chatbotIntro,
           'timestamp': DateTime.now(),
           'type': 'intro',
         });
@@ -315,7 +399,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
       if (mounted) {
         messages.add({
           'sender': 'bot',
-          'text': '💡 **Je peux vous aider avec:**\n• 📊 Conseils financiers personnalisés\n• 📱 Guide d\'utilisation SmartSpend\n• 💰 Stratégies d\'épargne et d\'investissement\n• 📈 Analyse de vos habitudes financières',
+          'text': l10n.chatbotCapabilities,
           'timestamp': DateTime.now(),
           'type': 'capabilities',
         });
@@ -328,7 +412,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
       if (mounted) {
         messages.add({
           'sender': 'bot',
-          'text': '🎯 **Commençons !** Choisissez un sujet ci-dessous ou posez-moi directement votre question.',
+          'text': l10n.chatbotPrompt,
           'timestamp': DateTime.now(),
           'type': 'prompt',
         });
@@ -350,6 +434,8 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
 
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
 
     // Incrémenter le compteur uniquement lors du premier message envoyé
     if (!_hasCountedUsage) {
@@ -362,8 +448,8 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
           final remaining = await _premiumService.getRemainingChatbotUses();
           if (remaining == 0 && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('C\'était votre dernière utilisation gratuite de l\'assistant.'),
+              SnackBar(
+                content: Text(l10n.chatbotLastFreeUse),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -390,14 +476,14 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
 
     setState(() {
       isTyping = true;
-      suggestions = FAQChatBot.getSuggestions(question);
+      suggestions = FAQChatBot.getSuggestions(question, isEnglish: isEnglish);
     });
 
     _scrollToBottom();
     _typingController.repeat();
 
     try {
-      final answer = await FAQChatBot.getAnswer(question);
+      final answer = await FAQChatBot.getAnswer(question, isEnglish: isEnglish);
       await Future.delayed(const Duration(milliseconds: 1500));
 
       if (mounted) {
@@ -424,7 +510,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
 
         messages.add({
           'sender': 'bot',
-          'text': '⚠️ Une erreur est survenue. Veuillez réessayer ou choisir une suggestion.',
+          'text': l10n.chatbotError,
           'timestamp': DateTime.now(),
           'type': 'error',
         });
@@ -630,7 +716,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Conseiller financier',
+                      AppLocalizations.of(context)!.chatbotSubtitle,
                       style: textTheme.bodySmall?.copyWith(
                         color: colorScheme.onPrimary.withOpacity(0.9),
                         fontSize: 10,
@@ -723,8 +809,8 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
                     ),
                     const SizedBox(height: 8),
                   ],
-                  Text(
-                    message['text'],
+                  Text.rich(
+                    _parseBoldText(message['text']),
                     style: textTheme.bodyMedium?.copyWith(
                       color: isUser ? colorScheme.onPrimary : colorScheme.onSurface,
                       height: 1.5,
@@ -753,6 +839,26 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
         ],
       ),
     );
+  }
+
+  TextSpan _parseBoldText(String text) {
+    final regex = RegExp(r'\*\*(.+?)\*\*');
+    final spans = <InlineSpan>[];
+    int lastEnd = 0;
+    for (final match in regex.allMatches(text)) {
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
+      }
+      spans.add(TextSpan(
+        text: match.group(1),
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ));
+      lastEnd = match.end;
+    }
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastEnd)));
+    }
+    return TextSpan(children: spans);
   }
 
   IconData _getMessageIcon(String type) {
@@ -805,7 +911,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'SmartBot réfléchit',
+                  AppLocalizations.of(context)!.chatbotThinking,
                   style: TextStyle(
                     color: colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,
@@ -861,9 +967,9 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
             ),
             child: Row(
               children: [
-                _buildSuggestionTab('🎯 Populaire', 0, colorScheme, textTheme),
-                _buildSuggestionTab('💰 Finances', 1, colorScheme, textTheme),
-                _buildSuggestionTab('📱 App', 2, colorScheme, textTheme),
+                _buildSuggestionTab(AppLocalizations.of(context)!.chatbotTabPopular, 0, colorScheme, textTheme),
+                _buildSuggestionTab(AppLocalizations.of(context)!.chatbotTabFinance, 1, colorScheme, textTheme),
+                _buildSuggestionTab(AppLocalizations.of(context)!.chatbotTabApp, 2, colorScheme, textTheme),
               ],
             ),
           ),
@@ -978,13 +1084,14 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
   }
 
   List<String> _getCurrentSuggestions() {
+    final isEnglish = Provider.of<LocalizationService>(context, listen: false).isEnglish();
     switch (selectedSuggestionTab) {
       case 1:
-        return FAQChatBot.financialTopics;
+        return isEnglish ? FAQChatBot.financialTopicsEn : FAQChatBot.financialTopicsFr;
       case 2:
-        return FAQChatBot.appTopics;
+        return isEnglish ? FAQChatBot.appTopicsEn : FAQChatBot.appTopicsFr;
       default:
-        return FAQChatBot.getSuggestions("");
+        return FAQChatBot.getSuggestions("", isEnglish: isEnglish);
     }
   }
 
@@ -1033,7 +1140,7 @@ class _ElegantFAQChatBotState extends State<ElegantFAQChatBot>
                     color: colorScheme.onSurface,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Posez votre question financière...',
+                    hintText: AppLocalizations.of(context)!.chatbotInputHint,
                     hintStyle: textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
