@@ -2,13 +2,34 @@ plugins {
     // ...
 
     // Add the dependency for the Google services Gradle plugin
-    id("com.google.gms.google-services") version "4.4.2" apply false
+    id("com.google.gms.google-services") version "4.4.4" apply false
 
 }
 allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+}
+
+// Force all subprojects to use Java 17 for 16KB page size support
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_17
+                    targetCompatibility = JavaVersion.VERSION_17
+                }
+            }
+        }
+
+        // Force Kotlin JVM target for all Kotlin tasks
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
     }
 }
 

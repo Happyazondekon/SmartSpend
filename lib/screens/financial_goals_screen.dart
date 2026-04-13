@@ -113,10 +113,10 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.track_changes_outlined,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            Image.asset(
+              'assets/Illustrations/empty_goals.webp',
+              height: 150,
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: 24),
             Text(
@@ -1239,9 +1239,9 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       final newAmount = goal.currentAmount + amount;
 
       if (newAmount >= goal.targetAmount) {
-        _showSnackBar('🎉 Félicitations ! Objectif "${goal.name}" atteint !', Colors.green);
+        _showGoalAchievedDialog(goal.name);
       } else {
-        _showSnackBar('Montant ajouté avec succès !', Colors.green);
+        _showSuccessDialog('Montant ajouté !');
       }
 
       _loadData();
@@ -1249,6 +1249,116 @@ class _FinancialGoalsScreenState extends State<FinancialGoalsScreen> {
       _showSnackBar('Erreur lors de l\'ajout', Colors.red);
     }
   }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black26,
+      builder: (ctx) {
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (ctx.mounted) Navigator.of(ctx).pop();
+        });
+        
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/Illustrations/success_check.webp',
+                    height: 100,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showGoalAchievedDialog(String goalName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/Illustrations/goal_achieved.webp',
+              height: 150,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              '🎉 Félicitations !',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Objectif "$goalName" atteint !',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _completeGoal(FinancialGoal goal) async {
     try {
       await _firestoreService.completeFinancialGoal(goal.id);

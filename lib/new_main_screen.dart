@@ -4,6 +4,7 @@ import 'budget_logic.dart';
 import 'new_design_system.dart';
 import 'theme_provider.dart';
 import 'services/auth_service.dart';
+import 'services/premium_service.dart';
 import 'faq_chatbot.dart' show ElegantFAQChatBot;
 import 'screens/new_budget_screen.dart';
 import 'screens/new_transactions_screen.dart';
@@ -118,7 +119,7 @@ class _NewMainScreenState extends State<NewMainScreen>
       child: AnimatedContainer(
         duration: AppAnimations.fast,
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
+          horizontal: AppSpacing.xs,
           vertical: AppSpacing.xs,
         ),
         child: Column(
@@ -145,8 +146,10 @@ class _NewMainScreenState extends State<NewMainScreen>
               style: AppTextStyles.labelSmall(isDark).copyWith(
                 color: isSelected ? colors.primary : colors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 10,
+                fontSize: 9,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -517,16 +520,7 @@ class _NewMainScreenState extends State<NewMainScreen>
                           date: selectedDate,
                         );
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Transaction ajoutée'),
-                            backgroundColor: colors.success,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                            ),
-                          ),
-                        );
+                        _showSuccessDialog(context, 'Transaction ajoutée !');
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -550,11 +544,70 @@ class _NewMainScreenState extends State<NewMainScreen>
     );
   }
 
-  void _openChatbot(BuildContext context, BudgetLogic budgetLogic) {
+  void _showSuccessDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black26,
+      builder: (context) {
+        // Auto-dismiss après 1.5 secondes
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (context.mounted) Navigator.of(context).pop();
+        });
+        
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/Illustrations/success_check.webp',
+                    height: 100,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openChatbot(BuildContext context, BudgetLogic budgetLogic) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = isDark ? AppColors.dark : AppColors.light;
+    final premiumService = PremiumService();
 
-    if (!budgetLogic.isPremium && budgetLogic.chatbotUsesUsed >= 3) {
+    final canUse = await premiumService.canUseChatbot();
+
+    if (!canUse) {
+      final remaining = await premiumService.getRemainingChatbotUses();
+      if (!context.mounted) return;
+      
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -564,13 +617,47 @@ class _NewMainScreenState extends State<NewMainScreen>
           ),
           title: Row(
             children: [
-              Icon(Icons.lock_rounded, color: colors.warning),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/Illustrations/premium_badge.webp',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                ),
+              ),
               const SizedBox(width: AppSpacing.sm),
               const Text('Limite atteinte'),
             ],
           ),
-          content: const Text(
-            'Vous avez utilisé vos 3 sessions gratuites de l\'assistant IA. Passez à Premium pour un accès illimité.',
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.lock_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Vous avez utilisé vos 3 sessions gratuites de l\'assistant IA.',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Passez à Premium pour un accès illimité à l\'assistant financier et à l\'export PDF.',
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -583,7 +670,8 @@ class _NewMainScreenState extends State<NewMainScreen>
                 budgetLogic.openPremiumPurchase(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: colors.warning,
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black,
               ),
               child: const Text('Voir Premium'),
             ),

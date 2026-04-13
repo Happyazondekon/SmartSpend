@@ -305,18 +305,10 @@ class _NewTransactionsScreenState extends State<NewTransactionsScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: colors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.receipt_long_rounded,
-              size: 40,
-              color: colors.primary,
-            ),
+          Image.asset(
+            'assets/Illustrations/empty_transactions.webp',
+            height: 150,
+            fit: BoxFit.contain,
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(

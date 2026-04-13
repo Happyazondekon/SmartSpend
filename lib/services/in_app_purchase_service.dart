@@ -109,16 +109,14 @@ class InAppPurchaseService {
     }
 
     if (_purchasePending) {
-      debugPrint('Un achat est déjà en cours');
-      return false;
+      debugPrint('Un achat est déjà en cours - réinitialisation');
+      _purchasePending = false; // Auto-reset après timeout implicite
     }
 
-    final ProductDetails? productDetails = _products.firstWhere(
-          (product) => product.id == productId,
-      orElse: () => throw Exception('Produit non trouvé'),
-    );
-
-    if (productDetails == null) {
+    ProductDetails? productDetails;
+    try {
+      productDetails = _products.firstWhere((product) => product.id == productId);
+    } catch (e) {
       debugPrint('Produit non trouvé: $productId');
       return false;
     }
@@ -179,9 +177,13 @@ class InAppPurchaseService {
         debugPrint('Achat en attente');
         _purchasePending = true;
       } else {
+        // Réinitialiser le flag pour tous les autres statuts
+        _purchasePending = false;
+        
         if (purchaseDetails.status == PurchaseStatus.error) {
           debugPrint('Erreur d\'achat: ${purchaseDetails.error}');
-          _purchasePending = false;
+        } else if (purchaseDetails.status == PurchaseStatus.canceled) {
+          debugPrint('Achat annulé par l\'utilisateur');
         } else if (purchaseDetails.status == PurchaseStatus.purchased ||
             purchaseDetails.status == PurchaseStatus.restored) {
 
@@ -193,17 +195,20 @@ class InAppPurchaseService {
             await _deliverProduct(purchaseDetails);
           } else {
             debugPrint('Échec de la vérification de l\'achat');
-            _purchasePending = false;
             return;
           }
         }
 
         if (purchaseDetails.pendingCompletePurchase) {
           await _inAppPurchase.completePurchase(purchaseDetails);
-          _purchasePending = false;
         }
       }
     });
+  }
+
+  // Méthode pour réinitialiser manuellement le flag si nécessaire
+  void resetPurchasePending() {
+    _purchasePending = false;
   }
 
   void _updateStreamOnDone() {

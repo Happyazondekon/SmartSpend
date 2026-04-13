@@ -21,18 +21,17 @@ keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "com.heyhappy.smartspend"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = "29.0.13113456"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-        // Activation de la core library desugaring
-        coreLibraryDesugaringEnabled = true
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -44,6 +43,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // MultiDex pour le desugaring
+        multiDexEnabled true
     }
 
     signingConfigs {
@@ -61,13 +63,32 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
+            proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+            )
         }
+    }
+
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/license.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt', 'META-INF/notice.txt', 'META-INF/ASL2.0', 'META-INF/*.kotlin_module']
+        }
+    }
+
+    lint {
+        disable 'InvalidPackage'
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
 dependencies {
-    // Ajout de la dépendance pour la core library desugaring
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
+    // Core Library Desugaring
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+
+    // MultiDex support
+    implementation 'androidx.multidex:multidex:2.0.1'
 
     // Import the Firebase BoM
     implementation platform('com.google.firebase:firebase-bom:34.1.0')

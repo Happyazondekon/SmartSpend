@@ -488,10 +488,10 @@ class _NewBudgetScreenState extends State<NewBudgetScreen>
             child: Center(
               child: Column(
                 children: [
-                  Icon(
-                    Icons.receipt_long_rounded,
-                    size: 48,
-                    color: colors.textSecondary.withOpacity(0.5),
+                  Image.asset(
+                    'assets/Illustrations/empty_transactions.webp',
+                    height: 100,
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(

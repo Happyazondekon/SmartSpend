@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:smartspend/services/auth_service.dart';
+import 'package:smartspend/services/premium_service.dart';
+import 'package:smartspend/services/in_app_purchase_service.dart';
 import 'package:smartspend/utils/icon_utils.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -1562,7 +1564,8 @@ class BudgetLogic extends ChangeNotifier {
         );
 
         if (goal.currentAmount >= goal.targetAmount) {
-          _showSnackBar('🎉 Félicitations ! Objectif "${goal.name}" atteint !', Colors.green);
+          // Afficher le dialogue de célébration
+          _showGoalAchievedDialog(goal.name);
 
           // Envoyer une notification
           await NotificationService().showGoalAchievedNotification(goal.name);
@@ -1580,6 +1583,74 @@ class BudgetLogic extends ChangeNotifier {
       debugPrint('Erreur lors de l\'ajout d\'argent: $e');
       _showSnackBar('Erreur lors de l\'ajout', Colors.red);
     }
+  }
+
+  void _showGoalAchievedDialog(String goalName) {
+    if (_context == null) return;
+    
+    showDialog(
+      context: _context!,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/Illustrations/goal_achieved.webp',
+              height: 150,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              '🎉 Félicitations !',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF10B981),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Objectif "$goalName" atteint !',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Continuez sur cette lancée pour atteindre tous vos objectifs financiers !',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> completeFinancialGoal(String goalId) async {
@@ -1764,30 +1835,107 @@ class BudgetLogic extends ChangeNotifier {
   }
 
   /// Ouvre l'écran d'achat Premium
-  void openPremiumPurchase(BuildContext ctx) {
+  void openPremiumPurchase(BuildContext ctx) async {
+    final iapService = InAppPurchaseService();
+    
+    // Réinitialiser le flag d'achat au cas où il serait bloqué
+    iapService.resetPurchasePending();
+    
+    // Charger les produits si pas encore fait
+    if (iapService.products.isEmpty) {
+      await iapService.loadProducts();
+    }
+
+    final yearlyProduct = iapService.getProductDetails('smartspend_premium_yearly');
+    final monthlyProduct = iapService.getProductDetails('smartspend_premium_monthly');
+
+    // Les prix viennent de Play Console, sinon valeurs par défaut
+    final yearlyPrice = yearlyProduct?.price ?? '6,99 €/an';
+    final monthlyPrice = monthlyProduct?.price ?? '0,99 €/mois';
+
+    if (!ctx.mounted) return;
+
     showDialog(
       context: ctx,
       builder: (context) => AlertDialog(
-        title: const Row(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
           children: [
-            Text('⭐', style: TextStyle(fontSize: 24)),
-            SizedBox(width: 8),
-            Text('SmartSpend Premium'),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/Illustrations/premium_badge.webp',
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('SmartSpend Premium'),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Débloquez toutes les fonctionnalités :'),
-            SizedBox(height: 12),
-            Text('✓ Exports PDF illimités'),
-            Text('✓ Assistant IA illimité'),
-            Text('✓ Analyses avancées'),
-            Text('✓ Pas de publicités'),
-            SizedBox(height: 16),
-            Text('2,99€ / mois ou 24,99€ / an',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            Center(
+              child: Image.asset(
+                'assets/Illustrations/premium_features.webp',
+                height: 100,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Débloquez toutes les fonctionnalités :'),
+            const SizedBox(height: 12),
+            _buildFeatureRow(Icons.picture_as_pdf, 'Exports PDF illimités'),
+            _buildFeatureRow(Icons.smart_toy, 'Assistant IA illimité'),
+            _buildFeatureRow(Icons.analytics, 'Analyses avancées'),
+            _buildFeatureRow(Icons.block, 'Pas de publicités'),
+            const SizedBox(height: 20),
+            
+            // Option annuelle
+            _buildPlanOption(
+              context: context,
+              title: 'Annuel',
+              price: yearlyPrice,
+              isRecommended: true,
+              onTap: () async {
+                Navigator.pop(context);
+                if (yearlyProduct != null) {
+                  _showSnackBar('Lancement de l\'achat...', Colors.blue);
+                  final success = await iapService.purchaseProduct('smartspend_premium_yearly');
+                  if (!success) {
+                    _showSnackBar('Erreur lors de l\'achat. Réessayez.', Colors.red);
+                  }
+                } else {
+                  _showSnackBar('Produit non disponible. Réessayez plus tard.', Colors.orange);
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            
+            // Option mensuelle
+            _buildPlanOption(
+              context: context,
+              title: 'Mensuel',
+              price: monthlyPrice,
+              isRecommended: false,
+              onTap: () async {
+                Navigator.pop(context);
+                if (monthlyProduct != null) {
+                  _showSnackBar('Lancement de l\'achat...', Colors.blue);
+                  final success = await iapService.purchaseProduct('smartspend_premium_monthly');
+                  if (!success) {
+                    _showSnackBar('Erreur lors de l\'achat. Réessayez.', Colors.red);
+                  }
+                } else {
+                  _showSnackBar('Produit non disponible. Réessayez plus tard.', Colors.orange);
+                }
+              },
+            ),
           ],
         ),
         actions: [
@@ -1795,19 +1943,80 @@ class BudgetLogic extends ChangeNotifier {
             onPressed: () => Navigator.pop(context),
             child: const Text('Plus tard'),
           ),
-          ElevatedButton(
-            onPressed: () {
+          TextButton(
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: Intégrer l'achat in-app
-              _showSnackBar('Achat Premium bientôt disponible', Colors.blue);
+              _showSnackBar('Restauration des achats...', Colors.blue);
+              await iapService.restorePurchases();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD700),
-              foregroundColor: Colors.black87,
-            ),
-            child: const Text('S\'abonner'),
+            child: const Text('Restaurer'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF10B981)),
+          const SizedBox(width: 8),
+          Text(text),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlanOption({
+    required BuildContext context,
+    required String title,
+    required String price,
+    required bool isRecommended,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isRecommended ? const Color(0xFFFFD700) : Colors.grey.shade300,
+            width: isRecommended ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isRecommended ? const Color(0xFFFFD700).withOpacity(0.1) : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    if (isRecommended) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD700),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text('MEILLEUR', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(price, style: TextStyle(color: Colors.grey.shade600)),
+              ],
+            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: isRecommended ? const Color(0xFFFFD700) : Colors.grey),
+          ],
+        ),
       ),
     );
   }
@@ -1842,13 +2051,59 @@ class BudgetLogic extends ChangeNotifier {
 
   /// Export vers PDF (simplifié pour le nouveau design)
   Future<void> exportToPDF(BuildContext ctx) async {
-    if (!_isPremium && _pdfExportsUsed >= 3) {
+    final premiumService = PremiumService();
+    final canExport = await premiumService.canExportPDF();
+
+    if (!canExport) {
       showDialog(
         context: ctx,
         builder: (context) => AlertDialog(
-          title: const Text('Limite atteinte'),
-          content: const Text(
-            'Vous avez utilisé vos 3 exports gratuits. Passez à Premium pour des exports illimités.',
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/Illustrations/premium_badge.webp',
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Limite atteinte'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.lock_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Vous avez utilisé vos 3 exports PDF gratuits.',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Passez à Premium pour des exports illimités et un accès complet à l\'assistant financier.',
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -1860,6 +2115,10 @@ class BudgetLogic extends ChangeNotifier {
                 Navigator.pop(context);
                 openPremiumPurchase(ctx);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black,
+              ),
               child: const Text('Voir Premium'),
             ),
           ],
@@ -1869,8 +2128,19 @@ class BudgetLogic extends ChangeNotifier {
     }
 
     await exportTransactionsToPDF();
-    if (!_isPremium) {
-      await incrementPdfExports();
+    
+    final isPremium = await premiumService.isPremiumUser();
+    if (!isPremium) {
+      await premiumService.incrementPDFExports();
+      final remaining = await premiumService.getRemainingPDFExports();
+      if (remaining == 0 && ctx.mounted) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+            content: Text('C\'était votre dernier export PDF gratuit.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 }

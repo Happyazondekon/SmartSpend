@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'screens/auth/new_login_screen.dart';
 import 'screens/auth/new_email_verification_screen.dart';
 import 'screens/auth/pin_setup_screen.dart';
 import 'screens/auth/pin_lock_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'new_main_screen.dart';
 import 'budget_logic.dart';
 import 'theme_provider.dart';
@@ -28,6 +30,8 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   bool _wasInBackground = false;
   bool _updateRequired = false;
   bool _checkingUpdate = true;
+  bool _onboardingComplete = true; // Par défaut true pour éviter flash
+  bool _checkingOnboarding = true;
 
   @override
   void initState() {
@@ -108,6 +112,23 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
     });
   }
 
+  Future<void> _checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final complete = prefs.getBool('onboarding_complete') ?? false;
+    if (mounted) {
+      setState(() {
+        _onboardingComplete = complete;
+        _checkingOnboarding = false;
+      });
+    }
+  }
+
+  void _onOnboardingComplete() {
+    setState(() {
+      _onboardingComplete = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -170,6 +191,17 @@ class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
                 onUnlocked: _onUnlocked,
                 onLogout: _onLogout,
               );
+            }
+
+            // Vérifier le statut de l'onboarding
+            if (_checkingOnboarding) {
+              _checkOnboardingStatus();
+              return _buildLoadingScreen(context, colors, isDark, 'Préparation de votre expérience...');
+            }
+
+            // Si onboarding pas encore complété, afficher le tutoriel
+            if (!_onboardingComplete) {
+              return OnboardingScreen(onComplete: _onOnboardingComplete);
             }
 
             // Déverrouillé - Afficher l'app principale
